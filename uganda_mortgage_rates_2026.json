@@ -1,0 +1,54 @@
+{
+  "year": 2026,
+  "country": "Uganda",
+  "central_bank_rate": "9.75%",
+  "average_shilling_lending_rate": "18.73%",
+  "average_foreign_currency_lending_rate": "7.09%",
+  "providers": [
+    {
+      "bank": "Housing Finance Bank",
+      "offerings": [
+        "Home Purchase Loans",
+        "House Completion Loans",
+        "Land Loans"
+      ],
+      "typical_rate_range_ugx": "17% - 19%",
+      "max_term_years": 20,
+      "notes": "Negotiable based on customer profile. Requires strong credit history."
+    },
+    {
+      "bank": "Stanbic Bank Uganda",
+      "offerings": [
+        "Home Purchase Loans",
+        "House Completion Loans",
+        "Land Loans"
+      ],
+      "typical_rate_range_ugx": "17% - 19%",
+      "max_term_years": 20,
+      "notes": "Competitive rates offered for premium customers."
+    },
+    {
+      "bank": "KCB Bank Uganda",
+      "offerings": [
+        "Home Purchase Loans",
+        "House Completion Loans",
+        "Land Loans"
+      ],
+      "typical_rate_range_ugx": "17% - 19%",
+      "max_term_years": 20,
+      "notes": "Provides varying mortgage options."
+    },
+    {
+      "bank": "Bank of Africa",
+      "offerings": [
+        "Home Purchase Loans",
+        "House Completion Loans",
+        "Land Loans"
+      ],
+      "typical_rate_range_ugx": "17% - 19%",
+      "max_term_years": 20,
+      "notes": "Customizable financing solutions."
+    }
+  ],
+  "disclaimer": "Rates are highly negotiable depending on the customer's profile, relationship with the bank, and loan product type. Foreign currency loans carry exchange rate risks. Average rates reflect market conditions monitored by the Bank of Uganda."
+}

@@ -1,0 +1,151 @@
+'use client';
+
+import Link from 'next/link';
+import { motion } from 'framer-motion';
+
+import { useFeaturedProducts } from '@/hooks/useHomeData';
+import { resizedImage } from '@/helpers/universal';
+
+const CATEGORY_STYLES = {
+  'Electronics': { emoji: '📱', color: '#4C8BFF' },
+  'Fashion': { emoji: '👗', color: '#FF6B9D' },
+  'Home & Living': { emoji: '🛋️', color: '#00E87A' },
+  'Vehicles': { emoji: '🚗', color: '#FFB800' },
+  'Sports': { emoji: '⚽', color: '#9B6BFF' },
+  'Food & Drinks': { emoji: '🍱', color: '#FF4D00' },
+  'Health & Beauty': { emoji: '💊', color: '#00D4C8' },
+  'Agriculture': { emoji: '🌿', color: '#7BC400' },
+  default: { emoji: '🛍️', color: 'var(--tt-gold)' }
+};
+
+function getStyle(categoryName) {
+  return CATEGORY_STYLES[categoryName] || CATEGORY_STYLES.default;
+}
+
+function formatUGX(n) {
+  return 'UGX ' + Math.round(n).toLocaleString('en-UG');
+}
+
+function FeaturedCard({ product, index }) {
+  const isLowStock = product.stock <= 3;
+  const endDate = new Date(product.sale_end_date);
+  const hoursLeft = Math.max((endDate - Date.now()) / 3_600_000, 0);
+  const {featured_image} = product ?? {}
+  
+  const discountPct = product.price > 0 ? Math.round(((product.price - product.sale_price) / product.price) * 100) : 0;
+  const categoryName = product.product_categories?.name || 'Uncategorized';
+  const { emoji, color: catColor } = getStyle(categoryName);
+
+  return (
+    <motion.div
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: index * 0.08, duration: 0.35 }}
+    >
+      <Link
+        href={`/products/${product.slug}`}
+        className="no-underline block h-full"
+      >
+        <div
+          className="tt-card cursor-pointer h-full transition-all duration-200 hover:-translate-y-1"
+          onMouseEnter={(e) => {
+            e.currentTarget.style.boxShadow = `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px ${catColor}40`;
+          }}
+          onMouseLeave={(e) => {
+            e.currentTarget.style.boxShadow = 'none';
+          }}
+        >
+          {/* Image placeholder with emoji */}
+          <div className="bg-[var(--tt-surface-2)] flex items-center justify-center text-[4rem] relative overflow-hidden">
+            {featured_image ? (
+              <img src={resizedImage(featured_image.url, 'medium')} alt={product.name} className="w-full h-full object-cover" />
+            ) : (
+              emoji
+            )}
+
+            {/* Discount badge */}
+            <div className="absolute top-2 left-2 bg-[rgba(255,77,0,0.12)] border border-[rgba(255,77,0,0.3)] text-[var(--tt-flame-2)] backdrop-blur-[4px] font-extrabold text-[0.7rem] px-2 py-[3px] rounded-full">
+              -{discountPct}%
+            </div>
+
+            {/* Featured badge */}
+            <div className="absolute top-2 right-2 bg-[rgba(255,77,0,0.12)] border border-[rgba(255,77,0,0.3)] text-[var(--tt-flame-2)] backdrop-blur-sm font-bold text-[0.62rem] px-[7px] py-[2px] rounded-full">
+              ⭐ Featured
+            </div>
+
+            {/* Low stock ribbon */}
+            {isLowStock && (
+              <div className="absolute bottom-2 right-2 bg-[var(--tt-danger)] text-white font-bold text-[0.62rem] px-2 py-[2px] rounded-full">
+                Only {product.stock} left!
+              </div>
+            )}
+          </div>
+
+          {/* Body */}
+          <div className="p-[0.875rem]">
+            <div className="inline-block px-[0.6rem] py-[0.25rem] mb-[0.5rem] rounded-full bg-[var(--tt-surface-2)] border border-[var(--tt-border)] text-[var(--tt-muted-2)] text-[0.65rem] font-semibold uppercase tracking-[0.06em]">
+              {categoryName}
+            </div>
+            <h3 className="text-[0.88rem] font-semibold leading-[1.3] mb-2 line-clamp-2">
+              {product.name}
+            </h3>
+
+            <div className="flex items-baseline gap-[0.4rem] mb-[0.4rem]">
+              <span className="font-['Syne',sans-serif] font-bold text-base text-[var(--tt-text)]">
+                {formatUGX(product.sale_price)}
+              </span>
+              <span className="text-[0.72rem] text-[var(--tt-muted)] line-through">
+                {formatUGX(product.price)}
+              </span>
+            </div>
+
+            <div className={`text-[0.7rem] font-semibold ${hoursLeft < 4 ? 'text-[var(--tt-danger)]' : 'text-[var(--tt-muted)]'}`}>
+              ⏱ {hoursLeft < 1 ? `${Math.round(hoursLeft * 60)}m` : `${Math.round(hoursLeft)}h`} remaining
+            </div>
+          </div>
+        </div>
+      </Link>
+    </motion.div>
+  );
+}
+
+export default function FeaturedProducts() {
+  const { data: products, isLoading } = useFeaturedProducts();
+  return (
+    <section className="pb-12">
+      <div className="tt-container">
+        <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
+          <div>
+            <h2 className="font-['Syne',sans-serif] font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">
+              ⭐ Featured{' '}
+              <span className="bg-[linear-gradient(135deg,#FFB800,#FF8C00)] bg-clip-text text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
+                Deals
+              </span>
+            </h2>
+            <p className="text-[var(--tt-muted)] text-[0.875rem] mt-1">
+              Hand-picked by our team — premium discounts, high trust vendors
+            </p>
+          </div>
+          <Link
+            href="/products?filter=featured"
+            className="tt-btn tt-btn-ghost text-[0.82rem] px-4 py-[0.45rem]"
+          >
+            All Featured →
+          </Link>
+        </div>
+
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+          {isLoading ? (
+             Array.from({ length: 4 }).map((_, i) => (
+               <div key={i} className="tt-shimmer h-[340px] rounded-[var(--tt-radius-lg)] bg-[var(--tt-surface)]" />
+             ))
+          ) : (
+            products?.map((p, i) => (
+              <FeaturedCard key={p.id} product={p} index={i} />
+            ))
+          )}
+        </div>
+      </div>
+    </section>
+  );
+}
