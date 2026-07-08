@@ -3,7 +3,7 @@ import OpenAI from 'openai';
 import * as cheerio from 'cheerio';
 import { z } from 'zod';
 import { zodResponseFormat } from 'openai/helpers/zod';
-import pdfParse from 'pdf-parse';
+import { PDFParse } from 'pdf-parse';
 
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
@@ -46,8 +46,9 @@ export async function POST(request) {
       const file = formData.get('file');
       if (!file) throw new Error("No PDF file uploaded");
       const buffer = Buffer.from(await file.arrayBuffer());
-      const pdfData = await pdfParse(buffer);
-      contentToAnalyze = pdfData.text;
+      const pdfParser = new PDFParse({ data: buffer });
+      const textResult = await pdfParser.getText();
+      contentToAnalyze = textResult.text;
       if (contentToAnalyze.length > 20000) {
         contentToAnalyze = contentToAnalyze.substring(0, 20000);
       }
