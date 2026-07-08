@@ -9,6 +9,9 @@ import FeaturedVendors from '@/components/home/FeaturedVendors';
 import MidPageCTA from '@/components/home/MidPageCTA';
 import TagCloud from '@/components/home/TagCloud';
 import HowItWorks from '@/components/home/HowItWorks';
+import PromoBanners2 from '@/components/home/PromoBanners2';
+//import PromoBanners3 from '@/components/home/PromoBanners3';
+//import PromoBanners4 from '@/components/home/PromoBanners4';
 
 export const metadata = {
   title: 'TickToss — Uganda\'s Urgency Marketplace | Deals on a Clock',
@@ -28,14 +31,14 @@ export const metadata = {
 export default function HomePage() {
   return (
     <div>
-      {/* ── 1. Hero ─────────────────────────────────── */}
-      <HeroSection />
+      {/* ── 1. Promo banners + quick-access tiles ────── */}
+      <PromoBanners2 />
+
+      {/* ── . Hero ─────────────────────────────────── */}
+      {/* <HeroSection /> */}
 
       {/* ── 2. Live news ticker ──────────────────────── */}
       <LiveTicker />
-
-      {/* ── 3. Promo banners + quick-access tiles ────── */}
-      <PromoBanners />
 
       {/* ── 4. Category grid ─────────────────────────── */}
       <CategoryGrid />
@@ -52,7 +55,7 @@ export default function HomePage() {
           .urgency-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
-      <div className="urgency-grid grid lg:grid-cols-[minmax(0,1fr)_360px] gap-8 max-w-[1280px] mx-auto px-6 pb-12">
+      <div className="urgency-grid grid lg:grid-cols-[minmax(0,1fr)_360px] mb-4 lg:mb-6 gap-6 max-w-[1280px] mx-auto px-3">
         {/* Live urgency list (left) */}
         <div className="min-w-0">
           <LiveUrgencyList />

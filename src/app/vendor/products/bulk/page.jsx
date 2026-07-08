@@ -46,7 +46,7 @@ export default function BulkAddPage() {
       const toInsert = data.products.map(p => ({
         ...p,
         status: 'draft',
-        vendor_id: user.id
+        user_id: user.id
       }));
       await db.draftProducts.bulkAdd(toInsert);
       addToast({ type: 'success', message: `Extracted ${data.products.length} products.` });
@@ -100,7 +100,7 @@ export default function BulkAddPage() {
           pickup_address: p.pickup_address,
           pickup_lat: p.pickup_lat,
           pickup_lng: p.pickup_lng,
-          vendor_id: user.id,
+          user_id: user.id,
           sale_end_date: sale_end_date.toISOString(),
           status: 'published'
         };

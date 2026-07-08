@@ -20,7 +20,7 @@ export default function VendorDashboardPage() {
       const { count: productsCount } = await supabase
         .from('products')
         .select('*', { count: 'exact', head: true })
-        .eq('vendor_id', user.id);
+        .eq('user_id', user.id);
 
       // Orders revenue
       const { data: orders } = await supabase

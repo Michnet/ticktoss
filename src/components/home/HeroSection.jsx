@@ -61,7 +61,7 @@ function HeroProductPill({ product }) {
   return (
     <Link
       href={`/products/${product.slug}`}
-      className={`flex items-center gap-3 px-4 py-3 backdrop-blur-md rounded-[var(--tt-radius-md)] no-underline transition-all duration-200 hover:translate-x-1 ${isCritical ? 'border border-[#ff2d55]/30 shadow-[0_0_20px_rgba(255,45,85,0.12)]' : 'border border-white/10'}`}
+      className={`flex items-center gap-3 px-4 py-3 backdrop-blur-md rounded-[var(--tt-radius-md)] no-underline transition-all duration-200 hover:translate-x-1 ${isCritical ? 'border border-[#ff2d55]/30 shadow-[0_0_5px_rgba(255,45,85,0.12)]' : 'border border-white/10'}`}
     >
       <span className="text-[1.6rem] shrink-0">{featured_image ? <img className='w-10 h-10 rounded-full' src={resizedImage(featured_image?.url, 'thumbnail')} alt={product.name} /> : emoji}</span>
       <div className="flex-1 min-w-0">
@@ -101,7 +101,7 @@ export default function HeroSection() {
   }, []);
 
   return (
-    <section className="py-[5rem] px-0 pb-[3rem] bg-[var(--tt-surface)] relative overflow-hidden">
+    <section className="py-[2rem] px-0 bg-[var(--tt-surface)] relative overflow-hidden">
 
       <div className="tt-container relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_320px] gap-8 md:gap-12 items-center">
@@ -158,7 +158,7 @@ export default function HeroSection() {
 
             {/* Stats row */}
             <div
-              className={`flex gap-8 flex-wrap pt-7 border-t border-[var(--tt-border)] transition-all duration-500 ${statsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
+              className={`flex gap-8 gap-row-3 p-5 flex-wrap border border-[var(--tt-border)] transition-all duration-500 ${statsVisible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-2'}`}
             >
               {[
                 { value: '12,400+', label: 'Active Deals' },

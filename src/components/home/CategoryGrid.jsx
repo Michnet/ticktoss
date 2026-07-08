@@ -69,7 +69,7 @@ export default function CategoryGrid() {
   // Show a simple skeleton loader if loading
   if (isLoading) {
     return (
-      <section className="pb-12">
+      <section className="pb-5">
         <div className="tt-container">
           <div className="tt-shimmer h-[30px] w-[200px] bg-[var(--tt-surface)] rounded-[4px] mb-5" />
           <div className="grid grid-cols-[repeat(auto-fill,minmax(145px,1fr))] gap-3">
@@ -85,7 +85,7 @@ export default function CategoryGrid() {
   if (error || !categories) return null;
 
   return (
-    <section className="pb-12">
+    <section className="pb-5">
       <div className="tt-container">
         {/* Header */}
         <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
@@ -109,7 +109,7 @@ export default function CategoryGrid() {
         </div>
 
         {/* Grid */}
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(105px,1fr))] gap-3">
+        <div className="grid grid-cols-[repeat(auto-fill,minmax(95px,1fr))] gap-3">
           {categories.map((cat) => {
             const style = CATEGORY_STYLES[cat.slug] || CATEGORY_STYLES.default;
             const accentColor = getCategoryColor(cat.name, cat.color);
@@ -119,7 +119,7 @@ export default function CategoryGrid() {
               <Link
                 key={cat.id}
                 href={`/categories/${cat.slug}`}
-                className="rounded-[var(--tt-radius-lg)] p-2 no-underline flex flex-col items-center gap-2 text-center transition-all duration-200 relative overflow-hidden"
+                className="rounded-[var(--tt-radius-lg)] p-1 no-underline flex flex-col items-center gap-2 text-center transition-all duration-200 relative overflow-hidden"
                 style={{
                   background: style.gradient,
                   borderColor: 'var(--tt-border)',
@@ -141,7 +141,7 @@ export default function CategoryGrid() {
                 <span className="text-[2rem]">{cat.icon || style.icon}</span>
                 <div>
                   <div
-                    className="font-bold mb-[0.15rem] leading-tight line-clamp-2 font-['Syne',sans-serif] text-sm"
+                    className="font-bold mb-[0.15rem] leading-tight line-clamp-2 font-['Syne',sans-serif] text-xs"
                     style={{ color: accentColor }}
                   >
                     {cat.name}

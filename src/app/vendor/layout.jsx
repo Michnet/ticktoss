@@ -7,13 +7,15 @@ import useAppStore from '@/store/useAppStore';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 
 export default function VendorDashboardLayout({ children }) {
-  const { user, profile, clearAuth } = useAppStore();
+  const { user, profile, clearAuth, isAuthLoading } = useAppStore();
   const router = useRouter();
   const pathname = usePathname();
   const [isAuthorized, setIsAuthorized] = useState(false);
   const supabase = getSupabaseBrowserClient();
 
   useEffect(() => {
+    if (isAuthLoading) return; // Wait for AuthProvider to finish
+
     // Only check once profile is loaded
     if (user === null) {
       router.push('/login?redirectTo=/vendor');
@@ -27,9 +29,9 @@ export default function VendorDashboardLayout({ children }) {
         router.push('/apply-vendor');
       }
     }
-  }, [user, profile, router]);
+  }, [user, profile, isAuthLoading, router]);
 
-  if (!isAuthorized) {
+  if (isAuthLoading || !isAuthorized) {
     return (
       <div className="tt-container" style={{ padding: '4rem', textAlign: 'center' }}>
         <div className="tt-skeleton" style={{ height: '200px', maxWidth: '400px', margin: '0 auto' }} />

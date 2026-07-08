@@ -85,7 +85,7 @@ function StarRating({ value }) {
 
 export default function FeaturedVendors({ vendors = VENDORS }) {
   return (
-    <section className="pb-12">
+    <section className="pb-5">
       <div className="tt-container">
         <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
           <div>

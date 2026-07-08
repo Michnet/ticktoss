@@ -16,9 +16,11 @@ const useAppStore = create(
       /* ── Auth ── */
       user: null,
       profile: null,
+      isAuthLoading: true,
       setUser: (user) => set({ user }),
       setProfile: (profile) => set({ profile }),
-      clearAuth: () => set({ user: null, profile: null }),
+      setAuthLoading: (loading) => set({ isAuthLoading: loading }),
+      clearAuth: () => set({ user: null, profile: null, isAuthLoading: false }),
 
       isVendor: () => {
         const { profile } = get();
@@ -58,14 +60,39 @@ const useAppStore = create(
         })),
       removeToast: (id) =>
         set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+      /* ── Cart ── */
+      cartItems: [],
+      addToCart: (product, quantity = 1) =>
+        set((s) => {
+          const existingItem = s.cartItems.find((item) => item.id === product.id);
+          if (existingItem) {
+            return {
+              cartItems: s.cartItems.map((item) =>
+                item.id === product.id ? { ...item, quantity: item.quantity + quantity } : item
+              ),
+            };
+          }
+          return { cartItems: [...s.cartItems, { ...product, quantity }] };
+        }),
+      removeFromCart: (productId) =>
+        set((s) => ({ cartItems: s.cartItems.filter((item) => item.id !== productId) })),
+      updateQuantity: (productId, quantity) =>
+        set((s) => ({
+          cartItems: s.cartItems.map((item) =>
+            item.id === productId ? { ...item, quantity: Math.max(1, quantity) } : item
+          ),
+        })),
+      clearCart: () => set({ cartItems: [] }),
+
     }),
     {
       name: 'ticktoss-store',
       // Only persist non-sensitive, lightweight fields
-      partialise: (state) => ({
+      partialize: (state) => ({
         userLocation: state.userLocation,
         selectedLocationId: state.selectedLocationId,
         pendingInterests: state.pendingInterests,
+        cartItems: state.cartItems,
       }),
     }
   )

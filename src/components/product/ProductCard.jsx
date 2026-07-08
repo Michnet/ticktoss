@@ -9,13 +9,45 @@ import UrgencyBar from './UrgencyBar';
 import { formatUGX } from '@/lib/currency';
 import { getUrgencyLevel } from '@/lib/urgency';
 import { resizedImage } from '@/helpers/universal';
+import useAppStore from '@/store/useAppStore';
+import { MessageSquare, Share2, Heart, ShoppingCart } from 'lucide-react';
+
+const CATEGORY_STYLES = {
+  'Electronics': { emoji: '📱', color: '#4C8BFF' },
+  'Fashion': { emoji: '👗', color: '#FF6B9D' },
+  'Home & Living': { emoji: '🛋️', color: '#00E87A' },
+  'Vehicles': { emoji: '🚗', color: '#FFB800' },
+  'Sports': { emoji: '⚽', color: '#9B6BFF' },
+  'Food & Drinks': { emoji: '🍱', color: '#FF4D00' },
+  'Health & Beauty': { emoji: '💊', color: '#00D4C8' },
+  'Agriculture': { emoji: '🌿', color: '#7BC400' },
+  default: { emoji: '🛍️', color: 'var(--tt-gold)' }
+};
+
+function getStyle(categoryName) {
+  return CATEGORY_STYLES[categoryName] || CATEGORY_STYLES.default;
+}
+
+function getTimeAgo(dateStr) {
+  if (!dateStr) return '';
+  const diff = Date.now() - new Date(dateStr).getTime();
+  const minutes = Math.floor(diff / 60000);
+  if (minutes < 60) return `${Math.max(1, minutes)}m ago`;
+  const hours = Math.floor(minutes / 60);
+  if (hours < 24) return `${hours}h ago`;
+  return `${Math.floor(hours / 24)}d ago`;
+}
 
 /**
  * ProductCard — glassmorphism card with live countdown, discount badge, urgency bar.
  *
- * @param {{ product: object, rank?: number, prevRank?: number, priority?: boolean }} props
+ * @param {{ product: object, rank?: number, prevRank?: number, priority?: boolean, index?: number }} props
  */
-export default function ProductCard({ product, rank, prevRank, priority = false }) {
+export default function ProductCard({ product, rank, prevRank, priority = false, index = 0 }) {
+  const addToCart = useAppStore(state => state.addToCart);
+  const addToast = useAppStore(state => state.addToast);
+
+  if (!product) return null;
   const {
     id, name, slug,
     price, sale_price,
@@ -24,6 +56,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false 
     stock, stock_alert_level,
     discount_pct,
     product_categories,
+    created_at
   } = product;
 
   const level = getUrgencyLevel(sale_end_date);
@@ -32,85 +65,78 @@ export default function ProductCard({ product, rank, prevRank, priority = false 
   const rankChange = prevRank !== undefined && rank !== undefined ? prevRank - rank : 0;
 
   const imageUrl = featured_image?.url ?? featured_image?.src ?? null;
-  const categoryColor = product_categories?.color ?? 'var(--tt-flame)';
-  const categoryName  = product_categories?.name ?? '';
+  const categoryName = product_categories?.name || 'Uncategorized';
+  const { emoji, color: categoryColor } = getStyle(categoryName);
+  
+  // Calculate discount percentage based on price and sale_price if discount_pct is not provided
+  let calculatedDiscountPct = discount_pct;
+  if (!calculatedDiscountPct) {
+      calculatedDiscountPct = price > 0 ? Math.round(((price - sale_price) / price) * 100) : 0;
+  }
+  const age = getTimeAgo(created_at);
 
   return (
     <motion.div
       layout
       layoutId={`product-${id}`}
-      initial={{ opacity: 0, y: 20 }}
+      initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
-      transition={{ type: 'spring', stiffness: 260, damping: 26 }}
+      transition={{ delay: index * 0.06, duration: 0.3, type: 'spring', stiffness: 260, damping: 26 }}
       style={{ position: 'relative' }}
     >
-      <Link href={`/products/${slug}`} style={{ textDecoration: 'none', display: 'block' }}>
+      <div className="no-underline block h-full">
         <div
-          className="tt-card"
+          className="cursor-pointer border border-gray-200 dark:border-gray-600 flex flex-col transition-all duration-200 hover:-translate-y-[3px] hover:shadow-xl"
           style={{
             height: '100%',
-            cursor: 'pointer',
             boxShadow: level === 'critical'
               ? `0 0 20px rgba(255, 45, 85, 0.18), inset 0 0 0 1px rgba(255, 45, 85, 0.15)`
-              : 'none',
+              : undefined,
           }}
         >
-          {/* Image */}
-          <div style={{ position: 'relative', aspectRatio: '4/3', overflow: 'hidden', background: 'var(--tt-surface-2)' }}>
+          {/* Image area */}
+          <div className="flex items-center justify-center text-[2.8rem] relative bg-white  overflow-hidden" style={{ aspectRatio: '4/3' }}>
+            <Link href={`/products/${slug}`}>
             {imageUrl ? (
               <img
+                className='h-[180px] min-w-full object-contain transition-transform duration-400 hover:scale-105'
                 src={resizedImage(imageUrl, 'medium')}
                 alt={name}
-                sizes="(max-width: 640px) 50vw, (max-width: 1024px) 33vw, 25vw"
-                style={{ objectFit: 'cover', transition: 'transform 0.4s' }}
               />
             ) : (
-              <div
-                style={{
-                  width: '100%',
-                  height: '100%',
-                  display: 'flex',
-                  alignItems: 'center',
-                  justifyContent: 'center',
-                  fontSize: '2.5rem',
-                  background: 'var(--tt-surface-2)',
-                }}
-              >
-                📦
+              <div className="h-[180px] flex items-center justify-center bg-[var(--tt-surface-2)] w-full">
+                {emoji}
               </div>
             )}
-
-            {/* Countdown overlay (top right) */}
-            <div
-              style={{
-                position: 'absolute',
-                top: '8px',
-                right: '8px',
-                background: 'rgba(13, 13, 20, 0.85)',
-                backdropFilter: 'blur(8px)',
-                borderRadius: 'var(--tt-radius-sm)',
-                padding: '4px 8px',
-                border: '1px solid rgba(255,255,255,0.08)',
-              }}
-            >
-              <CountdownClock saleEndDate={sale_end_date} size="sm" />
+            </Link>
+            
+            {/* NEW badge */}
+            <div className="absolute top-[6px] left-[6px] bg-[rgba(255,77,0,0.12)] border border-[rgba(255,77,0,0.3)] text-[var(--tt-flame-2)] backdrop-blur-[4px] text-[0.58rem] font-extrabold px-[6px] py-[1px] rounded-full tracking-[0.06em]">
+              NEW
             </div>
-
-            {/* Discount badge (top left) */}
-            {discount_pct > 0 && (
-              <div style={{ position: 'absolute', top: '8px', left: '8px' }}>
-                <DiscountBadge discountPct={discount_pct} saleEndDate={sale_end_date} size="sm" />
+            
+            {/* Discount */}
+            {calculatedDiscountPct > 0 && (
+              <div className="absolute top-[6px] right-[6px] bg-[rgba(255,77,0,0.12)] border border-[rgba(255,77,0,0.3)] text-[var(--tt-flame-2)] backdrop-blur-[4px] text-[0.6rem] font-extrabold px-[6px] py-[1px] rounded-full">
+                -{calculatedDiscountPct}%
+              </div>
+            )}
+            
+            {/* Time ago */}
+            {age && (
+              <div className="absolute bottom-[6px] right-[6px] bg-[#0d0d14]/75 backdrop-blur-[6px] text-[var(--tt-muted-2)] text-[0.58rem] font-semibold px-[6px] py-[1px] rounded-full">
+                🕐 {age}
               </div>
             )}
 
             {/* Category pill */}
-            {categoryName && (
+            {categoryName && categoryName !== 'Uncategorized' && (
               <div
                 style={{
                   position: 'absolute',
-                  bottom: '8px',
-                  left: '8px',
+                  bottom: '6px',
+                  left: '6px',
                   fontSize: '0.65rem',
                   fontWeight: 600,
                   padding: '2px 8px',
@@ -133,8 +159,8 @@ export default function ProductCard({ product, rank, prevRank, priority = false 
                 transition={{ delay: 1.5, duration: 0.5 }}
                 style={{
                   position: 'absolute',
-                  bottom: '8px',
-                  right: '8px',
+                  bottom: '30px',
+                  right: '6px',
                   fontSize: '0.7rem',
                   fontWeight: 700,
                   color: rankChange > 0 ? 'var(--tt-success)' : 'var(--tt-danger)',
@@ -159,9 +185,8 @@ export default function ProductCard({ product, rank, prevRank, priority = false 
                   justifyContent: 'center',
                 }}
               >
-                <span
+                <span className='bg-gray-500'
                   style={{
-                    background: 'var(--tt-danger)',
                     color: '#fff',
                     fontWeight: 700,
                     fontSize: '0.85rem',
@@ -176,38 +201,22 @@ export default function ProductCard({ product, rank, prevRank, priority = false 
           </div>
 
           {/* Body */}
-          <div style={{ padding: '0.875rem' }}>
+          <div className="p-3 flex-1 flex flex-col justify-between gap-2">
+            <div>
             {/* Name */}
-            <h3
-              style={{
-                fontSize: '0.9rem',
-                fontWeight: 600,
-                color: 'var(--tt-text)',
-                marginBottom: '0.4rem',
-                display: '-webkit-box',
-                WebkitLineClamp: 2,
-                WebkitBoxOrient: 'vertical',
-                overflow: 'hidden',
-                lineHeight: 1.35,
-              }}
-            >
+            <Link href={`/products/${slug}`}>
+            <h3 className="text-[0.78rem] font-semibold leading-[1.35] mb-[0.4rem] line-clamp-2 text-[var(--tt-text)]">
               {name}
             </h3>
-
+            </Link>
+            
             {/* Prices */}
-            <div style={{ display: 'flex', alignItems: 'baseline', gap: '0.5rem', marginBottom: '0.5rem' }}>
-              <span
-                style={{
-                  fontFamily: 'Syne, sans-serif',
-                  fontWeight: 700,
-                  fontSize: '1rem',
-                  color: level === 'critical' ? 'var(--tt-danger)' : 'var(--tt-text)',
-                }}
-              >
+            <div className="flex items-baseline gap-[0.35rem] mb-2">
+              <span className="font-['Syne',sans-serif] font-bold text-[0.88rem]" style={{ color: level === 'critical' ? 'var(--tt-danger)' : 'var(--tt-text)' }}>
                 {formatUGX(sale_price)}
               </span>
               {price && price > sale_price && (
-                <span style={{ fontSize: '0.78rem', color: 'var(--tt-muted)', textDecoration: 'line-through' }}>
+                <span className="text-[0.65rem] text-[var(--tt-muted)] line-through">
                   {formatUGX(price)}
                 </span>
               )}
@@ -219,21 +228,54 @@ export default function ProductCard({ product, rank, prevRank, priority = false 
                 🔥 Only {stock} left!
               </p>
             )}
-
-            {/* Book Now CTA */}
-            <button
-              onClick={(e) => e.preventDefault()} // handled by parent Link + product page
-              className="tt-btn tt-btn-primary tt-shimmer"
-              style={{ width: '100%', marginBottom: '0.6rem', padding: '0.5rem', fontSize: '0.82rem' }}
-            >
-              Book Now
-            </button>
-
+            
             {/* Urgency bar */}
             <UrgencyBar saleEndDate={sale_end_date} />
+            </div>
+
+            {/* Actions */}
+            <div className="flex gap-2 justify-between">
+              <div className='flex gap-2 flex-row'>
+              <button
+                onClick={(e) => e.preventDefault()}
+                className="flex items-center justify-center bg-[var(--tt-surface-2)] text-[var(--tt-text)] px-[0.6rem] hover:bg-[var(--tt-surface)] transition-colors border border-[rgba(255,255,255,0.08)]"
+                title="Contact Vendor"
+              >
+                <MessageSquare size={16} strokeWidth={2} />
+              </button>
+              <button
+                onClick={(e) => e.preventDefault()}
+                className="flex items-center justify-center bg-[var(--tt-surface-2)] text-[var(--tt-text)] px-[0.6rem] hover:bg-[var(--tt-surface)] transition-colors border border-[rgba(255,255,255,0.08)] hover:text-blue-500 hover:border-blue-500/30"
+                title="Share"
+              >
+                <Share2 size={16} strokeWidth={2} />
+              </button>
+              <button
+                onClick={(e) => e.preventDefault()}
+                className="flex items-center justify-center bg-[var(--tt-surface-2)] text-[var(--tt-text)] px-[0.6rem] hover:bg-[var(--tt-surface)] hover:text-red-500 hover:border-red-500/30 transition-colors border border-[rgba(255,255,255,0.08)]"
+                title="Save to Favourites"
+              >
+                <Heart  size={16} strokeWidth={2} />
+              </button>
+              </div>
+
+
+              <button
+                onClick={(e) => {
+                  e.preventDefault();
+                  addToCart(product, 1);
+                  addToast({ title: 'Added to Cart', message: `${product.name} has been added to your cart.` });
+                }}
+                className="bg-[var(--tt-flame-light)] text-[var(--tt-flame)] tt-shimmer flex-1 py-2 flex items-center justify-center"
+                title="Book Now"
+              >
+                <ShoppingCart size={20} strokeWidth={2} />
+              </button>
+            </div>
+
           </div>
         </div>
-      </Link>
+      </div>
     </motion.div>
   );
 }

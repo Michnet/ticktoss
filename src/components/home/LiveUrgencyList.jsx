@@ -71,7 +71,7 @@ function UrgencyRow({ product, rank, isNew }) {
     >
       <Link
         href={`/products/${product.slug}`}
-        className={`flex items-center gap-3 px-[0.875rem] py-[0.7rem] rounded-[var(--tt-radius-md)] no-underline transition-all duration-200 relative overflow-hidden hover:translate-x-[3px] ${isCritical ? 'bg-[rgba(255,45,85,0.06)] border border-[rgba(255,45,85,0.2)]' : 'bg-[var(--tt-surface)] border border-[var(--tt-border)]'}`}
+        className={`flex items-center gap-3 px-[0.875rem] py-[0.7rem] rounded-[var(--tt-radius-md)] no-underline transition-all duration-200 relative hover:translate-x-[3px] ${isCritical ? 'bg-[rgba(255,45,85,0.06)] border border-[rgba(255,45,85,0.2)]' : 'bg-[var(--tt-surface)] border border-[var(--tt-border)]'}`}
       >
         {/* Rank */}
         <span
@@ -88,9 +88,10 @@ function UrgencyRow({ product, rank, isNew }) {
           {featured_image ? <img  src={resizedImage(featured_image?.url, 'thumbnail')} alt="" /> : emoji}
         </span>
 
+        <div className='flex gap-3 flex-wrap justify-between items-center flex-grow'>
         {/* Name + location */}
-        <div className="flex-1 min-w-0">
-          <div className="text-[0.82rem] font-semibold text-[var(--tt-text)] whitespace-nowrap overflow-hidden text-ellipsis leading-[1.3]">
+        <div className='flex-1'>
+          <div className="text-[0.82rem] font-semibold text-[var(--tt-text)] line-clamp-2 overflow-hidden text-ellipsis leading-[1.3]">
             {product.name}
           </div>
           <div className="text-[0.68rem] text-[var(--tt-muted)] mt-[1px]">
@@ -99,7 +100,7 @@ function UrgencyRow({ product, rank, isNew }) {
         </div>
 
         {/* Prices */}
-        <div className="text-right shrink-0">
+        <div className="shrink-0">
           <div
             className={`font-['Syne',sans-serif] font-bold text-[0.85rem] ${isCritical ? 'text-[var(--tt-danger)]' : 'text-[var(--tt-text)]'}`}
           >
@@ -109,7 +110,8 @@ function UrgencyRow({ product, rank, isNew }) {
             {formatUGX(product.price)}
           </div>
         </div>
-
+        </div>
+        <div className='flex gap-2 flex-wrap justify-end items-center'>
         {/* Countdown */}
         <div
           className={`text-right shrink-0 min-w-[52px] font-['Syne',sans-serif] font-bold text-[0.8rem] ${isCritical ? 'text-[var(--tt-danger)] animate-[tt-pulse_1.2s_ease-in-out_infinite]' : h < 2 ? 'text-gray-500' : 'text-[var(--tt-muted-2)]'}`}
@@ -130,6 +132,7 @@ function UrgencyRow({ product, rank, isNew }) {
         {isVeryLow && (
           <div className="absolute left-0 top-0 bottom-0 w-[3px] bg-[var(--tt-danger)] rounded-l-full" />
         )}
+        </div>
       </Link>
     </motion.div>
   );
@@ -167,7 +170,7 @@ export default function LiveUrgencyList() {
   }, [dbProducts]);
 
   return (
-    <section className="pb-12">
+    <section className="pb-5">
       <div>
         <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
           <div>

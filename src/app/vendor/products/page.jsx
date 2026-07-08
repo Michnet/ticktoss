@@ -24,7 +24,7 @@ export default function VendorProductsPage() {
     const { data, error } = await supabase
       .from('products')
       .select('*')
-      .eq('vendor_id', user.id)
+      .eq('user_id', user.id)
       .neq('status', 'archived') // Don't show archived/deleted products
       .order('created_at', { ascending: false });
 
@@ -48,7 +48,7 @@ export default function VendorProductsPage() {
         .from('products')
         .update({ status: 'archived' })
         .eq('id', productId)
-        .eq('vendor_id', user.id); // Ensure ownership
+        .eq('user_id', user.id); // Ensure ownership
 
       if (error) throw error;
 

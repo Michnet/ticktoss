@@ -3,6 +3,7 @@
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import { sortByUrgency } from '@/lib/urgency';
+import { mapProductData } from '@/lib/productHelpers';
 
 const supabase = getSupabaseBrowserClient();
 
@@ -26,7 +27,7 @@ async function fetchProducts({ categorySlug, locationId, search, limit = 40, off
       is_featured, is_flash_sale, status,
       discount_pct, urgency_score,
       location_id, pickup_lat, pickup_lng, pickup_address,
-      vendor_id,
+      user_id,
       product_categories!inner(id, name, slug, color)
     `)
     .eq('status', 'published')
@@ -57,6 +58,7 @@ async function fetchProductBySlug(slug) {
     .from('products')
     .select(`
       *,
+      profiles:user_id(id, display_name, avatar),
       product_categories(id, name, slug, color, icon),
       product_variations(id, sku, price, sale_price, stock_quantity, attributes, featured_image, status),
       reviews(id, user_id, content, scores, overall_score, approved)
@@ -65,7 +67,7 @@ async function fetchProductBySlug(slug) {
     .single();
 
   if (error) throw error;
-  return data;
+  return mapProductData(data);
 }
 
 // ── Hooks ──
@@ -94,7 +96,7 @@ export function useVendorProducts(vendorId) {
       const { data, error } = await supabase
         .from('products')
         .select('id, name, slug, price, sale_price, sale_end_date, stock, status, discount_pct, urgency_score, featured_image')
-        .eq('vendor_id', vendorId)
+        .eq('user_id', vendorId)
         .order('created_at', { ascending: false });
       if (error) throw error;
       return data ?? [];

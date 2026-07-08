@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react';
 import Link from 'next/link';
 
-const BANNERS = [
+const DEFAULT_BANNERS = [
   {
     id: 'weekend',
     label: '🗓️ Weekend Flash',
@@ -42,17 +42,17 @@ const BANNERS = [
   },
 ];
 
-export default function PromoBanners() {
+export default function PromoBanners({ items = DEFAULT_BANNERS }) {
   const [active, setActive] = useState(0);
   const [paused, setPaused] = useState(false);
 
   useEffect(() => {
     if (paused) return;
-    const t = setInterval(() => setActive((a) => (a + 1) % BANNERS.length), 5000);
+    const t = setInterval(() => setActive((a) => (a + 1) % items.length), 5000);
     return () => clearInterval(t);
-  }, [paused]);
+  }, [paused, items.length]);
 
-  const banner = BANNERS[active];
+  const banner = items[active];
 
   return (
     <section className="pb-8">
@@ -65,7 +65,7 @@ export default function PromoBanners() {
           className="rounded-[var(--tt-radius-xl)] p-[clamp(1.5rem,4vw,2.5rem)] relative overflow-hidden animate-[bannerFadeIn_0.45s_ease]"
           style={{
             background: banner.gradient,
-            boxShadow: `0 0 60px ${banner.glow}`,
+            boxShadow: `0 0 6px ${banner.glow}`,
           }}
         >
           {/* Main rotating banner inner wrapper */}
@@ -91,7 +91,7 @@ export default function PromoBanners() {
 
           {/* Dot nav */}
           <div className="absolute bottom-3 right-4 flex gap-[5px] z-10">
-            {BANNERS.map((_, i) => (
+            {items.map((_, i) => (
               <button
                 key={i}
                 onClick={() => setActive(i)}
@@ -144,13 +144,13 @@ export default function PromoBanners() {
             <Link
               key={label}
               href={href}
-              className="flex items-center gap-3 px-4 py-[0.85rem] rounded-[var(--tt-radius-md)] no-underline transition-all duration-200 hover:-translate-y-[2px]"
-              style={{
+              className="flex items-center gap-3 px-4 py-[0.85rem] rounded-[var(--tt-radius-md)] no-underline transition-all duration-200 hover:-translate-y-[2px] bg-gray-100 dark:bg-gray-900"
+              /* style={{
                 background: bg,
                 borderColor: border,
                 borderWidth: '1px',
                 borderStyle: 'solid',
-              }}
+              }} */
               onMouseEnter={(e) => {
                 e.currentTarget.style.boxShadow = `0 6px 24px ${border}`;
               }}
@@ -158,10 +158,10 @@ export default function PromoBanners() {
                 e.currentTarget.style.boxShadow = 'none';
               }}
             >
-              <span className="text-[1.5rem]">{icon}</span>
+              <span className="text-[1.5rem] w-8 flex items-center justify-center">{icon}</span>
               <div>
-                <div className="font-bold text-[0.85rem] leading-[1.2]" style={{ color }}>{label}</div>
-                <div className="text-[var(--tt-muted)] text-[0.72rem]">{sub}</div>
+                <div className="font-bold text-[0.85rem] leading-[1.2] mb-1" style={{ color }}>{label}</div>
+                <div className="text-[0.8rem]">{sub}</div>
               </div>
             </Link>
           ))}

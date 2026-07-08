@@ -37,7 +37,7 @@ export async function POST(request) {
     // 1. Fetch product to verify stock and price
     const { data: product, error: productError } = await supabase
       .from('products')
-      .select('id, stock, sale_price, vendor_id')
+      .select('id, stock, sale_price, user_id')
       .eq('id', product_id)
       .single();
 
@@ -66,7 +66,7 @@ export async function POST(request) {
     const total_amount = product.sale_price * quantity;
     const orderData = {
       user_id: user.id,
-      vendor_id: product.vendor_id,
+      vendor_id: product.user_id,
       product_id: product.id,
       variation_id: variation_id || null,
       quantity,

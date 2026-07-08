@@ -37,6 +37,7 @@ const PRODUCT_SELECT = `
   featured_image,
   is_featured,
   created_at,
+  user_id,
   product_categories(name)
 `;
 

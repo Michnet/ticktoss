@@ -97,7 +97,7 @@ export default function NewProductPage() {
         stock: data.stock,
         discount_pct: discountPct,
         sale_end_date: sale_end_date.toISOString(),
-        vendor_id: user.id,
+        user_id: user.id,
         urgency_score: estimatedScore,
         pickup_address: data.pickup_address,
         pickup_lat: data.pickup_lat,

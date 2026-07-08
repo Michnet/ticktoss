@@ -4,7 +4,7 @@ import Link from 'next/link';
 
 export default function MidPageCTA() {
   return (
-    <section className="pb-12">
+    <section className="pb-5">
       <div className="tt-container">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
           {/* Vendor CTA */}

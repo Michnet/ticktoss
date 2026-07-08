@@ -5,7 +5,7 @@ import { useEffect, useRef } from 'react';
 const TICKER_ITEMS = [
   '⚡ Flash deal: Samsung A55 down 46%',
   '🔥 3 items left — HP ProBook ending in 27min',
-  '🇺🇬 TickToss — Uganda\'s #1 Urgency Market',
+  '🇺🇬 TickToss — Uganda\'s #1 Discount Marketplace',
   '🆕 120 new deals listed in the last 2 hours',
   '💰 Save up to UGX 1.4M on this Sony TV',
   '📍 Deals in Kampala, Jinja, Wakiso & more',
@@ -45,7 +45,7 @@ export default function LiveTicker() {
   const doubled = [...TICKER_ITEMS, ...TICKER_ITEMS];
 
   return (
-    <div className="bg-[var(--tt-surface)] border-y border-[var(--tt-border)] py-[0.55rem] overflow-hidden mb-10 relative">
+    <div className="bg-[var(--tt-surface)] shadow-lg py-[1.55rem] overflow-hidden mb-10 relative">
       {/* Left fade */}
       <div className="absolute left-0 top-0 bottom-0 w-[60px] bg-[linear-gradient(90deg,var(--tt-surface),transparent)] z-[2] pointer-events-none" />
       {/* Right fade */}
@@ -58,7 +58,7 @@ export default function LiveTicker() {
         {doubled.map((item, i) => (
           <span
             key={i}
-            className="text-[0.78rem] text-[var(--tt-muted-2)] font-medium inline-flex items-center gap-8"
+            className="text-[1.1rem] text-[var(--tt-muted-2)] font-medium inline-flex items-center gap-8"
           >
             {item}
             <span className="inline-block w-1 h-1 bg-[var(--tt-flame)] rounded-full opacity-50" />
