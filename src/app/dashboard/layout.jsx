@@ -2,14 +2,11 @@
 
 import Link from 'next/link';
 import { useSearchParams } from 'next/navigation';
-import { useState } from 'react';
+import { useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useAppStore from '@/store/useAppStore';
 
 export default function DashboardLayout({ children }) {
-  const { isVendor } = useAppStore();
-  const searchParams = useSearchParams();
-  const currentView = searchParams.get('view') || 'profile';
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
 
   const buyerLinks = [
@@ -24,43 +21,19 @@ export default function DashboardLayout({ children }) {
     { view: 'customer_orders', label: 'Customer Orders', icon: '🛒' },
   ];
 
-  const SidebarContent = ({ isMobile = false }) => (
-    <>
-      <div style={{ marginBottom: '2rem' }}>
-        <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tt-muted)', marginBottom: '1rem', fontWeight: 700 }}>
-          My Account
-        </h3>
-        <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-          {buyerLinks.map(link => {
-            const isActive = currentView === link.view;
-            return (
-              <Link
-                key={link.view}
-                href={`/dashboard?view=${link.view}`}
-                onClick={() => isMobile && setMobileMenuOpen(false)}
-                className={`tt-btn ${isActive ? '' : 'tt-btn-ghost'}`}
-                style={{ 
-                  justifyContent: 'flex-start', 
-                  background: isActive ? 'var(--tt-surface)' : 'transparent',
-                  color: isActive ? 'var(--tt-text)' : 'var(--tt-muted-2)',
-                  border: isActive ? '1px solid var(--tt-border)' : '1px solid transparent'
-                }}
-              >
-                <span style={{ width: '20px', textAlign: 'center', marginRight: '0.5rem' }}>{link.icon}</span>
-                {link.label}
-              </Link>
-            );
-          })}
-        </nav>
-      </div>
+  const SidebarContent = ({ isMobile = false }) => {
+    const { isVendor } = useAppStore();
+    const searchParams = useSearchParams();
+    const currentView = searchParams.get('view') || 'profile';
 
-      {isVendor() && (
-        <div>
-          <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tt-brand)', marginBottom: '1rem', fontWeight: 700 }}>
-            My Store
+    return (
+      <>
+        <div style={{ marginBottom: '2rem' }}>
+          <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tt-muted)', marginBottom: '1rem', fontWeight: 700 }}>
+            My Account
           </h3>
           <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
-            {vendorLinks.map(link => {
+            {buyerLinks.map(link => {
               const isActive = currentView === link.view;
               return (
                 <Link
@@ -71,7 +44,7 @@ export default function DashboardLayout({ children }) {
                   style={{ 
                     justifyContent: 'flex-start', 
                     background: isActive ? 'var(--tt-surface)' : 'transparent',
-                    color: isActive ? 'var(--tt-brand)' : 'var(--tt-muted-2)',
+                    color: isActive ? 'var(--tt-text)' : 'var(--tt-muted-2)',
                     border: isActive ? '1px solid var(--tt-border)' : '1px solid transparent'
                   }}
                 >
@@ -82,9 +55,39 @@ export default function DashboardLayout({ children }) {
             })}
           </nav>
         </div>
-      )}
-    </>
-  );
+
+        {isVendor() && (
+          <div>
+            <h3 style={{ fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tt-brand)', marginBottom: '1rem', fontWeight: 700 }}>
+              My Store
+            </h3>
+            <nav style={{ display: 'flex', flexDirection: 'column', gap: '0.25rem' }}>
+              {vendorLinks.map(link => {
+                const isActive = currentView === link.view;
+                return (
+                  <Link
+                    key={link.view}
+                    href={`/dashboard?view=${link.view}`}
+                    onClick={() => isMobile && setMobileMenuOpen(false)}
+                    className={`tt-btn ${isActive ? '' : 'tt-btn-ghost'}`}
+                    style={{ 
+                      justifyContent: 'flex-start', 
+                      background: isActive ? 'var(--tt-surface)' : 'transparent',
+                      color: isActive ? 'var(--tt-brand)' : 'var(--tt-muted-2)',
+                      border: isActive ? '1px solid var(--tt-border)' : '1px solid transparent'
+                    }}
+                  >
+                    <span style={{ width: '20px', textAlign: 'center', marginRight: '0.5rem' }}>{link.icon}</span>
+                    {link.label}
+                  </Link>
+                );
+              })}
+            </nav>
+          </div>
+        )}
+      </>
+    );
+  };
 
   return (
     <>
@@ -93,7 +96,9 @@ export default function DashboardLayout({ children }) {
         {/* Desktop Sidebar Navigation */}
         <aside style={{ width: '250px', flexShrink: 0 }} className="hidden-mobile">
           <div style={{ position: 'sticky', top: 'calc(var(--tt-nav-height) + 2rem)' }}>
-            <SidebarContent />
+            <Suspense fallback={<div className="tt-skeleton h-[300px] w-full" />}>
+              <SidebarContent />
+            </Suspense>
           </div>
         </aside>
 
@@ -179,7 +184,9 @@ export default function DashboardLayout({ children }) {
 
               {/* Navigation Links */}
               <div style={{ padding: '1.5rem', flex: 1 }}>
-                <SidebarContent isMobile={true} />
+                <Suspense fallback={<div className="tt-skeleton h-[300px] w-full" />}>
+                  <SidebarContent isMobile={true} />
+                </Suspense>
               </div>
             </motion.div>
           </>

@@ -36,7 +36,7 @@ function ViewLoader() {
   );
 }
 
-export default function DashboardPage() {
+function DashboardPageContent() {
   const searchParams = useSearchParams();
   const view = searchParams.get('view') || 'profile';
 
@@ -65,5 +65,13 @@ export default function DashboardPage() {
         {renderView()}
       </Suspense>
     </div>
+  );
+}
+
+export default function DashboardPage() {
+  return (
+    <Suspense fallback={<ViewLoader />}>
+      <DashboardPageContent />
+    </Suspense>
   );
 }

@@ -1,11 +1,11 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, Suspense } from 'react';
 import { useSearchParams } from 'next/navigation';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import useAppStore from '@/store/useAppStore';
 
-export default function AdminDashboardPage() {
+function AdminPageContent() {
   const searchParams = useSearchParams();
   const view = searchParams.get('view') || 'overview';
   
@@ -26,6 +26,14 @@ export default function AdminDashboardPage() {
         </div>
       </div>
     </div>
+  );
+}
+
+export default function AdminDashboardPage() {
+  return (
+    <Suspense fallback={<div className="tt-skeleton h-[200px] w-full" />}>
+      <AdminPageContent />
+    </Suspense>
   );
 }
 
