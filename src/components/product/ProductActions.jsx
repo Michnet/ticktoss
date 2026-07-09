@@ -39,7 +39,7 @@ export default function ProductActions({ product, storeData }) {
 
   return (
     <div className="flex justify-between">
-      <div className='flex flex-row shrink-1 overflow-x-auto no-scrollbar bg-[var(--tt-surface)]'>
+      <div className='flex flex-row justify-end shrink-1 overflow-x-auto no-scrollbar bg-[var(--tt-surface)]'>
         <button
           onClick={handleContact}
           className="flex items-center justify-center border border-[var(--tt-surface)] text-[var(--tt-text)] px-[0.6rem] hover:bg-[var(--tt-surface)] transition-colors"

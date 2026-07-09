@@ -68,7 +68,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
     >
       <div className="no-underline block h-full">
         <div
-          className="cursor-pointer border border-[var(--tt-border)] flex flex-col transition-all duration-200 hover:-translate-y-[3px] hover:shadow-xl"
+          className="cursor-pointer border border-[var(--tt-border)] flex flex-col transition-all duration-200 hover:-translate-y-[3px] hover:shadow-xl overflow-hidden rounded-[var(--tt-radius-md)]"
           style={{
             height: '100%',
             boxShadow: level === 'critical'
@@ -189,7 +189,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
             )}
             {/* Name */}
             <Link href={`/products/${slug}`}>
-            <h3 className="text-[0.78rem] font-semibold leading-[1.35] mb-[0.4rem] line-clamp-2 text-[var(--tt-text)]">
+            <h3 className="font-semibold leading-[1.35] mb-[0.4rem] line-clamp-1 text-[var(--tt-text)]">
               {name}
             </h3>
             </Link>
@@ -199,11 +199,11 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
               <span className="font-['Syne',sans-serif] font-bold text-[0.88rem]" style={{ color: level === 'critical' ? 'var(--tt-danger)' : 'var(--tt-text)' }}>
                 {formatUGX(sale_price)}
               </span>
-              {price && price > sale_price && (
+              {/* {price && price > sale_price && (
                 <span className="text-[0.65rem] text-[var(--tt-muted)] line-through">
                   {formatUGX(price)}
                 </span>
-              )}
+              )} */}
             </div>
 
             {/* Low stock warning */}

@@ -92,7 +92,7 @@ function FeaturedCard({ product, index }) {
             </h3>
 
             <div className="flex items-baseline gap-[0.4rem] mb-[0.4rem]">
-              <span className="font-bold text-base text-[var(--tt-text)]">
+              <span className="font-bold text-base text-[var(--tt-flame)]">
                 {formatUGX(product.sale_price)}
               </span>
               <span className="text-[0.72rem] text-[var(--tt-muted)] line-through">
