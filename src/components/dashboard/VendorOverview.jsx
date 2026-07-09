@@ -26,7 +26,7 @@ export default function VendorOverview() {
         const { count: productsCount, error: productsError } = await supabase
           .from('products')
           .select('*', { count: 'exact', head: true })
-          .eq('vendor_id', user.id);
+          .eq('user_id', user.id);
         
         if (productsError) throw productsError;
 

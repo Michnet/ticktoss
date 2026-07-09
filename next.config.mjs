@@ -1,10 +1,11 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
+   allowedDevOrigins: ['10.113.48.91'],
   images: {
     remotePatterns: [
       {
         protocol: 'https',
-        hostname: 'wqxvlrejlpkvqzwrqptr.supabase.co',
+        hostname: 'lyvecityclub.com',
         pathname: '/**',
       },
       {

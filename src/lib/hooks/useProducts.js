@@ -17,7 +17,7 @@ export const productKeys = {
 /**
  * Fetch products with optional filters.
  */
-async function fetchProducts({ categorySlug, locationId, search, limit = 40, offset = 0 } = {}) {
+async function fetchProducts({ categorySlug, categoryId, locationId, search, minPrice, maxPrice, isFeatured, limit = 40, offset = 0 } = {}) {
   let query = supabase
     .from('products')
     .select(`
@@ -26,23 +26,33 @@ async function fetchProducts({ categorySlug, locationId, search, limit = 40, off
       featured_image, stock, stock_alert_level,
       is_featured, is_flash_sale, status,
       discount_pct, urgency_score,
-      location_id, pickup_lat, pickup_lng, pickup_address,
+      location, pickup_lat, pickup_lng, pickup_address,
       user_id,
       product_categories!inner(id, name, slug, color)
     `)
     .eq('status', 'published')
-    //.not('sale_end_date', 'is', null)
-    //.gt('sale_end_date', new Date().toISOString())
     .range(offset, offset + limit - 1);
 
+  if (categoryId) {
+    query = query.in('cat_ids', categoryId);
+  }
   if (categorySlug) {
     query = query.eq('product_categories.slug', categorySlug);
   }
   if (locationId) {
-    query = query.eq('location_id', locationId);
+    query = query.eq('location', locationId);
   }
   if (search) {
     query = query.ilike('name', `%${search}%`);
+  }
+  if (minPrice) {
+    query = query.gte('sale_price', minPrice);
+  }
+  if (maxPrice) {
+    query = query.lte('sale_price', maxPrice);
+  }
+  if (isFeatured) {
+    query = query.eq('is_featured', true);
   }
 
   const { data, error } = await query;

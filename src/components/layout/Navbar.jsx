@@ -41,8 +41,8 @@ export default function Navbar() {
                     Dashboard
                   </Link>
                 )} */}
-                <Link href="/dashboard?view=my_orders" className="tt-btn tt-btn-ghost hidden-mobile" style={{ padding: '0.45rem 0.9rem', fontSize: '0.85rem' }}>
-                  My Bookings
+                <Link href="/dashboard" className="tt-btn tt-btn-ghost hidden-mobile" style={{ padding: '0.45rem 0.9rem', fontSize: '0.85rem' }}>
+                  Dashboard
                 </Link>
                 <button
                   onClick={() => setUserMenuOpen(true)}

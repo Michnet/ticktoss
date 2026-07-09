@@ -41,7 +41,7 @@ export default function HomePage() {
       <LiveTicker />
 
       {/* ── 4. Category grid ─────────────────────────── */}
-      <CategoryGrid />
+      <CategoryGrid/>
 
       {/* ── 5. Featured deals ────────────────────────── */}
       <FeaturedProducts />

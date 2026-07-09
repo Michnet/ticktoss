@@ -11,6 +11,7 @@ export default function MyProfile() {
   const supabase = getSupabaseBrowserClient();
   const [isLoading, setIsLoading] = useState(false);
   const [isUploading, setIsUploading] = useState(false);
+  const [isEditing, setIsEditing] = useState(false);
   const fileInputRef = useRef(null);
 
   const {
@@ -98,6 +99,7 @@ export default function MyProfile() {
 
       setProfile({ ...profile, ...data });
       alert('Profile updated successfully!');
+      setIsEditing(false);
     } catch (error) {
       console.error('Error updating profile:', error);
       alert('Failed to update profile.');
@@ -160,85 +162,150 @@ export default function MyProfile() {
           </div>
         </div>
 
-        {/* Profile Form */}
-        <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
-          
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+        {/* Profile Content */}
+        {!isEditing ? (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.2rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>First Name</label>
+                <p style={{ color: 'var(--tt-text)', padding: '0.5rem 0', fontSize: '1rem' }}>{profile?.first_name || '-'}</p>
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.2rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Last Name</label>
+                <p style={{ color: 'var(--tt-text)', padding: '0.5rem 0', fontSize: '1rem' }}>{profile?.last_name || '-'}</p>
+              </div>
+            </div>
+
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>First Name</label>
-              <input
-                type="text"
-                className="tt-input"
-                placeholder="John"
-                {...register('first_name')}
-              />
+              <label style={{ display: 'block', marginBottom: '0.2rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Display Name</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0', color: 'var(--tt-text)', fontSize: '1rem' }}>
+                <User size={18} style={{ color: 'var(--tt-muted)' }} />
+                {profile?.display_name || '-'}
+              </div>
             </div>
+
             <div>
-              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Last Name</label>
-              <input
-                type="text"
-                className="tt-input"
-                placeholder="Doe"
-                {...register('last_name')}
-              />
+              <label style={{ display: 'block', marginBottom: '0.2rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Email Address</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0', color: 'var(--tt-text)', fontSize: '1rem' }}>
+                <Mail size={18} style={{ color: 'var(--tt-muted)' }} />
+                {profile?.email || user?.email || '-'}
+              </div>
+            </div>
+
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.2rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Phone Number</label>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', padding: '0.5rem 0', color: 'var(--tt-text)', fontSize: '1rem' }}>
+                <Phone size={18} style={{ color: 'var(--tt-muted)' }} />
+                {profile?.phone || '-'}
+              </div>
+            </div>
+
+            <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--tt-border)' }}>
+              <button 
+                type="button" 
+                onClick={() => setIsEditing(true)}
+                className="tt-btn tt-btn-primary" 
+              >
+                Edit Profile
+              </button>
             </div>
           </div>
-
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Display Name</label>
-            <div style={{ position: 'relative' }}>
-              <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--tt-muted)' }} />
-              <input
-                type="text"
-                className="tt-input"
-                placeholder="johndoe"
-                style={{ paddingLeft: '2.5rem' }}
-                {...register('display_name')}
-              />
+        ) : (
+          <form onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+            
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1.5rem' }}>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>First Name</label>
+                <input
+                  type="text"
+                  className="tt-input"
+                  placeholder="John"
+                  {...register('first_name')}
+                />
+              </div>
+              <div>
+                <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Last Name</label>
+                <input
+                  type="text"
+                  className="tt-input"
+                  placeholder="Doe"
+                  {...register('last_name')}
+                />
+              </div>
             </div>
-          </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Email Address</label>
-            <div style={{ position: 'relative' }}>
-              <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--tt-muted)' }} />
-              <input
-                type="email"
-                className="tt-input"
-                value={profile?.email || user?.email || ''}
-                disabled
-                style={{ paddingLeft: '2.5rem', opacity: 0.7, cursor: 'not-allowed' }}
-              />
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Display Name</label>
+              <div style={{ position: 'relative' }}>
+                <User size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--tt-muted)' }} />
+                <input
+                  type="text"
+                  className="tt-input"
+                  placeholder="johndoe"
+                  style={{ paddingLeft: '2.5rem' }}
+                  {...register('display_name')}
+                />
+              </div>
             </div>
-            <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)', marginTop: '0.4rem' }}>Email cannot be changed directly.</p>
-          </div>
 
-          <div>
-            <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Phone Number</label>
-            <div style={{ position: 'relative' }}>
-              <Phone size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--tt-muted)' }} />
-              <input
-                type="tel"
-                className="tt-input"
-                placeholder="+256 700 000 000"
-                style={{ paddingLeft: '2.5rem' }}
-                {...register('phone')}
-              />
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Email Address</label>
+              <div style={{ position: 'relative' }}>
+                <Mail size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--tt-muted)' }} />
+                <input
+                  type="email"
+                  className="tt-input"
+                  value={profile?.email || user?.email || ''}
+                  disabled
+                  style={{ paddingLeft: '2.5rem', opacity: 0.7, cursor: 'not-allowed' }}
+                />
+              </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)', marginTop: '0.4rem' }}>Email cannot be changed directly.</p>
             </div>
-          </div>
 
-          <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--tt-border)' }}>
-            <button 
-              type="submit" 
-              className="tt-btn tt-btn-primary" 
-              disabled={isLoading}
-              style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
-            >
-              {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
-              {isLoading ? 'Saving Changes...' : 'Save Changes'}
-            </button>
-          </div>
-        </form>
+            <div>
+              <label style={{ display: 'block', marginBottom: '0.5rem', fontSize: '0.9rem', color: 'var(--tt-text)', fontWeight: 600 }}>Phone Number</label>
+              <div style={{ position: 'relative' }}>
+                <Phone size={18} style={{ position: 'absolute', left: '1rem', top: '50%', transform: 'translateY(-50%)', color: 'var(--tt-muted)' }} />
+                <input
+                  type="tel"
+                  className="tt-input"
+                  placeholder="+256 700 000 000"
+                  style={{ paddingLeft: '2.5rem' }}
+                  {...register('phone')}
+                />
+              </div>
+            </div>
+
+            <div style={{ paddingTop: '1rem', borderTop: '1px solid var(--tt-border)', display: 'flex', gap: '1rem' }}>
+              <button 
+                type="submit" 
+                className="tt-btn tt-btn-primary" 
+                disabled={isLoading}
+                style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}
+              >
+                {isLoading ? <Loader2 size={18} className="animate-spin" /> : <Save size={18} />}
+                {isLoading ? 'Saving Changes...' : 'Save Changes'}
+              </button>
+              <button
+                type="button"
+                className="tt-btn tt-btn-outline"
+                onClick={() => {
+                  setIsEditing(false);
+                  if (profile) {
+                    setValue('first_name', profile.first_name || '');
+                    setValue('last_name', profile.last_name || '');
+                    setValue('display_name', profile.display_name || '');
+                    setValue('phone', profile.phone || '');
+                  }
+                }}
+                disabled={isLoading}
+              >
+                Cancel
+              </button>
+            </div>
+          </form>
+        )}
 
       </div>
     </div>

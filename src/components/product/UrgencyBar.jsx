@@ -18,6 +18,8 @@ export default function UrgencyBar({ saleEndDate, showLabel = false }) {
   const { level } = useCountdown(saleEndDate);
   const config = LEVEL_CONFIG[level] ?? LEVEL_CONFIG.low;
 
+  if (level === 'expired') return null;
+
   return (
     <div>
       {showLabel && (

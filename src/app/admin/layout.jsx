@@ -5,7 +5,7 @@ import { useRouter, usePathname, useSearchParams } from 'next/navigation';
 import Link from 'next/link';
 import useAppStore from '@/store/useAppStore';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
-import { isAdmin } from '@/lib/isAdmin';
+import { isAdmin } from '@/lib/roles';
 import { Menu, X } from 'lucide-react';
 
 function AdminSidebar() {
@@ -133,7 +133,7 @@ function AdminSidebar() {
 }
 
 export default function AdminDashboardLayout({ children }) {
-  const { user, isAuthLoading } = useAppStore();
+  const { user, profile, isAuthLoading } = useAppStore();
   const router = useRouter();
   const [isAuthorized, setIsAuthorized] = useState(false);
 

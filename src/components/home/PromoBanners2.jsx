@@ -103,10 +103,10 @@ export default function PromoBanners2({ items = DEFAULT_BANNERS_WITH_IMAGES }) {
         {/* Mini highlight cards */}
         <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4">
           {[
-            { icon: '🚚', title: 'Free Delivery', sub: 'On orders over $50' },
-            { icon: '🛡️', title: 'Secure Payment', sub: '100% safe transactions' },
-            { icon: '↩️', title: 'Easy Returns', sub: '30-day return policy' },
-            { icon: '💬', title: '24/7 Support', sub: 'Always here to help' },
+            { icon: '🚚', title: 'Convenient Payments', sub: 'Cash On Deliver Options' },
+            { icon: '🛡️', title: 'Compare Prices', sub: 'Find the best deals' },
+            { icon: '↩️', title: 'Location search', sub: 'Find deals near you' },
+            { icon: '💬', title: 'Quality Products', sub: 'Buy from top vendors' },
           ].map((feature, i) => (
             <div key={i} className="bg-white dark:bg-gray-800 rounded-[var(--tt-radius-md)] p-3 md:p-4 flex flex-col items-center text-center border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow">
               <span className="text-2xl mb-2">{feature.icon}</span>

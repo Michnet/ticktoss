@@ -3,7 +3,7 @@ import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import Mailjet from 'node-mailjet';
-import { isAdmin } from '@/lib/isAdmin';
+import { isAdmin } from '@/lib/roles';
 
 export async function GET(request) {
   try {
@@ -115,11 +115,11 @@ export async function POST(request) {
         return NextResponse.json({ error: 'Failed to approve application' }, { status: 500 });
       }
 
-      // 2. Append 'vendor' to the profiles roles
+      // 2. Append 'tt_vendor' to roles and add tt_store to profiles.tt_stores
       // Fetch current profile
       const { data: profile, error: profileError } = await supabaseAdmin
         .from('profiles')
-        .select('roles, email, display_name')
+        .select('roles, tt_stores, email, display_name')
         .eq('user_id', user_id)
         .single();
 
@@ -129,14 +129,27 @@ export async function POST(request) {
       }
 
       const currentRoles = profile.roles || [];
-      if (!currentRoles.includes('vendor')) {
+      const currentStores = profile.tt_stores || [];
+      const ttStore = appData.meta?.tt_store ?? null;
+
+      const profileUpdates = {};
+
+      if (!currentRoles.includes('tt_vendor')) {
+        profileUpdates.roles = [...currentRoles, 'tt_vendor'];
+      }
+
+      if (ttStore) {
+        profileUpdates.tt_stores = [...currentStores, ttStore];
+      }
+
+      if (Object.keys(profileUpdates).length > 0) {
         const { error: updateProfileError } = await supabaseAdmin
           .from('profiles')
-          .update({ roles: [...currentRoles, 'vendor'] })
+          .update(profileUpdates)
           .eq('user_id', user_id);
 
         if (updateProfileError) {
-          console.error('Failed to update profile roles:', updateProfileError);
+          console.error('Failed to update profile:', updateProfileError);
           return NextResponse.json({ error: 'Failed to update user profile' }, { status: 500 });
         }
       }

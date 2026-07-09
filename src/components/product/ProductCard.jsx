@@ -9,24 +9,8 @@ import UrgencyBar from './UrgencyBar';
 import { formatUGX } from '@/lib/currency';
 import { getUrgencyLevel } from '@/lib/urgency';
 import { resizedImage } from '@/helpers/universal';
-import useAppStore from '@/store/useAppStore';
-import { MessageSquare, Share2, Heart, ShoppingCart } from 'lucide-react';
-
-const CATEGORY_STYLES = {
-  'Electronics': { emoji: '📱', color: '#4C8BFF' },
-  'Fashion': { emoji: '👗', color: '#FF6B9D' },
-  'Home & Living': { emoji: '🛋️', color: '#00E87A' },
-  'Vehicles': { emoji: '🚗', color: '#FFB800' },
-  'Sports': { emoji: '⚽', color: '#9B6BFF' },
-  'Food & Drinks': { emoji: '🍱', color: '#FF4D00' },
-  'Health & Beauty': { emoji: '💊', color: '#00D4C8' },
-  'Agriculture': { emoji: '🌿', color: '#7BC400' },
-  default: { emoji: '🛍️', color: 'var(--tt-gold)' }
-};
-
-function getStyle(categoryName) {
-  return CATEGORY_STYLES[categoryName] || CATEGORY_STYLES.default;
-}
+import ProductActions from './ProductActions';
+import { getStringStyle } from '@/lib/colors';
 
 function getTimeAgo(dateStr) {
   if (!dateStr) return '';
@@ -44,9 +28,6 @@ function getTimeAgo(dateStr) {
  * @param {{ product: object, rank?: number, prevRank?: number, priority?: boolean, index?: number }} props
  */
 export default function ProductCard({ product, rank, prevRank, priority = false, index = 0 }) {
-  const addToCart = useAppStore(state => state.addToCart);
-  const addToast = useAppStore(state => state.addToast);
-
   if (!product) return null;
   const {
     id, name, slug,
@@ -56,7 +37,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
     stock, stock_alert_level,
     discount_pct,
     product_categories,
-    created_at
+    created_at, vendor, tt_location 
   } = product;
 
   const level = getUrgencyLevel(sale_end_date);
@@ -66,12 +47,12 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
 
   const imageUrl = featured_image?.url ?? featured_image?.src ?? null;
   const categoryName = product_categories?.name || 'Uncategorized';
-  const { emoji, color: categoryColor } = getStyle(categoryName);
+  const { emoji, color: categoryColor } = getStringStyle(categoryName);
   
   // Calculate discount percentage based on price and sale_price if discount_pct is not provided
   let calculatedDiscountPct = discount_pct;
-  if (!calculatedDiscountPct) {
-      calculatedDiscountPct = price > 0 ? Math.round(((price - sale_price) / price) * 100) : 0;
+  if (!calculatedDiscountPct && sale_price > 0 && price > 0) {
+      calculatedDiscountPct = Math.round(((price - sale_price) / price) * 100);
   }
   const age = getTimeAgo(created_at);
 
@@ -118,38 +99,18 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
             
             {/* Discount */}
             {calculatedDiscountPct > 0 && (
-              <div className="absolute top-[6px] right-[6px] bg-[rgba(255,77,0,0.12)] border border-[rgba(255,77,0,0.3)] text-[var(--tt-flame-2)] backdrop-blur-[4px] text-[0.6rem] font-extrabold px-[6px] py-[1px] rounded-full">
-                -{calculatedDiscountPct}%
+              <div className="absolute top-[6px] right-[6px] bg-[var(--tt-flame)] border border-white/20 text-white shadow-[0_4px_12px_rgba(255,77,0,0.5)] text-[0.75rem] font-black p-1 rounded-full z-10 aspect-square flex items-center">
+                {calculatedDiscountPct}%
               </div>
             )}
             
             {/* Time ago */}
-            {age && (
+            {/* {age && (
               <div className="absolute bottom-[6px] right-[6px] bg-[#0d0d14]/75 backdrop-blur-[6px] text-[var(--tt-muted-2)] text-[0.58rem] font-semibold px-[6px] py-[1px] rounded-full">
                 🕐 {age}
               </div>
-            )}
+            )} */}
 
-            {/* Category pill */}
-            {categoryName && categoryName !== 'Uncategorized' && (
-              <div
-                style={{
-                  position: 'absolute',
-                  bottom: '6px',
-                  left: '6px',
-                  fontSize: '0.65rem',
-                  fontWeight: 600,
-                  padding: '2px 8px',
-                  borderRadius: '99px',
-                  background: `${categoryColor}33`,
-                  color: categoryColor,
-                  border: `1px solid ${categoryColor}55`,
-                  backdropFilter: 'blur(4px)',
-                }}
-              >
-                {categoryName}
-              </div>
-            )}
 
             {/* Rank change indicator */}
             {rankChange !== 0 && (
@@ -198,11 +159,34 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
                 </span>
               </div>
             )}
+
+            {/* Time Warning Overlay */}
+            {sale_end_date && !isOutOfStock && (
+              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0d0d14]/90 via-[#0d0d14]/30 to-transparent pt-8 pb-2 px-2 flex flex-col items-center justify-end z-10 pointer-events-none">
+                <div className="flex items-center gap-2 bg-[#0d0d14]/60 backdrop-blur-md border border-white/10 px-3 py-[2px] rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
+                  <span className="text-[0.65rem] text-white/90 font-bold uppercase tracking-widest">
+                    ⏱️
+                  </span>
+                  <CountdownClock saleEndDate={sale_end_date} size="sm" />
+                </div>
+              </div>
+            )}
           </div>
 
           {/* Body */}
-          <div className="p-3 flex-1 flex flex-col justify-between gap-2">
+          <div className="p-3 pb-2 flex-1 flex flex-col justify-between gap-2">
             <div>
+              {/* Category pill */}
+            {categoryName && categoryName !== 'Uncategorized' && (
+              <div className='leading-tight line-clamp-1 mb-1 text-gray-500'
+                style={{
+                  fontSize: '0.7rem',
+                  fontWeight: 600
+                }}
+              >
+                {categoryName}
+              </div>
+            )}
             {/* Name */}
             <Link href={`/products/${slug}`}>
             <h3 className="text-[0.78rem] font-semibold leading-[1.35] mb-[0.4rem] line-clamp-2 text-[var(--tt-text)]">
@@ -211,7 +195,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
             </Link>
             
             {/* Prices */}
-            <div className="flex items-baseline gap-[0.35rem] mb-2">
+            <div className="flex items-baseline flex-col">
               <span className="font-['Syne',sans-serif] font-bold text-[0.88rem]" style={{ color: level === 'critical' ? 'var(--tt-danger)' : 'var(--tt-text)' }}>
                 {formatUGX(sale_price)}
               </span>
@@ -230,48 +214,11 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
             )}
             
             {/* Urgency bar */}
-            <UrgencyBar saleEndDate={sale_end_date} />
+            <UrgencyBar saleEndDate={sale_end_date} showLabel={true} />
             </div>
 
             {/* Actions */}
-            <div className="flex gap-2 justify-between">
-              <div className='flex gap-2 flex-row'>
-              <button
-                onClick={(e) => e.preventDefault()}
-                className="flex items-center justify-center bg-[var(--tt-surface-2)] text-[var(--tt-text)] px-[0.6rem] hover:bg-[var(--tt-surface)] transition-colors border border-[rgba(255,255,255,0.08)]"
-                title="Contact Vendor"
-              >
-                <MessageSquare size={16} strokeWidth={2} />
-              </button>
-              <button
-                onClick={(e) => e.preventDefault()}
-                className="flex items-center justify-center bg-[var(--tt-surface-2)] text-[var(--tt-text)] px-[0.6rem] hover:bg-[var(--tt-surface)] transition-colors border border-[rgba(255,255,255,0.08)] hover:text-blue-500 hover:border-blue-500/30"
-                title="Share"
-              >
-                <Share2 size={16} strokeWidth={2} />
-              </button>
-              <button
-                onClick={(e) => e.preventDefault()}
-                className="flex items-center justify-center bg-[var(--tt-surface-2)] text-[var(--tt-text)] px-[0.6rem] hover:bg-[var(--tt-surface)] hover:text-red-500 hover:border-red-500/30 transition-colors border border-[rgba(255,255,255,0.08)]"
-                title="Save to Favourites"
-              >
-                <Heart  size={16} strokeWidth={2} />
-              </button>
-              </div>
-
-
-              <button
-                onClick={(e) => {
-                  e.preventDefault();
-                  addToCart(product, 1);
-                  addToast({ title: 'Added to Cart', message: `${product.name} has been added to your cart.` });
-                }}
-                className="bg-[var(--tt-flame-light)] text-[var(--tt-flame)] tt-shimmer flex-1 py-2 flex items-center justify-center"
-                title="Book Now"
-              >
-                <ShoppingCart size={20} strokeWidth={2} />
-              </button>
-            </div>
+            <ProductActions product={product} storeData={tt_location || vendor} />
 
           </div>
         </div>

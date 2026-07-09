@@ -5,6 +5,8 @@ import { motion } from 'framer-motion';
 
 import { useFeaturedProducts } from '@/hooks/useHomeData';
 import { resizedImage } from '@/helpers/universal';
+import CountdownClock from '@/components/product/CountdownClock';
+import UrgencyBar from '@/components/product/UrgencyBar';
 
 const CATEGORY_STYLES = {
   'Electronics': { emoji: '📱', color: '#4C8BFF' },
@@ -28,8 +30,6 @@ function formatUGX(n) {
 
 function FeaturedCard({ product, index }) {
   const isLowStock = product.stock <= 3;
-  const endDate = new Date(product.sale_end_date);
-  const hoursLeft = Math.max((endDate - Date.now()) / 3_600_000, 0);
   const {featured_image} = product ?? {}
   
   const discountPct = product.price > 0 ? Math.round(((product.price - product.sale_price) / product.price) * 100) : 0;
@@ -99,8 +99,14 @@ function FeaturedCard({ product, index }) {
               </span>
             </div>
 
-            <div className={`text-[0.7rem] font-semibold ${hoursLeft < 4 ? 'text-[var(--tt-danger)]' : 'text-[var(--tt-muted)]'}`}>
-              ⏱ {hoursLeft < 1 ? `${Math.round(hoursLeft * 60)}m` : `${Math.round(hoursLeft)}h`} remaining
+            <div className="mt-2 flex flex-col gap-1.5">
+              <div className="flex items-center justify-between">
+                <span className="text-[0.65rem] font-bold text-[var(--tt-muted-2)] uppercase tracking-wider flex items-center gap-1">
+                  ⏱️ Time Left
+                </span>
+                <CountdownClock saleEndDate={product.sale_end_date} size="sm" />
+              </div>
+              <UrgencyBar saleEndDate={product.sale_end_date} />
             </div>
           </div>
         </div>

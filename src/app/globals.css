@@ -1,6 +1,17 @@
 @import "tailwindcss";
 @custom-variant dark (&:where(.dark, .dark *));
 
+@utility no-scrollbar {
+  /* Hide for IE, Edge and Firefox */
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+  
+  /* Hide for Chrome, Safari and Opera */
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
 /* ──────────────────────────────────────────────
    TICKTOSS DESIGN SYSTEM — Global CSS
    Theme: Urgency / dark / electric

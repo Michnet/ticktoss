@@ -23,7 +23,7 @@ export default function VendorDashboardLayout({ children }) {
     }
     
     if (profile !== undefined) {
-      if (profile?.roles?.includes('vendor')) {
+      if (profile?.roles?.includes('tt_vendor')) {
         setIsAuthorized(true);
       } else {
         router.push('/apply-vendor');

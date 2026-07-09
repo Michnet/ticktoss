@@ -10,11 +10,9 @@ export function useTopCategories() {
       const { data, error } = await supabase
         .from('product_categories')
         .select('*')
-        //.gt('count', 0)
-        .order('name', { ascending: false })
+        .gt('count', 0)
+        .order('count', { ascending: false })
         .limit(8);
-
-        console.log({catData:data, d:error})
 
       if (error) throw error;
       return data;
@@ -38,6 +36,8 @@ const PRODUCT_SELECT = `
   is_featured,
   created_at,
   user_id,
+  tt_location,
+  vendor:user_id("tt_stores"),
   product_categories(name)
 `;
 

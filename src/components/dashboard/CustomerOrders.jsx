@@ -5,6 +5,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import useAppStore from '@/store/useAppStore';
 import { Package, Clock, CheckCircle, XCircle, MapPin } from 'lucide-react';
 import { formatUGX } from '@/lib/currency';
+import { resizedImage } from '@/helpers/universal';
 
 export default function CustomerOrders() {
   const { user } = useAppStore();
@@ -17,18 +18,12 @@ export default function CustomerOrders() {
     
     const fetchOrders = async () => {
       try {
-        const { data, error } = await supabase
-          .from('product_orders')
-          .select(`
-            *,
-            products:product_id(name, featured_image, slug),
-            profiles:user_id(display_name, email, phone)
-          `)
-          .eq('vendor_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setOrders(data || []);
+        const response = await fetch('/api/orders?intent=get_vendor_orders');
+        if (!response.ok) {
+          throw new Error('Failed to fetch orders');
+        }
+        const data = await response.json();
+        setOrders(data.orders || []);
       } catch (error) {
         console.error('Error fetching customer orders:', error);
       } finally {
@@ -85,7 +80,7 @@ export default function CustomerOrders() {
   }
 
   return (
-    <div className="tt-card tt-glass" style={{ padding: '2rem', border: '1px solid var(--tt-flame)' }}>
+    <div>
       <h2 className="tt-section-title" style={{ color: 'var(--tt-flame)', marginBottom: '0.5rem' }}>Customer Orders</h2>
       <p style={{ color: 'var(--tt-muted)', marginBottom: '2rem' }}>
         View and fulfill orders placed by buyers for your products.
@@ -100,8 +95,28 @@ export default function CustomerOrders() {
       ) : (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
           {orders.map((order) => {
-            const productImg = order.products?.featured_image?.url || order.products?.featured_image?.src;
-            const buyerName = order.shipping_address?.name || order.profiles?.display_name || 'Customer';
+            let orderItems = [];
+            try {
+              if (order.items) {
+                orderItems = typeof order.items === 'string' ? JSON.parse(order.items) : order.items;
+              }
+            } catch (e) {
+              console.error('Failed to parse order items', e);
+            }
+            
+            // Fallback for legacy orders
+            if (orderItems.length === 0 && order.products) {
+                orderItems = [{
+                    name: order.products.name,
+                    image: order.products.featured_image?.url || order.products.featured_image?.src,
+                    quantity: order.quantity || 1,
+                    price: null
+                }];
+            }
+
+            const buyerName = (order.shipping_address?.firstName || order.shipping_address?.lastName) 
+              ? `${order.shipping_address?.firstName || ''} ${order.shipping_address?.lastName || ''}`.trim() 
+              : order.profiles?.display_name || 'Customer';
             const buyerPhone = order.shipping_address?.phone || order.profiles?.phone || 'No phone';
             
             return (
@@ -117,7 +132,7 @@ export default function CustomerOrders() {
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem' }}>
                   <div>
                     <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)', marginBottom: '0.2rem' }}>Order #{order.id.split('-')[0].toUpperCase()}</p>
-                    <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>{new Date(order.created_at).toLocaleString()}</p>
+                    <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>{new Date(order.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' })}</p>
                   </div>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                     {getStatusBadge(order.status)}
@@ -142,20 +157,31 @@ export default function CustomerOrders() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: '1.5rem' }}>
                   
                   {/* Product Details */}
-                  <div style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                    {productImg ? (
-                      <div style={{ width: '60px', height: '60px', borderRadius: 'var(--tt-radius-sm)', overflow: 'hidden', flexShrink: 0 }}>
-                        <img src={productImg} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
-                      </div>
-                    ) : (
-                      <div style={{ width: '60px', height: '60px', borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
-                        <Package size={24} color="var(--tt-muted)" />
-                      </div>
-                    )}
-                    <div>
-                      <p style={{ fontWeight: 600, color: 'var(--tt-text)' }}>{order.products?.name || 'Unknown Product'}</p>
-                      <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)' }}>Qty: {order.quantity}</p>
-                      <p style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--tt-flame)', marginTop: '0.2rem' }}>{formatUGX(order.total_amount)}</p>
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                    {orderItems.map((item, idx) => {
+                      const productImg = item.image ? (item.image.startsWith('http') ? item.image : resizedImage(item.image, 'thumbnail')) : null;
+                      return (
+                        <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                          {productImg ? (
+                            <div style={{ width: '60px', height: '60px', borderRadius: 'var(--tt-radius-sm)', overflow: 'hidden', flexShrink: 0 }}>
+                              <img src={productImg} alt="Product" style={{ width: '100%', height: '100%', objectFit: 'cover' }} />
+                            </div>
+                          ) : (
+                            <div style={{ width: '60px', height: '60px', borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>
+                              <Package size={24} color="var(--tt-muted)" />
+                            </div>
+                          )}
+                          <div>
+                            <p style={{ fontWeight: 600, color: 'var(--tt-text)' }}>{item.name || 'Unknown Product'}</p>
+                            <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)' }}>
+                              Qty: {item.quantity} {item.price ? `× ${formatUGX(item.price)}` : ''}
+                            </p>
+                          </div>
+                        </div>
+                      );
+                    })}
+                    <div style={{ marginTop: '0.5rem', paddingTop: '0.5rem', borderTop: '1px solid var(--tt-border)' }}>
+                      <p style={{ fontSize: '1rem', fontWeight: 800, color: 'var(--tt-flame)' }}>Total: {formatUGX(order.total_amount)}</p>
                     </div>
                   </div>
 

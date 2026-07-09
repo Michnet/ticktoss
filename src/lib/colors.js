@@ -55,3 +55,31 @@ export function getGlowColor(color, opacity = 0.25) {
   
   return color;
 }
+
+/**
+ * Generates a consistent style (color and emoji) based on the first letter of a string.
+ */
+export function getStringStyle(str) {
+  if (!str) return { emoji: '🛍️', color: 'var(--tt-gold)' };
+  
+  const charCode = str.charAt(0).toUpperCase().charCodeAt(0);
+  
+  // A vibrant, diverse palette for categories/labels
+  const colors = [
+    '#4C8BFF', '#FF6B9D', '#00E87A', '#FFB800', '#9B6BFF', 
+    '#FF4D00', '#00D4C8', '#7BC400', '#FF3366', '#33CCFF',
+    '#FF9933', '#99FF33', '#CC33FF', '#33FFCC', '#FF3333',
+    '#2ECC71', '#3498DB', '#9B59B6', '#E67E22', '#E74C3C'
+  ];
+  
+  const emojis = ['🛍️', '📦', '🎁', '✨', '🔥', '🌟', '💎', '🚀', '🎯', '🛒'];
+  
+  const index = isNaN(charCode) ? 0 : charCode;
+  const colorIndex = index % colors.length;
+  const emojiIndex = index % emojis.length;
+  
+  return {
+    emoji: emojis[emojiIndex],
+    color: colors[colorIndex]
+  };
+}

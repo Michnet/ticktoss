@@ -24,7 +24,7 @@ const useAppStore = create(
 
       isVendor: () => {
         const { profile } = get();
-        return profile?.roles?.includes('vendor') ?? false;
+        return profile?.roles?.includes('tt_vendor') ?? false;
       },
 
       /* ── Location ── */

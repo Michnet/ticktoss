@@ -17,8 +17,10 @@ export default function DashboardLayout({ children }) {
 
   const vendorLinks = [
     { view: 'vendor_overview', label: 'Store Overview', icon: '🏪' },
+    { view: 'vendor_stores', label: 'My Stores', icon: '🏬' },
     { view: 'vendor_products', label: 'Products', icon: '🏷️' },
     { view: 'customer_orders', label: 'Customer Orders', icon: '🛒' },
+    { view: 'vendor_orders', label: 'Orders & Bookings', icon: '📥' },
   ];
 
   const SidebarContent = ({ isMobile = false }) => {
@@ -91,10 +93,10 @@ export default function DashboardLayout({ children }) {
 
   return (
     <>
-      <div className="tt-container" style={{ paddingTop: '2rem', paddingBottom: '4rem', display: 'flex', gap: '2rem', minHeight: '80vh' }}>
+      <div className='min-h-[inherit]' style={{display: 'flex', gap: '1rem'}}>
         
         {/* Desktop Sidebar Navigation */}
-        <aside style={{ width: '250px', flexShrink: 0 }} className="hidden-mobile">
+        <aside style={{ width: '250px', flexShrink: 0 }} className="hidden-mobile bg-[var(--tt-surface-2)] px-4">
           <div style={{ position: 'sticky', top: 'calc(var(--tt-nav-height) + 2rem)' }}>
             <Suspense fallback={<div className="tt-skeleton h-[300px] w-full" />}>
               <SidebarContent />
@@ -103,9 +105,9 @@ export default function DashboardLayout({ children }) {
         </aside>
 
         {/* Main Content Area */}
-        <main style={{ flex: 1, minWidth: 0 }}>
+        <main style={{ flex: 1, minWidth: 0 }} className='p-3 sm:p-5'>
           {/* Mobile Trigger */}
-          <div className="mobile-only" style={{ marginBottom: '1.5rem', display: 'none' }}>
+          <div className="mobile-only" style={{ marginBottom: '0.5rem', display: 'none' }}>
             <button 
               onClick={() => setMobileMenuOpen(true)}
               className="tt-btn tt-btn-ghost"

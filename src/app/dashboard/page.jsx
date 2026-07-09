@@ -18,6 +18,9 @@ const SavedItems = dynamic(() => import('@/components/dashboard/SavedItems'), {
 const VendorOverview = dynamic(() => import('@/components/dashboard/VendorOverview'), {
   loading: () => <ViewLoader />,
 });
+const MyStores = dynamic(() => import('@/components/dashboard/MyStores'), {
+  loading: () => <ViewLoader />,
+});
 const VendorProducts = dynamic(() => import('@/components/dashboard/VendorProducts'), {
   loading: () => <ViewLoader />,
 });
@@ -25,6 +28,15 @@ const CustomerOrders = dynamic(() => import('@/components/dashboard/CustomerOrde
   loading: () => <ViewLoader />,
 });
 const MyCart = dynamic(() => import('@/components/cart/MyCart'), {
+  loading: () => <ViewLoader />,
+});
+const VendorOrders = dynamic(() => import('@/components/dashboard/VendorOrders'), {
+  loading: () => <ViewLoader />,
+});
+const VendorAddSingle = dynamic(() => import('@/components/dashboard/VendorAddSingle'), {
+  loading: () => <ViewLoader />,
+});
+const VendorAddBulk = dynamic(() => import('@/components/dashboard/VendorAddBulk'), {
   loading: () => <ViewLoader />,
 });
 
@@ -51,8 +63,12 @@ function DashboardPageContent() {
       
       // Vendor Views
       case 'vendor_overview': return <VendorOverview />;
+      case 'vendor_stores': return <MyStores />;
       case 'vendor_products': return <VendorProducts />;
       case 'customer_orders': return <CustomerOrders />;
+      case 'vendor_orders': return <VendorOrders />;
+      case 'add_single': return <VendorAddSingle />;
+      case 'add_bulk': return <VendorAddBulk />;
       
       // Fallback
       default: return <MyProfile />;

@@ -1,4 +1,5 @@
 export function isAdmin(user) {
+  console.log({user});
   if (!user) return false;
 
   const siteManagersStr = process.env.SITE_MANAGERS || process.env.NEXT_PUBLIC_SITE_MANAGERS || '{}';
@@ -13,6 +14,23 @@ export function isAdmin(user) {
     return user.email === admin.email && user.id === admin.id;
   } catch (error) {
     console.error('Failed to parse SITE_MANAGERS for isAdmin check', error);
+    return false;
+  }
+}
+
+
+export function isVendor(user) {
+  console.log({user});
+  if (!user) return false;
+
+  const {roles} = user
+
+  if(!roles) return false;
+  
+  try {
+    return roles.includes('tt_vendor');
+  } catch (error) {
+    console.error('Failed to parse roles for isVendor check', error);
     return false;
   }
 }

@@ -121,11 +121,14 @@ function VendorApplicationsView() {
           {applications.map(app => (
             <div key={app.id} className="tt-card tt-glass p-5 flex flex-col md:flex-row gap-4 justify-between items-start md:items-center">
               <div>
-                <h3 className="font-bold text-lg">{app.business_name}</h3>
+                <h3 className="font-bold text-lg">{app.meta?.tt_store?.name || app.business_name || 'Unnamed Store'}</h3>
                 <div className="text-sm text-[var(--tt-muted-2)] mt-1 space-y-1">
                   <p><span className="font-semibold">Applicant:</span> {app.profiles?.display_name || 'N/A'} ({app.profiles?.email || 'N/A'})</p>
-                  <p><span className="font-semibold">Phone:</span> {app.business_phone}</p>
-                  <p><span className="font-semibold">Location:</span> {app.business_location}</p>
+                  <p><span className="font-semibold">Call Numbers:</span> {app.meta?.tt_store?.calls?.join(', ') || 'N/A'}</p>
+                  {app.meta?.tt_store?.whatsapp?.length > 0 && (
+                    <p><span className="font-semibold">WhatsApp:</span> {app.meta.tt_store.whatsapp.join(', ')}</p>
+                  )}
+                  <p><span className="font-semibold">Location:</span> {app.meta?.tt_store?.location || 'N/A'}</p>
                   {app.note && <p><span className="font-semibold">Notes:</span> {app.note}</p>}
                   <p><span className="font-semibold">Applied:</span> {new Date(app.created_at).toLocaleDateString()}</p>
                 </div>

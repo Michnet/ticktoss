@@ -28,30 +28,31 @@ export async function POST(request) {
     }
 
     const body = await request.json();
-    const { business_name, business_phone, business_location, note } = body;
+    const { meta, note } = body;
 
-    if (!business_name || !business_phone || !business_location) {
-      return NextResponse.json({ error: 'Please provide all required business details' }, { status: 400 });
+    const ttStore = meta?.tt_store;
+    if (!ttStore?.name || !Array.isArray(ttStore?.calls) || ttStore.calls.length === 0 || !ttStore?.location) {
+      return NextResponse.json(
+        { error: 'Please provide all required business details (name, at least one call number, and location)' },
+        { status: 400 }
+      );
     }
 
-    // Insert the application
+    // Insert the application — business data lives in meta.tt_store
     const { data: application, error: appError } = await supabase
       .from('roles_applications')
       .insert([{
         user_id: user.id,
         roles_applied: ['vendor'],
         status: 'pending',
-        business_name,
-        business_phone,
-        business_location,
-        note
+        meta: { tt_store: ttStore },
+        note,
       }])
       .select()
       .single();
 
     if (appError) {
       console.error('Error submitting vendor application:', appError);
-      // Check if unique violation or already applied etc.
       return NextResponse.json({ error: 'Failed to submit application. You may have already applied.' }, { status: 500 });
     }
 
@@ -66,6 +67,11 @@ export async function POST(request) {
     const siteManagers = process.env.SITE_MANAGERS ? JSON.parse(process.env.SITE_MANAGERS) : {};
     const adminEmail = siteManagers?.admin?.email;
 
+    const storeName = ttStore.name;
+    const storePhone = ttStore.calls?.join(', ') || 'N/A';
+    const storeWhatsApp = ttStore.whatsapp?.join(', ') || 'N/A';
+    const storeLocation = ttStore.location;
+
     // 1. Email Admin
     if (adminEmail) {
       try {
@@ -73,12 +79,13 @@ export async function POST(request) {
           Messages: [{
             From: { Email: "support@lyvecity.com", Name: "TickToss Admin" },
             To: [{ Email: adminEmail, Name: "Admin" }],
-            Subject: `New Vendor Application: ${business_name}`,
+            Subject: `New Vendor Application: ${storeName}`,
             HTMLPart: `<h3>New Vendor Application</h3>
               <p>A new vendor application has been submitted.</p>
-              <p><strong>Business Name:</strong> ${business_name}</p>
-              <p><strong>Phone:</strong> ${business_phone}</p>
-              <p><strong>Location:</strong> ${business_location}</p>
+              <p><strong>Business Name:</strong> ${storeName}</p>
+              <p><strong>Call Numbers:</strong> ${storePhone}</p>
+              <p><strong>WhatsApp:</strong> ${storeWhatsApp}</p>
+              <p><strong>Location:</strong> ${storeLocation}</p>
               <p><strong>Note:</strong> ${note || 'N/A'}</p>
               <p><strong>User Email:</strong> ${userEmail || 'N/A'}</p>`
           }]
@@ -98,7 +105,7 @@ export async function POST(request) {
             Subject: `Vendor Application Received`,
             HTMLPart: `<h3>Application Received</h3>
               <p>Hello ${userName},</p>
-              <p>We have received your application to become a vendor on TickToss for <strong>${business_name}</strong>.</p>
+              <p>We have received your application to become a vendor on TickToss for <strong>${storeName}</strong>.</p>
               <p>Our team will review your details and get back to you shortly.</p>
               <p>Thank you for choosing TickToss!</p>`
           }]

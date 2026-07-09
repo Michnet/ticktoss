@@ -6,7 +6,7 @@ import useAppStore from '@/store/useAppStore';
 import { formatUGX } from '@/lib/currency';
 import Image from 'next/image';
 
-export default function VendorOrdersPage() {
+export default function VendorOrders() {
   const { user, addToast } = useAppStore();
   const supabase = getSupabaseBrowserClient();
   const [orders, setOrders] = useState([]);
