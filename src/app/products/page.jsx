@@ -86,7 +86,7 @@ function ProductsContent() {
           <div className={`
             fixed inset-y-0 left-0 z-50 w-[250px] bg-[var(--tt-surface)] md:bg-transparent shadow-xl md:shadow-none 
             transform transition-transform duration-300 ease-in-out flex-shrink-0
-            md:relative md:translate-x-0 md:z-0
+            md:sticky md:top-[80px] md:translate-x-0 md:z-0
             ${isFilterOpen ? 'translate-x-0' : '-translate-x-full'}
           `}>
             <div className="h-full overflow-y-auto p-4 md:p-0">
@@ -130,7 +130,7 @@ function ProductsContent() {
 
 export default function BrowseProductsPage() {
   return (
-    <Suspense fallback={<div className="tt-container" style={{ padding: '2rem 1.5rem', minHeight: '80vh' }}><div className="tt-skeleton" style={{ height: '60px', marginBottom: '2rem' }}></div><div className="tt-grid-products">{Array.from({ length: 8 }).map((_, i) => (<div key={i} className="tt-skeleton" style={{ height: '360px' }} />))}</div></div>}>
+    <Suspense fallback={<div className="tt-container" style={{ padding: '2rem 1.5rem', minHeight: '80vh' }}><div className="tt-skeleton" style={{ height: '60px', marginBottom: '2rem' }}></div><div className="tt-grid-products ">{Array.from({ length: 8 }).map((_, i) => (<div key={i} className="tt-skeleton" style={{ height: '360px' }} />))}</div></div>}>
       <ProductsContent />
     </Suspense>
   );

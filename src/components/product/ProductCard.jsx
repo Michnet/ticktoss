@@ -68,7 +68,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
     >
       <div className="no-underline block h-full">
         <div
-          className="cursor-pointer border border-gray-200 dark:border-gray-600 flex flex-col transition-all duration-200 hover:-translate-y-[3px] hover:shadow-xl"
+          className="cursor-pointer border border-[var(--tt-border)] flex flex-col transition-all duration-200 hover:-translate-y-[3px] hover:shadow-xl"
           style={{
             height: '100%',
             boxShadow: level === 'critical'

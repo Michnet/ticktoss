@@ -47,7 +47,7 @@ function FeaturedCard({ product, index }) {
         className="no-underline block h-full"
       >
         <div
-          className="tt-card cursor-pointer h-full transition-all duration-200 hover:-translate-y-1"
+          className="tt-card cursor-pointer h-full transition-all duration-200 hover:-translate-y-1 flex flex-col"
           onMouseEnter={(e) => {
             e.currentTarget.style.boxShadow = `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px ${catColor}40`;
           }}
@@ -82,8 +82,9 @@ function FeaturedCard({ product, index }) {
           </div>
 
           {/* Body */}
-          <div className="p-[0.875rem]">
-            <div className="inline-block px-[0.6rem] py-[0.25rem] mb-[0.5rem] rounded-full bg-[var(--tt-surface-2)] border border-[var(--tt-border)] text-[var(--tt-muted-2)] text-[0.65rem] font-semibold uppercase tracking-[0.06em]">
+          <div className="p-[0.875rem] flex-grow flex flex-col justify-between gap-1">
+            <div>
+              <div className="inline-block px-[0.6rem] py-[0.25rem] mb-[0.5rem] rounded-full bg-[var(--tt-surface-2)] border border-[var(--tt-border)] text-[var(--tt-muted-2)] text-[0.65rem] font-semibold uppercase tracking-[0.06em]">
               {categoryName}
             </div>
             <h3 className="text-[0.88rem] font-semibold leading-[1.3] mb-2 line-clamp-2">
@@ -91,12 +92,13 @@ function FeaturedCard({ product, index }) {
             </h3>
 
             <div className="flex items-baseline gap-[0.4rem] mb-[0.4rem]">
-              <span className="font-['Syne',sans-serif] font-bold text-base text-[var(--tt-text)]">
+              <span className="font-bold text-base text-[var(--tt-text)]">
                 {formatUGX(product.sale_price)}
               </span>
               <span className="text-[0.72rem] text-[var(--tt-muted)] line-through">
                 {formatUGX(product.price)}
               </span>
+            </div>
             </div>
 
             <div className="mt-2 flex flex-col gap-1.5">

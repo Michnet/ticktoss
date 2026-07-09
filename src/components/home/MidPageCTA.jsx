@@ -8,9 +8,9 @@ export default function MidPageCTA() {
       <div className="tt-container">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
           {/* Vendor CTA */}
-          <div className="bg-[var(--tt-surface-2)] border border-[rgba(255,77,0,0.25)] rounded-[var(--tt-radius-xl)] p-8 relative overflow-hidden">
+          <div className="bg-[var(--tt-surface-2)] border border-[var(--tt-border)] rounded-[var(--tt-radius-xl)] p-8 relative overflow-hidden">
             <div className="text-[2.5rem] mb-3">🏪</div>
-            <h3 className="font-['Syne',sans-serif] font-extrabold text-[1.2rem] mb-2">
+            <h3 className="font-extrabold text-[1.2rem] mb-2">
               Sell Faster with a Deadline
             </h3>
             <p className="text-[var(--tt-muted)] text-[0.875rem] leading-[1.6] mb-5">
@@ -28,9 +28,9 @@ export default function MidPageCTA() {
           </div>
 
           {/* Near Me CTA */}
-          <div className="bg-[var(--tt-surface-2)] border border-[rgba(0,232,122,0.2)] rounded-[var(--tt-radius-xl)] p-8 relative overflow-hidden">
+          <div className="theme-set no-border rounded-[var(--tt-radius-xl)] p-8 relative overflow-hidden">
             <div className="text-[2.5rem] mb-3">📍</div>
-            <h3 className="font-['Syne',sans-serif] font-extrabold text-[1.2rem] mb-2">
+            <h3 className="font-extrabold text-[1.2rem] mb-2">
               Deals Near You
             </h3>
             <p className="text-[var(--tt-muted)] text-[0.875rem] leading-[1.6] mb-5">
