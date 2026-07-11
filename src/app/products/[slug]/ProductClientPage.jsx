@@ -18,6 +18,7 @@ import Link from 'next/link';
 import { ProductProvider, useProductContext } from '@/components/product/ProductProvider';
 import ProductCard from '@/components/product/ProductCard';
 import { useProducts } from '@/lib/hooks/useProducts';
+import ProductActions from '@/components/product/ProductActions';
 
 export default function ProductClientPage({ slug }) {
   const { data: product, isLoading, error } = useProduct(slug);
@@ -78,16 +79,16 @@ function SingleProductView() {
   const activeImageUrl = selectedVariation?.featured_image?.url || gallery[activeImageIndex]?.url || imageUrl;
 
   return (
-    <div className="tt-container">
+    <div className="p-2 sm:p-4">
       
       {/* Back nav & Breadcrumbs */}
-      <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
-       {/*  <button onClick={() => window.history.back()} className="tt-btn tt-btn-ghost" style={{ padding: '0.4rem 0.8rem' }}>
+      {/* <div style={{ marginBottom: '1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem' }}>
+        <button onClick={() => window.history.back()} className="tt-btn tt-btn-ghost" style={{ padding: '0.4rem 0.8rem' }}>
           ← Back
-        </button> */}
-      </div>
+        </button>
+      </div> */}
 
-      <div className='gap-4' style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))'}}>
+      <div className='gap-2 sm:gap-4' style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))'}}>
         
         {/* Left: Images */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
@@ -95,7 +96,6 @@ function SingleProductView() {
             style={{ 
               position: 'relative', 
               aspectRatio: '1/1', 
-              borderRadius: 'var(--tt-radius-xl)', 
               overflow: 'hidden',
               background: 'var(--tt-surface-2)',
               border: '1px solid var(--tt-border)'
@@ -157,11 +157,11 @@ function SingleProductView() {
         </div>
 
         {/* Right: Details & Panels */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+        <div className="gap-2 sm:gap-4" style={{ display: 'flex', flexDirection: 'column' }}>
           
           {/* Vendor Panel */}
           {product.profiles && (
-            <div className="tt-card tt-glass" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+            <div className="bg-[var(--tt-theme)] border border-[var(--tt-surface)]" style={{ padding: '1rem 1.5rem', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
                 <div style={{ width: '40px', height: '40px', borderRadius: '50%', background: 'var(--tt-surface-2)', display: 'flex', alignItems: 'center', justifyContent: 'center', overflow: 'hidden' }}>
                   {product.profiles.avatar_url ? (
@@ -181,7 +181,7 @@ function SingleProductView() {
           )}
 
           {/* Title & Price Panel */}
-          <div className="tt-card tt-glass" style={{ padding: '1.5rem' }}>
+          <div className="bg-[var(--tt-theme)] border border-[var(--tt-surface)]" style={{ padding: '1.5rem' }}>
             <h1 className="tt-section-title" style={{ fontSize: 'clamp(1.8rem, 3vw, 2.4rem)', marginBottom: '0.5rem', lineHeight: 1.1 }}>
               {product.name}
             </h1>
@@ -203,7 +203,7 @@ function SingleProductView() {
 
           {/* Variation Selectors */}
           {variationAttributes.length > 0 && (
-            <div className="tt-card tt-glass" style={{ padding: '1.5rem' }}>
+            <div className="bg-[var(--tt-theme)] border border-[var(--tt-surface)]" style={{ padding: '1.5rem' }}>
               <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tt-muted)', marginBottom: '1rem' }}>
                 Select Options
               </h3>
@@ -253,7 +253,7 @@ function SingleProductView() {
 
           {/* Meta Attributes Panel */}
           {metaAttributes.length > 0 && (
-            <div className="tt-card tt-glass" style={{ padding: '1.5rem' }}>
+            <div className="bg-[var(--tt-theme)] border border-[var(--tt-surface)]" style={{ padding: '1.5rem' }}>
               <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tt-muted)', marginBottom: '1rem' }}>
                 Item Features
               </h3>
@@ -284,7 +284,7 @@ function SingleProductView() {
                   Flash Deal Ends In
                 </p>
               </div>
-              <CountdownClock saleEndDate={product.sale_end_date} size="lg" />
+              <CountdownClock includeMilliSeconds={true} saleEndDate={product.sale_end_date} size="lg" />
               <div style={{ marginTop: '1.5rem', background: 'rgba(255, 255, 255, 0.5)', padding: '0.75rem', borderRadius: 'var(--tt-radius-sm)' }}>
                 <UrgencyBar saleEndDate={product.sale_end_date} showLabel={true} />
               </div>
@@ -338,50 +338,11 @@ function SingleProductView() {
                     : 'Book Now (Pay on Delivery)'}
             </button>
 
-            {/* Auxiliary Action Buttons */}
-            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '1rem' }}>
-              <button
-                onClick={() => {
-                  if (variationAttributes.length > 0 && !selectedVariation) {
-                    alert("Please select all options before adding to cart.");
-                    return;
-                  }
-                  alert("Added to cart!");
-                }}
-                disabled={!canBook || (variationAttributes.length > 0 && !selectedVariation)}
-                className="tt-btn tt-btn-outline"
-                style={{ padding: '0.8rem', fontWeight: 600, borderRadius: 'var(--tt-radius-md)', opacity: (!canBook || (variationAttributes.length > 0 && !selectedVariation)) ? 0.5 : 1 }}
-              >
-                🛒 Add to Cart
-              </button>
-              <button
-                onClick={() => alert("Saved to wishlist!")}
-                className="tt-btn tt-btn-ghost"
-                style={{ padding: '0.8rem', fontWeight: 600, borderRadius: 'var(--tt-radius-md)', border: '1px solid var(--tt-border)' }}
-              >
-                ❤️ Save
-              </button>
-            </div>
-            
-            <button
-               onClick={() => {
-                 if (navigator.share) {
-                   navigator.share({ title: product.name, url: window.location.href });
-                 } else {
-                   navigator.clipboard.writeText(window.location.href);
-                   alert("Link copied to clipboard!");
-                 }
-               }}
-               className="tt-btn tt-btn-ghost"
-               style={{ width: '100%', marginTop: '1rem', padding: '0.8rem', fontSize: '0.9rem', color: 'var(--tt-muted)' }}
-            >
-               🔗 Share this item
-            </button>
           </div>
 
           {/* Item Overview Panel */}
           {product.short_description && (
-            <div className="tt-card tt-glass" style={{ padding: '1.5rem' }}>
+            <div className="bg-[var(--tt-theme)] border border-[var(--tt-surface)]" style={{ padding: '1.5rem' }}>
               <h3 style={{ fontFamily: 'Syne, sans-serif', fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--tt-text)' }}>
                 Overview
               </h3>
@@ -407,9 +368,13 @@ function SingleProductView() {
             </div>
           )}
 
+          <div className="bg-[var(--tt-theme)] border border-[var(--tt-surface)]" style={{ padding: '1em 0.5rem' }}>
+              <ProductActions leftExtraClass='bg-transparent' iconSize = {30} product={product} selectedVariation={selectedVariation}/>
+            </div>
+
           {/* Item Details Panel */}
           {(product.long_description || product.short_description) && (
-            <div className="tt-card tt-glass" style={{ padding: '1.5rem' }}>
+            <div className="bg-[var(--tt-theme)] border border-[var(--tt-surface)]" style={{ padding: '1.5rem' }}>
               <h3 style={{ fontFamily: 'Syne, sans-serif', fontSize: '1.2rem', marginBottom: '1rem', color: 'var(--tt-text)' }}>
                 Item Details
               </h3>
@@ -421,19 +386,44 @@ function SingleProductView() {
           )}
 
           {/* Found In Panel */}
-          {product.product_categories && (
-            <div className="tt-card tt-glass" style={{ padding: '1.5rem' }}>
+          {(product.all_categories?.length || product.product_categories || product.tags?.length) && (
+            <div className="bg-[var(--tt-theme)] border border-[var(--tt-surface)]" style={{ padding: '1.5rem' }}>
               <h3 style={{ fontSize: '0.9rem', textTransform: 'uppercase', letterSpacing: '0.05em', color: 'var(--tt-muted)', marginBottom: '1rem' }}>
                 Found In
               </h3>
               <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem' }}>
-                <Link href={`/products?category=${product.product_categories.slug}`} className="tt-badge" style={{ background: 'var(--tt-surface-2)', color: 'var(--tt-text)', textDecoration: 'none', padding: '0.4rem 0.8rem', borderRadius: 'var(--tt-radius-sm)' }}>
-                  📁 {product.product_categories.name}
-                </Link>
-                {product.tags?.map((tag, idx) => (
-                  <span key={idx} className="tt-badge" style={{ background: 'var(--tt-surface-2)', color: 'var(--tt-muted)', padding: '0.4rem 0.8rem', borderRadius: 'var(--tt-radius-sm)' }}>
-                    #{tag}
-                  </span>
+                {/* All categories resolved from cat_ids */}
+                {product.all_categories?.length
+                  ? product.all_categories.map((cat) => (
+                      <Link
+                        key={cat.id}
+                        href={`/products?category=${cat.slug}`}
+                        className="tt-badge"
+                        style={{ background: 'var(--tt-surface-2)', color: 'var(--tt-text)', textDecoration: 'none', padding: '0.4rem 0.8rem', borderRadius: 'var(--tt-radius-sm)' }}
+                      >
+                        📁 {cat.name}
+                      </Link>
+                    ))
+                  : product.product_categories && (
+                      <Link
+                        href={`/products?category=${product.product_categories.slug}`}
+                        className="tt-badge"
+                        style={{ background: 'var(--tt-surface-2)', color: 'var(--tt-text)', textDecoration: 'none', padding: '0.4rem 0.8rem', borderRadius: 'var(--tt-radius-sm)' }}
+                      >
+                        📁 {product.product_categories.name}
+                      </Link>
+                    )}
+
+                {/* Tags resolved from tag_ids — now full objects with id/name/slug */}
+                {product.tags?.map((tag) => (
+                  <Link
+                    key={tag.id}
+                    href={`/products?tag=${tag.slug}`}
+                    className="tt-badge"
+                    style={{ background: 'var(--tt-surface-2)', color: 'var(--tt-muted)', textDecoration: 'none', padding: '0.4rem 0.8rem', borderRadius: 'var(--tt-radius-sm)' }}
+                  >
+                    #{tag.name}
+                  </Link>
                 ))}
               </div>
             </div>

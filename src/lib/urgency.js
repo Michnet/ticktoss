@@ -43,9 +43,9 @@ export function getUrgencyLevel(saleEndDate) {
 }
 
 /**
- * Parse ms remaining into { days, hours, minutes, seconds }
+ * Parse ms remaining into { days, hours, minutes, seconds, cs, expired }
  * @param {string|Date} saleEndDate
- * @returns {{ days: number, hours: number, minutes: number, seconds: number, expired: boolean }}
+ * @returns {{ days: number, hours: number, minutes: number, seconds: number, cs: number, expired: boolean }}
  */
 export function parseTimeRemaining(saleEndDate) {
   const now = Date.now();
@@ -53,7 +53,7 @@ export function parseTimeRemaining(saleEndDate) {
   const diff = endMs - now;
 
   if (diff <= 0) {
-    return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true };
+    return { days: 0, hours: 0, minutes: 0, seconds: 0, cs: 0, expired: true };
   }
 
   const totalSeconds = Math.floor(diff / 1000);
@@ -61,8 +61,10 @@ export function parseTimeRemaining(saleEndDate) {
   const hours   = Math.floor((totalSeconds % 86400) / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
+  // centiseconds (0-99) — readable but fast enough to feel live
+  const cs      = Math.floor((diff % 1000) / 10);
 
-  return { days, hours, minutes, seconds, expired: false };
+  return { days, hours, minutes, seconds, cs, expired: false };
 }
 
 /**

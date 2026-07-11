@@ -29,6 +29,7 @@ const PRODUCT_SELECT = `
   price,
   sale_price,
   sale_end_date,
+  sale_start_date,
   stock,
   stock_alert_level,
   urgency_score,
@@ -57,7 +58,6 @@ export function useHeroProducts() {
         .limit(3);
 
       if (error) throw error;
-      console.log({data, error})
       return data;
     },
     staleTime: 30 * 1000, // 30 seconds
@@ -119,6 +119,27 @@ export function useNewArrivals() {
         .eq('status', 'published')
         .order('created_at', { ascending: false })
         .limit(8);
+
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 5 * 60 * 1000,
+  });
+}
+
+export function useUpcomingDeals() {
+  const supabase = getSupabaseBrowserClient();
+
+  return useQuery({
+    queryKey: ['products', 'upcoming_deals'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('products')
+        .select(PRODUCT_SELECT)
+        .eq('status', 'published')
+        .gt('sale_start_date', new Date().toISOString())
+        .order('sale_start_date', { ascending: false })
+        .limit(3);
 
       if (error) throw error;
       return data;

@@ -6,6 +6,8 @@ import AuthProvider from '@/components/providers/AuthProvider';
 import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ToastProvider from '@/components/notifications/ToastProvider';
+import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
+import InstallPrompt from '@/components/pwa/InstallPrompt';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -49,7 +51,7 @@ export const metadata = {
 export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} ${roboto.variable}`}>
+      <body className={`${inter.variable} ${roboto.variable} bg-[var(--tt-surface)]`}>
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <QueryProvider>
             <AuthProvider>
@@ -59,6 +61,8 @@ export default function RootLayout({ children }) {
               </main>
               <Footer />
               <ToastProvider />
+              <ServiceWorkerRegistrar />
+              <InstallPrompt />
             </AuthProvider>
           </QueryProvider>
         </ThemeProvider>

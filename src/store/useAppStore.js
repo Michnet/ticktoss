@@ -50,6 +50,14 @@ const useAppStore = create(
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
 
+      // Auth modal — opened from guest watchlist/like actions
+      authModalOpen: false,
+      setAuthModalOpen: (open) => set({ authModalOpen: open }),
+
+      // First visit timestamp — used by push notification grace period
+      firstVisitTime: null,
+      setFirstVisitTime: (ts) => set({ firstVisitTime: ts }),
+
       toasts: [],
       addToast: (toast) =>
         set((s) => ({
@@ -89,10 +97,11 @@ const useAppStore = create(
       name: 'ticktoss-store',
       // Only persist non-sensitive, lightweight fields
       partialize: (state) => ({
-        userLocation: state.userLocation,
+        userLocation:       state.userLocation,
         selectedLocationId: state.selectedLocationId,
-        pendingInterests: state.pendingInterests,
-        cartItems: state.cartItems,
+        pendingInterests:   state.pendingInterests,
+        cartItems:          state.cartItems,
+        firstVisitTime:     state.firstVisitTime,
       }),
     }
   )

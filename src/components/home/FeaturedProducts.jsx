@@ -7,6 +7,7 @@ import { useFeaturedProducts } from '@/hooks/useHomeData';
 import { resizedImage } from '@/helpers/universal';
 import CountdownClock from '@/components/product/CountdownClock';
 import UrgencyBar from '@/components/product/UrgencyBar';
+import Carousel from '../ui/Carousel';
 
 const CATEGORY_STYLES = {
   'Electronics': { emoji: '📱', color: '#4C8BFF' },
@@ -28,7 +29,7 @@ function formatUGX(n) {
   return 'UGX ' + Math.round(n).toLocaleString('en-UG');
 }
 
-function FeaturedCard({ product, index }) {
+function FeaturedCard({ product, index, cardWidth='300px' }) {
   const isLowStock = product.stock <= 3;
   const {featured_image} = product ?? {}
   
@@ -36,18 +37,18 @@ function FeaturedCard({ product, index }) {
   const categoryName = product.product_categories?.name || 'Uncategorized';
   const { emoji, color: catColor } = getStyle(categoryName);
 
+  const hrefLink = `/products/${product.slug}`
+
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.08, duration: 0.35 }}
+      style={{ width: cardWidth }}
+      className="h-full flex"
     >
-      <Link
-        href={`/products/${product.slug}`}
-        className="no-underline block h-full"
-      >
         <div
-          className="tt-card cursor-pointer h-full transition-all duration-200 hover:-translate-y-1 flex flex-col"
+          className="tt-card cursor-pointer w-full h-full transition-all duration-200 hover:-translate-y-1 flex flex-col"
           onMouseEnter={(e) => {
             e.currentTarget.style.boxShadow = `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px ${catColor}40`;
           }}
@@ -56,7 +57,7 @@ function FeaturedCard({ product, index }) {
           }}
         >
           {/* Image placeholder with emoji */}
-          <div className="bg-[var(--tt-surface-2)] flex items-center justify-center text-[4rem] relative overflow-hidden">
+          <div className="bg-[var(--tt-surface-2)] flex items-center justify-center text-[4rem] relative overflow-hidden aspect-[4/3]">
             {featured_image ? (
               <img src={resizedImage(featured_image.url, 'medium')} alt={product.name} className="w-full h-full object-cover" />
             ) : (
@@ -112,19 +113,17 @@ function FeaturedCard({ product, index }) {
             </div>
           </div>
         </div>
-      </Link>
     </motion.div>
   );
 }
 
-export default function FeaturedProducts() {
+export default function FeaturedProducts({cardWidth='300px'}) {
   const { data: products, isLoading } = useFeaturedProducts();
   return (
     <section className="pb-5">
-      <div className="tt-container">
-        <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
+        <div className="flex items-end justify-between px-5 mb-5 gap-4 flex-wrap">
           <div>
-            <h2 className="font-['Syne',sans-serif] font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">
+            <h2 className="font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">
               ⭐ Featured{' '}
               <span className="bg-[linear-gradient(135deg,#FFB800,#FF8C00)] bg-clip-text text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
                 Deals
@@ -142,18 +141,28 @@ export default function FeaturedProducts() {
           </Link>
         </div>
 
-        <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
+        <Carousel autoWidth={true} trackClassName="gap-3" itemClassName="flex" padding={16}>
+          {isLoading ? (
+             Array.from({ length: 4 }).map((_, i) => (
+               <div key={i} className="tt-shimmer h-[340px] w-[220px] rounded-[var(--tt-radius-lg)] bg-[var(--tt-surface)]" />
+             ))
+          ) : (
+            products?.map((p, i) => (
+              <FeaturedCard key={p.id} product={p} index={i} cardWidth={cardWidth} />
+            ))
+          )}
+        </Carousel>
+        {/* <div className="grid grid-cols-[repeat(auto-fill,minmax(220px,1fr))] gap-4">
           {isLoading ? (
              Array.from({ length: 4 }).map((_, i) => (
                <div key={i} className="tt-shimmer h-[340px] rounded-[var(--tt-radius-lg)] bg-[var(--tt-surface)]" />
              ))
           ) : (
             products?.map((p, i) => (
-              <FeaturedCard key={p.id} product={p} index={i} />
+              <FeaturedCard key={p.id} product={p} index={i} cardWidth={cardWidth} />
             ))
           )}
-        </div>
-      </div>
+        </div> */}
     </section>
   );
 }

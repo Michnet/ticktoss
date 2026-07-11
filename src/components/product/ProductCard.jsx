@@ -1,16 +1,17 @@
 'use client';
 
-import Image from 'next/image';
+//import Image from 'next/image';
 import Link from 'next/link';
 import { motion } from 'framer-motion';
 import CountdownClock from './CountdownClock';
-import DiscountBadge from './DiscountBadge';
-import UrgencyBar from './UrgencyBar';
+//import DiscountBadge from './DiscountBadge';
+//import UrgencyBar from './UrgencyBar';
 import { formatUGX } from '@/lib/currency';
 import { getUrgencyLevel } from '@/lib/urgency';
 import { resizedImage } from '@/helpers/universal';
 import ProductActions from './ProductActions';
 import { getStringStyle } from '@/lib/colors';
+import UrgencyCircle from './UrgencyCircle';
 
 function getTimeAgo(dateStr) {
   if (!dateStr) return '';
@@ -60,6 +61,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
     <motion.div
       layout
       layoutId={`product-${id}`}
+      className='bg-[var(--tt-theme)] border border-[var(--tt-surface)]'
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       exit={{ opacity: 0, scale: 0.95 }}
@@ -68,7 +70,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
     >
       <div className="no-underline block h-full">
         <div
-          className="cursor-pointer border border-[var(--tt-border)] flex flex-col transition-all duration-200 hover:-translate-y-[3px] hover:shadow-xl overflow-hidden rounded-[var(--tt-radius-md)]"
+          className="cursor-pointer flex flex-col transition-all duration-200 hover:-translate-y-[3px] hover:shadow-xl overflow-hidden rounded-[var(--tt-radius-md)]"
           style={{
             height: '100%',
             boxShadow: level === 'critical'
@@ -160,22 +162,12 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
               </div>
             )}
 
-            {/* Time Warning Overlay */}
-            {sale_end_date && !isOutOfStock && (
-              <div className="absolute bottom-0 left-0 right-0 bg-gradient-to-t from-[#0d0d14]/90 via-[#0d0d14]/30 to-transparent pt-8 pb-2 px-2 flex flex-col items-center justify-end z-10 pointer-events-none">
-                <div className="flex items-center gap-2 bg-[#0d0d14]/60 backdrop-blur-md border border-white/10 px-3 py-[2px] rounded-full shadow-[0_4px_12px_rgba(0,0,0,0.5)]">
-                  <span className="text-[0.65rem] text-white/90 font-bold uppercase tracking-widest">
-                    ⏱️
-                  </span>
-                  <CountdownClock saleEndDate={sale_end_date} size="sm" />
-                </div>
-              </div>
-            )}
+            
           </div>
 
           {/* Body */}
-          <div className="p-3 pb-2 flex-1 flex flex-col justify-between gap-2">
-            <div>
+          <div className="flex-1 flex flex-col justify-between gap-2">
+            <div className='p-3 pb-0'>
               {/* Category pill */}
             {categoryName && categoryName !== 'Uncategorized' && (
               <div className='leading-tight line-clamp-1 mb-1 text-gray-500'
@@ -189,7 +181,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
             )}
             {/* Name */}
             <Link href={`/products/${slug}`}>
-            <h3 className="font-semibold leading-[1.35] mb-[0.4rem] line-clamp-1 text-[var(--tt-text)]">
+            <h3 className="font-normal leading-[1.35] mb-[0.4rem] line-clamp-1 text-[var(--tt-text)]">
               {name}
             </h3>
             </Link>
@@ -214,7 +206,18 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
             )}
             
             {/* Urgency bar */}
-            <UrgencyBar saleEndDate={sale_end_date} showLabel={true} />
+            {/* <UrgencyBar saleEndDate={sale_end_date} showLabel={true} /> */}
+
+            {/* Time Warning Overlay */}
+            {sale_end_date && !isOutOfStock && (
+                <div className="flex items-center gap-2">
+                  {/* <span className="text-[0.65rem] text-white/90 font-bold uppercase tracking-widest">
+                    ⏱️
+                  </span> */}
+                  <CountdownClock saleEndDate={sale_end_date} size="sm" />
+                  <UrgencyCircle saleEndDate={sale_end_date} showLabel={false} />
+                </div>
+            )}
             </div>
 
             {/* Actions */}

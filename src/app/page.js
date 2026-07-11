@@ -10,6 +10,7 @@ import MidPageCTA from '@/components/home/MidPageCTA';
 import TagCloud from '@/components/home/TagCloud';
 import HowItWorks from '@/components/home/HowItWorks';
 import PromoBanners2 from '@/components/home/PromoBanners2';
+import ProductsView from '@/components/home/ProductsView';
 //import PromoBanners3 from '@/components/home/PromoBanners3';
 //import PromoBanners4 from '@/components/home/PromoBanners4';
 
@@ -44,7 +45,7 @@ export default function HomePage() {
       <CategoryGrid/>
 
       {/* ── 5. Featured deals ────────────────────────── */}
-      <FeaturedProducts />
+      <FeaturedProducts cardWidth='200px'/>
 
       {/* ── 6. Mid-page split CTA ────────────────────── */}
       <MidPageCTA />
@@ -124,6 +125,8 @@ export default function HomePage() {
           </div>
         </aside>
       </div>
+
+      <ProductsView cardWidth='150px' />
 
       {/* ── 8. New arrivals ───────────────────────────── */}
       <NewArrivals />

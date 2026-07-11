@@ -3,6 +3,7 @@ import { createClient } from '@/lib/supabase/server';
 import { mapProductData } from '@/lib/productHelpers';
 import { constructMetadata, generateProductSchema } from '@/lib/seo';
 import ProductClientPage from './ProductClientPage';
+import { resizedImage } from '@/helpers/universal';
 
 // Helper function to fetch product for SEO
 async function getProductForSEO(slug) {
@@ -20,7 +21,28 @@ async function getProductForSEO(slug) {
     .single();
 
   if (error || !data) return null;
-  return mapProductData(data);
+
+  // Resolve tag objects from tag_ids array
+  let resolvedTags = [];
+  if (data.tag_ids?.length) {
+    const { data: tagsData } = await supabase
+      .from('tags')
+      .select('id, name, slug, count')
+      .in('id', data.tag_ids);
+    resolvedTags = tagsData ?? [];
+  }
+
+  // Resolve all category objects from cat_ids array (full set, not just primary)
+  let resolvedCategories = [];
+  if (data.cat_ids?.length) {
+    const { data: catsData } = await supabase
+      .from('product_categories')
+      .select('id, name, slug, color, icon, image_icon, description')
+      .in('id', data.cat_ids);
+    resolvedCategories = catsData ?? [];
+  }
+
+  return mapProductData({ ...data, tags: resolvedTags, all_categories: resolvedCategories });
 }
 
 export async function generateMetadata({ params }) {
@@ -41,7 +63,7 @@ export async function generateMetadata({ params }) {
   return constructMetadata({
     title: product.name,
     description: product.short_description || product.name,
-    image: imageUrl,
+    image: resizedImage(imageUrl, 'large'),
     url,
   });
 }

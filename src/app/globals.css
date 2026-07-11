@@ -22,7 +22,7 @@
   --tt-flame-light:  #ffe9e0;
   --tt-flame-2: #FF6A00;
   --tt-gold:    #FFB800;
-  --tt-night:   #FFFFFF;
+  --tt-theme:   #FFFFFF;
   --tt-surface: #F5F5F7;
   --tt-surface-2: #EAEAEE;
   --tt-border:  #D1D1D6;
@@ -65,7 +65,7 @@
   --tt-flame:   #FF4D00;
   --tt-flame-2: #FF6A00;
   --tt-gold:    #FFB800;
-  --tt-night:   #0D0D14;
+  --tt-theme:   #0D0D14;
   --tt-surface: #16161F;
   --tt-surface-2: #1E1E2E;
   --tt-border:  #2A2A3A;
@@ -103,7 +103,6 @@ html {
 }
 
 body {
-  background-color: var(--tt-night);
   color: var(--tt-text);
   font-family: var(--font-body), system-ui, sans-serif;
   line-height: 1.6;
@@ -145,7 +144,7 @@ a {
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--tt-night);
+  background: var(--tt-theme);
 }
 ::-webkit-scrollbar-thumb {
   background: var(--tt-border-2);

@@ -1,12 +1,14 @@
 'use client';
 
 import Link from 'next/link';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
+import { Bell } from 'lucide-react';
 import useAppStore from '@/store/useAppStore';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import AuthForm from '@/components/auth/AuthForm';
 import CartIcon from '@/components/cart/CartIcon';
+import { useNotifications } from '@/hooks/useNotifications';
 
 const NAV_LINKS = [
   { href: '/products',   label: 'Browse' },
@@ -15,11 +17,22 @@ const NAV_LINKS = [
 ];
 
 export default function Navbar() {
-  const { user, profile, isVendor, clearAuth } = useAppStore();
-  const [mobileOpen, setMobileOpen] = useState(false);
-  const [userMenuOpen, setUserMenuOpen] = useState(false);
+  const { user, profile, isVendor, clearAuth, authModalOpen: storeAuthModalOpen, setAuthModalOpen: setStoreAuthModalOpen } = useAppStore();
+  const [mobileOpen, setMobileOpen]       = useState(false);
+  const [userMenuOpen, setUserMenuOpen]   = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
+
+  const { unreadCount } = useNotifications(user?.id ?? null);
+
+  // Open the local auth modal when another component (e.g. WatchlistButton) sets the store flag
+  useEffect(() => {
+    if (storeAuthModalOpen) {
+      setAuthModalMode('login');
+      setAuthModalOpen(true);
+      setStoreAuthModalOpen(false); // reset the store flag immediately
+    }
+  }, [storeAuthModalOpen, setStoreAuthModalOpen]);
 
   let userView = null;
 
@@ -171,6 +184,37 @@ export default function Navbar() {
         {/* Right actions */}
         <div className='shrink-0' style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
           <CartIcon />
+
+          {/* Notifications bell */}
+          <Link
+            href="/notifications"
+            style={{ position: 'relative', display: 'flex', alignItems: 'center', color: 'var(--tt-text)', padding: '0.25rem' }}
+            title="Notifications"
+          >
+            <Bell size={20} strokeWidth={2} />
+            {unreadCount > 0 && (
+              <span style={{
+                position: 'absolute',
+                top: '-2px',
+                right: '-4px',
+                minWidth: '16px',
+                height: '16px',
+                borderRadius: '8px',
+                background: 'var(--tt-flame)',
+                color: '#fff',
+                fontSize: '0.6rem',
+                fontWeight: 700,
+                display: 'flex',
+                alignItems: 'center',
+                justifyContent: 'center',
+                padding: '0 3px',
+                lineHeight: 1,
+              }}>
+                {unreadCount > 9 ? '9+' : unreadCount}
+              </span>
+            )}
+          </Link>
+
           <div style={{ display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
             {userView}
           </div>

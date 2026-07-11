@@ -10,8 +10,8 @@ const LEVEL_COLORS = {
   expired:  'var(--tt-muted)',
 };
 
-function Digit({ value }) {
-  const str = String(value).padStart(2, '0');
+function Digit({ value, pad = 2 }) {
+  const str = String(value).padStart(pad, '0');
   return (
     <span
       className="tt-clock"
@@ -30,8 +30,11 @@ function Digit({ value }) {
  * CountdownClock — flip-digit style countdown timer.
  * @param {{ saleEndDate: string|Date, size?: 'sm'|'md'|'lg' }} props
  */
-export default function CountdownClock({ saleEndDate, size = 'md' }) {
-  const { days, hours, minutes, seconds, expired, level } = useCountdown(saleEndDate);
+export default function CountdownClock({ includeMilliSeconds = false, saleEndDate, size = 'md' }) {
+  const { days, hours, minutes, seconds, cs, expired, level } = useCountdown(
+    saleEndDate,
+    { includeMs: includeMilliSeconds },
+  );
 
   const sizes = {
     sm: { fontSize: '0.8rem',  gap: '2px' },
@@ -77,6 +80,12 @@ export default function CountdownClock({ saleEndDate, size = 'md' }) {
       <Digit value={minutes} />
       <span style={{ color: `${color}88`, fontSize: '0.85em', marginBottom: '2px' }}>:</span>
       <Digit value={seconds} />
+      {includeMilliSeconds && (
+        <>
+          <span style={{ color: `${color}88`, fontSize: '0.85em', marginBottom: '2px' }}>.</span>
+          <Digit value={cs} pad={2} />
+        </>
+      )}
     </div>
   );
 }

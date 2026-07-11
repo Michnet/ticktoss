@@ -7,6 +7,7 @@ import ProductCard from '@/components/product/ProductCard';
 
 export default function NewArrivals() {
   const { data: products, isLoading } = useNewArrivals();
+  if(products?.length > 0){
   return (
     <section className="pb-5">
       <div className="tt-container">
@@ -19,7 +20,7 @@ export default function NewArrivals() {
               </span>
             </h2>
             <p className="text-[var(--tt-muted)] text-[0.875rem] mt-1">
-              Fresh deals added today — be the first to book
+              Fresh deals — be the first to book
             </p>
           </div>
           <Link
@@ -45,4 +46,7 @@ export default function NewArrivals() {
       </div>
     </section>
   );
+}else{
+  return <></>
+}
 }

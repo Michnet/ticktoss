@@ -5,12 +5,11 @@ import { parseTimeRemaining, getUrgencyLevel } from '@/lib/urgency';
 
 /**
  * Live countdown hook for a product sale end date.
- * Updates every second.
- * 
  * @param {string|Date|null} saleEndDate
- * @returns {{ days, hours, minutes, seconds, expired, level }}
+ * @param {{ includeMs?: boolean }} options
+ * @returns {{ days, hours, minutes, seconds, cs, expired, level }}
  */
-export function useCountdown(saleEndDate) {
+export function useCountdown(saleEndDate, { includeMs = false } = {}) {
   const [state, setState] = useState(() =>
     saleEndDate ? parseTimeRemaining(saleEndDate) : null
   );
@@ -24,12 +23,12 @@ export function useCountdown(saleEndDate) {
     };
 
     tick(); // immediate first tick
-    intervalRef.current = setInterval(tick, 1000);
+    intervalRef.current = setInterval(tick, includeMs ? 50 : 1000);
 
     return () => clearInterval(intervalRef.current);
-  }, [saleEndDate]);
+  }, [saleEndDate, includeMs]);
 
-  if (!state) return { days: 0, hours: 0, minutes: 0, seconds: 0, expired: true, level: 'expired' };
+  if (!state) return { days: 0, hours: 0, minutes: 0, seconds: 0, cs: 0, expired: true, level: 'expired' };
 
   return {
     ...state,

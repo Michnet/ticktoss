@@ -17,7 +17,7 @@ export const productKeys = {
 /**
  * Fetch products with optional filters.
  */
-async function fetchProducts({ categorySlug, categoryId, locationId, search, minPrice, maxPrice, isFeatured, limit = 40, offset = 0 } = {}) {
+async function fetchProducts({ categorySlug, categoryId, locationId, tagIds, search, minPrice, maxPrice, isFeatured, limit = 40, offset = 0 } = {}) {
   let query = supabase
     .from('products')
     .select(`
@@ -34,7 +34,10 @@ async function fetchProducts({ categorySlug, categoryId, locationId, search, min
     .range(offset, offset + limit - 1);
 
   if (categoryId) {
-    query = query.in('cat_ids', categoryId);
+    query = query.overlaps('cat_ids', [categoryId]);
+  }
+  if (tagIds) {
+    query = query.overlaps('tag_ids', [tagIds]);
   }
   if (categorySlug) {
     query = query.eq('product_categories.slug', categorySlug);
@@ -77,7 +80,28 @@ async function fetchProductBySlug(slug) {
     .single();
 
   if (error) throw error;
-  return mapProductData(data);
+
+  // Resolve tag objects from tag_ids array
+  let resolvedTags = [];
+  if (data.tag_ids?.length) {
+    const { data: tagsData } = await supabase
+      .from('tags')
+      .select('id, name, slug, count')
+      .in('id', data.tag_ids);
+    resolvedTags = tagsData ?? [];
+  }
+
+  // Resolve all category objects from cat_ids array (full set, not just primary)
+  let resolvedCategories = [];
+  if (data.cat_ids?.length) {
+    const { data: catsData } = await supabase
+      .from('product_categories')
+      .select('id, name, slug, color, icon, image_icon, description')
+      .in('id', data.cat_ids);
+    resolvedCategories = catsData ?? [];
+  }
+
+  return mapProductData({ ...data, tags: resolvedTags, all_categories: resolvedCategories });
 }
 
 // ── Hooks ──

@@ -26,6 +26,8 @@ function ProductsContent() {
   const minPrice = searchParams.get('minPrice');
   const maxPrice = searchParams.get('maxPrice');
   const categorySlug = searchParams.get('categorySlug');
+  const categoryId = searchParams.get('category_id');
+  const tagIds = searchParams.get('tag_ids');
   const isFeatured = searchParams.get('isFeatured') === 'true';
 
   const { data: products, isLoading, error } = useProducts({ 
@@ -33,7 +35,9 @@ function ProductsContent() {
     minPrice,
     maxPrice,
     categorySlug,
-    isFeatured
+    categoryId,
+    isFeatured,
+    tagIds
   });
 
   return (
