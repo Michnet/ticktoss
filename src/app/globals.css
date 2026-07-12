@@ -167,7 +167,7 @@ a {
   margin-right:auto;
 }
 .tt-container-padding {
-  padding: 0 1.5rem;
+  padding: 0 1rem;
 }
 
 .tt-card {
@@ -439,7 +439,7 @@ a {
     gap: 0.75rem;
   }
   .tt-container-padding {
-    padding: 0 1rem;
+    padding: 0 10px;
   }
 }
 

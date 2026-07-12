@@ -18,7 +18,7 @@ export default function UrgencyCircle({ saleEndDate, showLabel = false, size = 2
   const { level } = useCountdown(saleEndDate);
   const config = LEVEL_CONFIG[level] ?? LEVEL_CONFIG.low;
 
-  if (level === 'expired') return null;
+  if (level === 'expired' || level === 'low') return null;
 
   const strokeWidth = Math.max(2, size * 0.1);
   const radius = (size - strokeWidth) / 2;

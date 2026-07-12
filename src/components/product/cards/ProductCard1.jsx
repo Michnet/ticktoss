@@ -84,7 +84,7 @@ export default function ProductCard1({ product, index, cardWidth = '300px' }) {
         </div>
 
         {/* Body */}
-        <div className="p-[0.875rem] flex-grow flex flex-col justify-between gap-1">
+        <div className="p-[0.875rem] pt-1 flex-grow flex flex-col justify-between gap-1">
           <div className='flex flex-row'>
             <div>
               <div className="inline-block mb-1 text-[var(--tt-muted-2)] text-[0.5rem] font-semibold uppercase tracking-[0.06em]">
@@ -103,7 +103,7 @@ export default function ProductCard1({ product, index, cardWidth = '300px' }) {
               </span>} */}
               </div>
             </div>
-            <ProductLabelRow style={{gap:'10px'}} className='flex-nowrap flex-col' max={4} itemStyle={{ borderRadius: '5px', padding:'2px 4px'}} noText noBg product={product} size="md" />
+            <ProductLabelRow style={{gap:'10px'}} className='flex-nowrap flex-col pt-2' max={4} itemStyle={{ borderRadius: '5px', padding:'2px 4px'}} noText noBg product={product} size="md" />
           </div>
 
           <div className="flex flex-col gap-1.5">

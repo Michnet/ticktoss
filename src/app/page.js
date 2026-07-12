@@ -37,7 +37,7 @@ export default function HomePage() {
     <div>
       {/* ── 1. Promo banners + quick-access tiles ────── */}
       
-      <section className="pb-8 pt-4">
+      <section className="pb-4 pt-4">
       <div className="tt-container tt-container-padding grid grid-cols-1 md:grid-cols-[auto_300px] lg:grid-cols-[auto_400px] gap-3 md:gap-6">
         <BannerSlider
                 items={IMAGE_BANNERS}
@@ -50,7 +50,7 @@ export default function HomePage() {
               />
 
         {/* Mini highlight cards */}
-        <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-2 sm:gap-4">
           {[
             { icon: '🏷️', title: 'Discount Deals', sub: 'Time-limited offers' },
             { icon: '🛡️', title: 'Compare Prices', sub: 'Find the best deals' },

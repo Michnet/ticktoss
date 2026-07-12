@@ -85,7 +85,7 @@ export default function ProductsView({cardType = 0, itemExClass='', cardWidth = 
             {renderItems()}
           </Carousel>
         ) : (
-          <div className="grid sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] grid-cols-2 gap-[0.875rem]">
+          <div className="grid sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] grid-cols-2 gap-2 sm:gap-[0.875rem]">
             {renderItems()}
           </div>
         )}

@@ -135,7 +135,7 @@ export default function BannerSlider({
 
       {/* ── Dot indicators ── */}
       {showDots && count > 1 && (
-        <div className="bs-dots" role="tablist" aria-label="Slide indicators">
+        <div className="bs-dots absolute w-full bottom-4" role="tablist" aria-label="Slide indicators">
           {items.map((_, i) => (
             <button
               key={i}

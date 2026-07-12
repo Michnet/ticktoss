@@ -21,7 +21,7 @@ export default function ProductGrid({ products = [] }) {
 
   return (
     <motion.div 
-      className="grid sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] grid-cols-2 gap-[0.875rem]"
+      className="grid sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] grid-cols-2 gap-2 sm:gap-[0.875rem]"
       layout
     >
       <AnimatePresence>

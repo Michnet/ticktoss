@@ -77,30 +77,45 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   // Array to store the hierarchy of selected category IDs
   const [selectedCatIds, setSelectedCatIds] = useState([]);
   
-  const slugify = (str) => {
-    if (!str) return '';
-    return str.toString().toLowerCase()
-      .replace(/\s+/g, '-')
-      .replace(/[^\w\-]+/g, '')
-      .replace(/\-\-+/g, '-')
-      .replace(/^-+/, '')
-      .replace(/-+$/, '');
-  };
-
-  const [attributesList, setAttributesList] = useState(() => {
-    let initialAttrs = {};
+  const [attributeSelections, setAttributeSelections] = useState(() => {
     try {
-      initialAttrs = typeof initialData?.attributes === 'string' 
+      return typeof initialData?.attributes === 'string' 
         ? JSON.parse(initialData.attributes) 
         : (initialData?.attributes || {});
     } catch {
-      initialAttrs = {};
+      return {};
     }
-    return Object.values(initialAttrs).map(attr => ({
-      name: attr.name || '',
-      valuesString: (attr.values || []).map(v => v.name).join(', ')
-    }));
   });
+
+  const [availableAttributes, setAvailableAttributes] = useState([]);
+
+  useEffect(() => {
+    async function fetchAttributes() {
+      if (!selectedCatIds || selectedCatIds.length === 0) {
+        setAvailableAttributes([]);
+        return;
+      }
+      
+      const { data: mappings, error } = await supabase
+        .from('product_cat_attributes')
+        .select(`
+          attribute_id, 
+          product_attributes(id, name, slug, options, custom_options)
+        `)
+        .in('category_id', selectedCatIds);
+        
+      if (mappings && !error) {
+        const uniqueAttrs = new Map();
+        mappings.forEach(m => {
+          if (m.product_attributes && !uniqueAttrs.has(m.attribute_id)) {
+            uniqueAttrs.set(m.attribute_id, m.product_attributes);
+          }
+        });
+        setAvailableAttributes(Array.from(uniqueAttrs.values()));
+      }
+    }
+    fetchAttributes();
+  }, [selectedCatIds]);
   
   const [openSection, setOpenSection] = useState('basic');
 
@@ -267,23 +282,6 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
 
     setIsSubmitting(true);
     try {
-      const attributesObj = {};
-      attributesList.forEach(attr => {
-        const trimmedName = attr.name.trim();
-        if (trimmedName && attr.valuesString) {
-          const slug = slugify(trimmedName);
-          const valuesArray = attr.valuesString.split(',').map(v => v.trim()).filter(v => v);
-          if (valuesArray.length > 0) {
-            attributesObj[slug] = {
-              name: trimmedName,
-              slug: slug,
-              values: valuesArray.map(v => ({ name: v, slug: slugify(v) })),
-              is_variation: false
-            };
-          }
-        }
-      });
-
       const payload = {
         name: data.name,
         short_description: data.short_description,
@@ -304,7 +302,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
         pickup_lat: pickup_lat,
         pickup_lng: pickup_lng,
         tt_location: selectedStore,
-        attributes: Object.keys(attributesObj).length > 0 ? attributesObj : null,
+        attributes: Object.keys(attributeSelections).length > 0 ? attributeSelections : null,
         status: 'published' // Publish immediately for MVP
       };
 
@@ -732,63 +730,49 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
             hasError={false}
           >
             <div>
-              <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)', marginBottom: '1rem' }}>
-                Add custom attributes to your product (e.g. Brand, Skin Type, Ingredients, Country of Origin).
-                Separate multiple values with a comma.
-              </p>
-              
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
-                {attributesList.map((attr, idx) => (
-                  <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
-                    <div style={{ flex: '1 1 150px' }}>
-                      <input 
-                        type="text" 
-                        className="tt-input" 
-                        placeholder="Name (e.g. Skin Type)" 
-                        value={attr.name}
-                        onChange={(e) => {
-                          const newList = [...attributesList];
-                          newList[idx].name = e.target.value;
-                          setAttributesList(newList);
-                        }}
-                      />
+              {availableAttributes.length > 0 ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                  {availableAttributes.map(attr => (
+                    <div key={attr.id} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                      <div style={{ flex: '1 1 150px' }}>
+                        <label className="tt-label" style={{ marginBottom: 0 }}>{attr.name}</label>
+                      </div>
+                      <div style={{ flex: '2 1 250px' }}>
+                        <select 
+                          className="tt-input" 
+                          value={attributeSelections[attr.slug]?.values?.[0]?.slug || ''}
+                          onChange={(e) => {
+                            const selectedOption = attr.options?.find(o => o.slug === e.target.value);
+                            setAttributeSelections(prev => {
+                              const next = { ...prev };
+                              if (!selectedOption) {
+                                delete next[attr.slug];
+                              } else {
+                                next[attr.slug] = {
+                                  name: attr.name,
+                                  slug: attr.slug,
+                                  values: [{ name: selectedOption.name, slug: selectedOption.slug }],
+                                  is_variation: false
+                                };
+                              }
+                              return next;
+                            });
+                          }}
+                        >
+                          <option value="">-- Select {attr.name} --</option>
+                          {attr.options?.map(opt => (
+                            <option key={opt.slug} value={opt.slug}>{opt.name}</option>
+                          ))}
+                        </select>
+                      </div>
                     </div>
-                    <div style={{ flex: '2 1 250px' }}>
-                      <input 
-                        type="text" 
-                        className="tt-input" 
-                        placeholder="Values (e.g. Oily, Dry, Normal)" 
-                        value={attr.valuesString}
-                        onChange={(e) => {
-                          const newList = [...attributesList];
-                          newList[idx].valuesString = e.target.value;
-                          setAttributesList(newList);
-                        }}
-                      />
-                    </div>
-                    <button 
-                      type="button" 
-                      onClick={() => {
-                        const newList = attributesList.filter((_, i) => i !== idx);
-                        setAttributesList(newList);
-                      }}
-                      style={{ padding: '0.8rem', background: 'var(--tt-surface-2)', border: '1px solid var(--tt-border)', borderRadius: 'var(--tt-radius-sm)', color: 'var(--tt-danger)', cursor: 'pointer' }}
-                      title="Remove attribute"
-                    >
-                      &times;
-                    </button>
-                  </div>
-                ))}
-              </div>
-
-              <button 
-                type="button" 
-                onClick={() => setAttributesList([...attributesList, { name: '', valuesString: '' }])}
-                className="tt-btn tt-btn-ghost"
-                style={{ marginTop: '1rem', width: 'fit-content' }}
-              >
-                + Add Attribute
-              </button>
+                  ))}
+                </div>
+              ) : (
+                <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)' }}>
+                  Select a category to see relevant attributes.
+                </p>
+              )}
             </div>
           </ExpandableSection>
 

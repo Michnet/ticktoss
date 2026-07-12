@@ -32,7 +32,7 @@ export default function NewArrivals() {
         </div>
 
         {/* Horizontal scroll strip */}
-        <div className="grid sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] grid-cols-2 gap-[0.875rem]">
+        <div className="grid sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] grid-cols-2 sm:gap-[0.875rem] gap-2">
           {isLoading ? (
              Array.from({ length: 6 }).map((_, i) => (
                <div key={i} className="tt-shimmer h-[260px] rounded-[var(--tt-radius-lg)] bg-[var(--tt-surface)]" />
