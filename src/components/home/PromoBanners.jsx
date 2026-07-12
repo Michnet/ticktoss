@@ -56,7 +56,7 @@ export default function PromoBanners({ items = DEFAULT_BANNERS }) {
 
   return (
     <section className="pb-8">
-      <div className="tt-container">
+      <div className="tt-container tt-container-padding">
         {/* Main rotating banner */}
         <div
           key={banner.id}

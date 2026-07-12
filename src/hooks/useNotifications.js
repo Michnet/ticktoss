@@ -23,6 +23,7 @@ export function useNotifications(userId) {
     const { data, error } = await supabase
       .from('notifications')
       .select('*')
+      .eq('client', 'ticktoss')
       .eq('user_id', userId)
       .order('created_at', { ascending: false })
       .limit(50);
@@ -78,8 +79,9 @@ export function useNotifications(userId) {
 
     // Real-time subscription — any change to user's notifications refreshes list
     const supabase = getSupabaseBrowserClient();
+    const channelName = `notifications-${userId}-${Math.random().toString(36).substring(7)}`;
     const channel = supabase
-      .channel(`notifications-${userId}`)
+      .channel(channelName)
       .on(
         'postgres_changes',
         {

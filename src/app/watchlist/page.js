@@ -133,7 +133,7 @@ export default function WatchlistPage() {
   const groups = groupByDate(products);
 
   return (
-    <div className="tt-container py-8 max-w-2xl mx-auto">
+    <div className="tt-container tt-container-padding py-8 max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center gap-3 mb-8">
         <div className="w-10 h-10 rounded-full bg-[var(--tt-flame)]/15 flex items-center justify-center">

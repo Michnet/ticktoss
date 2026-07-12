@@ -156,14 +156,14 @@ export default function AdminDashboardLayout({ children }) {
 
   if (isAuthLoading || !isAuthorized) {
     return (
-      <div className="tt-container" style={{ padding: '4rem', textAlign: 'center' }}>
+      <div className="tt-container tt-container-padding" style={{ padding: '4rem', textAlign: 'center' }}>
         <div className="tt-skeleton" style={{ height: '200px', maxWidth: '400px', margin: '0 auto' }} />
       </div>
     );
   }
 
   return (
-    <div className="tt-container relative" style={{ padding: '2rem 1.5rem', display: 'flex', gap: '2rem', minHeight: '80vh' }}>
+    <div className="tt-container tt-container-padding relative" style={{ padding: '2rem 1.5rem', display: 'flex', gap: '2rem', minHeight: '80vh' }}>
       <Suspense fallback={<div className="w-[280px] lg:w-[240px] tt-skeleton h-full" />}>
         <AdminSidebar />
       </Suspense>

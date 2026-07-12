@@ -1,6 +1,6 @@
-import HeroSection from '@/components/home/HeroSection';
+//import HeroSection from '@/components/home/HeroSection';
 import LiveTicker from '@/components/home/LiveTicker';
-import PromoBanners from '@/components/home/PromoBanners';
+//import PromoBanners from '@/components/home/PromoBanners';
 import CategoryGrid from '@/components/home/CategoryGrid';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
 import LiveUrgencyList from '@/components/home/LiveUrgencyList';
@@ -9,8 +9,11 @@ import FeaturedVendors from '@/components/home/FeaturedVendors';
 import MidPageCTA from '@/components/home/MidPageCTA';
 import TagCloud from '@/components/home/TagCloud';
 import HowItWorks from '@/components/home/HowItWorks';
-import PromoBanners2 from '@/components/home/PromoBanners2';
+//import PromoBanners2 from '@/components/home/PromoBanners2';
+import { IMAGE_BANNERS } from '@/components/home/BannerSlider';
 import ProductsView from '@/components/home/ProductsView';
+import BannerSlider from '@/components/ui/BannerSlider';
+import ClustersView from '@/components/home/ClustersView';
 //import PromoBanners3 from '@/components/home/PromoBanners3';
 //import PromoBanners4 from '@/components/home/PromoBanners4';
 
@@ -33,19 +36,51 @@ export default function HomePage() {
   return (
     <div>
       {/* ── 1. Promo banners + quick-access tiles ────── */}
-      <PromoBanners2 />
+      
+      <section className="pb-8 pt-4">
+      <div className="tt-container tt-container-padding grid grid-cols-1 md:grid-cols-[auto_300px] lg:grid-cols-[auto_400px] gap-3 md:gap-6">
+        <BannerSlider
+                items={IMAGE_BANNERS}
+                variant="image"
+                slideHeight="clamp(240px, 40vw, 380px)"
+                interval={5000}
+                autoPlay
+                showArrows
+                showDots
+              />
+
+        {/* Mini highlight cards */}
+        <div className="grid grid-cols-2 md:grid-cols-2 gap-3 md:gap-4">
+          {[
+            { icon: '🏷️', title: 'Discount Deals', sub: 'Time-limited offers' },
+            { icon: '🛡️', title: 'Compare Prices', sub: 'Find the best deals' },
+            { icon: '↩️', title: 'Location search', sub: 'Find deals near you' },
+            { icon: '💬', title: 'Quality Products', sub: 'Buy from top vendors' },
+          ].map((feature, i) => (
+            <div key={i} className="bg-white dark:bg-gray-800 rounded-[var(--tt-radius-md)] p-3 md:p-4 flex flex-col items-center text-center border border-gray-100 dark:border-gray-700 shadow-sm hover:shadow-md transition-shadow justify-center">
+              <span className="text-2xl mb-2">{feature.icon}</span>
+              <h3 className="font-bold text-[0.85rem] md:text-[0.9rem] text-gray-900 dark:text-white leading-tight">{feature.title}</h3>
+              <p className="text-[0.75rem] text-gray-500 dark:text-gray-400 mt-1">{feature.sub}</p>
+            </div>
+          ))}
+        </div>
+      </div>
+    </section>
+     {/*  <PromoBanners2 /> */}
 
       {/* ── . Hero ─────────────────────────────────── */}
       {/* <HeroSection /> */}
 
       {/* ── 2. Live news ticker ──────────────────────── */}
-      <LiveTicker />
+      <div className="tt-container">
+        <LiveTicker />
+      </div>
 
       {/* ── 4. Category grid ─────────────────────────── */}
-      <CategoryGrid/>
+      <CategoryGrid />
 
       {/* ── 5. Featured deals ────────────────────────── */}
-      <FeaturedProducts cardWidth='200px'/>
+      <FeaturedProducts cardWidth='200px' />
 
       {/* ── 6. Mid-page split CTA ────────────────────── */}
       <MidPageCTA />
@@ -125,11 +160,18 @@ export default function HomePage() {
           </div>
         </aside>
       </div>
-
-      <ProductsView cardWidth='150px' />
-
+      <section className="tt-container tt-container-padding mb-6">
+        <ProductsView cardWidth='150px' itemExClass='flex flex-col' />
+      </section>
+      <section  className="tt-container tt-container-padding mb-6">
+        <ProductsView cardWidth='320px' cardType={1} title="Ending" subTitle='Soon' description= 'Make the last minute save now'
+          source="custom"
+          filters={['ending-soon']} itemExClass='flex flex-col' />
+      </section>
       {/* ── 8. New arrivals ───────────────────────────── */}
       <NewArrivals />
+
+      <ClustersView groups={['ending', 'below-10k']} />
 
       {/* ── 9. Tag cloud ─────────────────────────────── */}
       <TagCloud />

@@ -98,7 +98,7 @@ const Carousel = ({
           <div
             style={itemStyles} 
             key={idx} 
-            className={`flex-none snap-start relative scroll-ml-16 ${autoWidth ? 'w-auto' : 'w-full'} ${itemClassName}`}
+            className={`flex-none  snap-start relative scroll-ml-16 ${autoWidth ? 'w-auto' : 'w-full'} ${itemClassName}`}
           >
             {item}
           </div>
@@ -128,15 +128,15 @@ const Carousel = ({
       {/* Dots */}
       {showDots && items.length > 1 && (
         <div className='flex justify-center'>
-        <div className="flex items-center gap-2 z-10 bg-black/20 dark:bg-black/40 backdrop-blur-md px-3 py-2 rounded-full border border-white/10">
+        <div className="flex items-center gap-2 z-10 backdrop-blur-md px-3 py-2 rounded-full">
           {items.map((_, idx) => (
             <button
               key={idx}
               onClick={() => scrollTo(idx)}
-              className={`h-1.5 rounded-full transition-all duration-300 focus:outline-none focus:ring-2 focus:ring-[var(--tt-flame)] ${
+              className={`h-1.5 rounded-full transition-all duration-300 focus:outline-none ${
                 activeIndex === idx 
-                  ? 'bg-white w-6 shadow-[0_0_8px_rgba(255,255,255,0.8)]' 
-                  : 'bg-white/50 w-1.5 hover:bg-white/80'
+                  ? 'bg-black/60 dark:bg-white/30 w-6 shadow-[0_0_2px_rgba(255,255,255,0.8)]' 
+                  : 'bg-black/50 dark:bg-white/50 w-1.5 hover:bg-white/80'
               }`}
               aria-label={`Go to slide ${idx + 1}`}
             />

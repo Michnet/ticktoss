@@ -10,7 +10,7 @@ export async function GET(request) {
   const { data: { user } } = await supabase.auth.getUser();
 
   if (!user) {
-    return NextResponse.json({ watching: false, watchers: 0 });
+    return NextResponse.json({ watching: false });
   }
 
   const { searchParams } = new URL(request.url);
@@ -20,23 +20,15 @@ export async function GET(request) {
     return NextResponse.json({ error: 'product_id is required' }, { status: 400 });
   }
 
-  const [{ data: profile }, { data: product }] = await Promise.all([
-    supabase
-      .from('profiles')
-      .select('watched_products')
-      .eq('user_id', user.id)
-      .single(),
-    supabase
-      .from('products')
-      .select('watchers')
-      .eq('id', productId)
-      .single(),
-  ]);
+  const { data: profile } = await supabase
+    .from('profiles')
+    .select('watched_products')
+    .eq('user_id', user.id)
+    .single();
 
   const watching = profile?.watched_products?.includes(productId) ?? false;
-  const watchers = product?.watchers ?? 0;
 
-  return NextResponse.json({ watching, watchers });
+  return NextResponse.json({ watching });
 }
 
 /**

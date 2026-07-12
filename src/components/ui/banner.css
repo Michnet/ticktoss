@@ -1,0 +1,526 @@
+/* ═══════════════════════════════════════════════════════════════
+   BANNER SLIDER SYSTEM — banner.css
+   Responsive, mobile-first ecommerce promotional banners
+   ═══════════════════════════════════════════════════════════════ */
+
+/* ── Root wrapper ─────────────────────────────────────────── */
+.banner-slider-root {
+  position: relative;
+  width: 100%;
+  user-select: none;
+}
+
+/* ── Track (stacks slides on top of each other) ────────────── */
+.banner-slider-track {
+  position: relative;
+  width: 100%;
+  border-radius: var(--tt-radius-xl);
+  overflow: hidden;
+}
+
+/* ── Slide wrapper ──────────────────────────────────────────── */
+.banner-slide-wrapper {
+  position: absolute;
+  inset: 0;
+  transition: opacity 0.65s cubic-bezier(0.4, 0, 0.2, 1),
+              transform 0.65s cubic-bezier(0.4, 0, 0.2, 1);
+  pointer-events: none;
+}
+
+.banner-slide-wrapper.bs-active {
+  opacity: 1;
+  transform: scale(1);
+  pointer-events: auto;
+  z-index: 2;
+}
+
+.banner-slide-wrapper.bs-inactive {
+  opacity: 0;
+  transform: scale(0.99);
+  z-index: 1;
+}
+
+/* ── Common slide base ──────────────────────────────────────── */
+.bs-image-slide,
+.bs-icon-slide {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+  display: flex;
+  align-items: center;
+  border-radius: var(--tt-radius-xl);
+}
+
+/* ── Grain texture overlay ──────────────────────────────────── */
+.bs-grain {
+  position: absolute;
+  inset: 0;
+  background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)' opacity='0.04'/%3E%3C/svg%3E");
+  pointer-events: none;
+  z-index: 1;
+  border-radius: inherit;
+}
+
+/* ── Accent circle (decorative bg element) ──────────────────── */
+.bs-accent-circle {
+  position: absolute;
+  right: -10%;
+  top: -20%;
+  width: 60%;
+  height: 180%;
+  pointer-events: none;
+  z-index: 1;
+  border-radius: 50%;
+}
+
+/* ── Content wrapper (two-column: text | image/icon) ─────────── */
+.bs-content-wrap {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  align-items: center;
+  width: 100%;
+  height: 100%;
+  padding: clamp(1.25rem, 4vw, 2.5rem) clamp(1.25rem, 4vw, 2.75rem);
+  gap: clamp(1rem, 3vw, 2.5rem);
+}
+
+/* Reverse layout (image on left) */
+.bs-content-reverse {
+  flex-direction: row-reverse;
+}
+
+/* ── Text block ─────────────────────────────────────────────── */
+.bs-text-block {
+  flex: 1 1 0;
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+/* ── Badge ─────────────────────────────────────────────────── */
+.bs-badge {
+  display: inline-flex;
+  align-items: center;
+  self-align: flex-start;
+  width: fit-content;
+  font-size: 0.7rem;
+  font-weight: 700;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  padding: 0.25rem 0.75rem;
+  border-radius: 99px;
+  border: 1px solid transparent;
+  backdrop-filter: blur(8px);
+  -webkit-backdrop-filter: blur(8px);
+}
+
+/* ── Eyebrow subtitle ───────────────────────────────────────── */
+.bs-subtitle {
+  font-size: clamp(0.7rem, 1.5vw, 0.85rem);
+  font-weight: 700;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  margin: 0;
+  opacity: 0.95;
+}
+
+/* ── Main title ─────────────────────────────────────────────── */
+.bs-title {
+  font-family: var(--font-heading, system-ui), sans-serif;
+  font-size: clamp(1.3rem, 3.5vw, 2.2rem);
+  font-weight: 900;
+  line-height: 1.1;
+  margin: 0;
+  color: inherit;
+  /* Accent gradient on first word via CSS var */
+}
+
+/* First-word accent trick: wrap first word in <em> for gradient */
+.bs-title em {
+  font-style: normal;
+  background: linear-gradient(135deg, var(--accent, #FF4D00), #FFB800);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+/* ── Description ────────────────────────────────────────────── */
+.bs-description {
+  font-size: clamp(0.78rem, 1.8vw, 0.9rem);
+  line-height: 1.6;
+  margin: 0;
+  opacity: 0.85;
+  max-width: 42ch;
+}
+
+/* ── Color-coded accent bar ─────────────────────────────────── */
+.bs-accent-bar {
+  height: 2px;
+  width: 3rem;
+  border-radius: 99px;
+  margin: 0.25rem 0;
+  flex-shrink: 0;
+}
+
+/* ── CTA row ────────────────────────────────────────────────── */
+.bs-cta-row {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.5rem;
+}
+
+.bs-cta-primary {
+  color: #fff !important;
+  font-size: clamp(0.78rem, 1.5vw, 0.88rem) !important;
+  padding: 0.55rem 1.25rem !important;
+  border-radius: var(--tt-radius-md) !important;
+  font-weight: 700 !important;
+  transition: filter 0.2s, transform 0.2s !important;
+  text-decoration: none;
+}
+
+.bs-cta-primary:hover {
+  filter: brightness(1.12);
+  transform: translateY(-2px);
+}
+
+.bs-cta-ghost {
+  background: rgba(255,255,255,0.08) !important;
+  backdrop-filter: blur(8px);
+  font-size: clamp(0.75rem, 1.5vw, 0.85rem) !important;
+  padding: 0.5rem 1.1rem !important;
+  border-radius: var(--tt-radius-md) !important;
+  border: 1px solid transparent;
+  font-weight: 600 !important;
+  transition: background 0.2s !important;
+  text-decoration: none;
+}
+
+.bs-cta-ghost:hover {
+  background: rgba(255,255,255,0.16) !important;
+}
+
+/* ── Image block (for BannerSlide) ─────────────────────────── */
+.bs-image-block {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(120px, 35%, 300px);
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.bs-image-glow {
+  position: absolute;
+  inset: -20%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bs-image {
+  position: relative;
+  z-index: 1;
+  width: 100%;
+  height: 100%;
+  object-fit: contain;
+  object-position: center;
+  filter: drop-shadow(0 8px 24px rgba(0,0,0,0.4));
+  /* Subtle float animation */
+  animation: bs-float 4s ease-in-out infinite;
+}
+
+@keyframes bs-float {
+  0%, 100% { transform: translateY(0px); }
+  50%       { transform: translateY(-8px); }
+}
+
+/* ── Icon block (for BannerSlideIcon) ──────────────────────── */
+.bs-icon-block {
+  position: relative;
+  flex: 0 0 auto;
+  width: clamp(140px, 32%, 280px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 1rem;
+}
+
+.bs-icon-glow {
+  position: absolute;
+  inset: -30%;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bs-icon-container {
+  position: relative;
+  z-index: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: clamp(100px, 18vw, 160px);
+  height: clamp(100px, 18vw, 160px);
+  border-radius: var(--tt-radius-xl);
+  animation: bs-float 5s ease-in-out infinite;
+}
+
+/* Concentric rings */
+.bs-icon-ring-wrap {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  z-index: 0;
+}
+
+.bs-icon-ring {
+  position: absolute;
+  border-radius: 50%;
+  border: 1px solid;
+  animation: bs-ring-pulse 3s ease-in-out infinite;
+}
+
+.bs-icon-ring-outer {
+  width: min(80%, 240px);
+  height: min(80%, 240px);
+  animation-delay: 0s;
+}
+
+.bs-icon-ring-mid {
+  width: min(55%, 170px);
+  height: min(55%, 170px);
+  animation-delay: 0.5s;
+}
+
+.bs-icon-ring-inner {
+  width: min(35%, 110px);
+  height: min(35%, 110px);
+  animation-delay: 1s;
+}
+
+@keyframes bs-ring-pulse {
+  0%, 100% { opacity: 0.4; transform: scale(1); }
+  50%       { opacity: 0.9; transform: scale(1.04); }
+}
+
+/* ── Stats row (under icon) ─────────────────────────────────── */
+.bs-stats-row {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  justify-content: center;
+  z-index: 1;
+}
+
+.bs-stat-pill {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  padding: 0.35rem 0.7rem;
+  border-radius: var(--tt-radius-sm);
+  backdrop-filter: blur(8px);
+}
+
+.bs-stat-value {
+  font-family: var(--font-heading, system-ui), monospace;
+  font-size: clamp(0.9rem, 2vw, 1.1rem);
+  font-weight: 800;
+  line-height: 1;
+}
+
+.bs-stat-label {
+  font-size: 0.6rem;
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+  margin-top: 0.1rem;
+}
+
+/* ── Feature list ───────────────────────────────────────────── */
+.bs-features-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.bs-feature-item {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: clamp(0.72rem, 1.4vw, 0.82rem);
+  opacity: 0.9;
+}
+
+.bs-feature-icon-wrap {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 22px;
+  height: 22px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+/* ── Arrow buttons ──────────────────────────────────────────── */
+.bs-arrow {
+  position: absolute;
+  top: 50%;
+  transform: translateY(-50%);
+  z-index: 10;
+  width: 38px;
+  height: 38px;
+  border-radius: 50%;
+  border: 1px solid rgba(255,255,255,0.25);
+  background: rgba(0,0,0,0.35);
+  backdrop-filter: blur(10px);
+  -webkit-backdrop-filter: blur(10px);
+  color: #fff;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  opacity: 0;
+  transition: opacity 0.25s, background 0.2s, transform 0.2s;
+  outline: none;
+}
+
+.banner-slider-root:hover .bs-arrow,
+.banner-slider-root:focus-within .bs-arrow {
+  opacity: 1;
+}
+
+.bs-arrow:hover {
+  background: rgba(0,0,0,0.6);
+  transform: translateY(-50%) scale(1.08);
+}
+
+.bs-arrow-left  { left: 0.75rem; }
+.bs-arrow-right { right: 0.75rem; }
+
+/* ── Dot indicators ─────────────────────────────────────────── */
+.bs-dots {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 6px;
+  padding: 0.5rem 0 0;
+}
+
+.bs-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 99px;
+  background: var(--tt-border-2, #ccc);
+  border: none;
+  cursor: pointer;
+  padding: 0;
+  transition: width 0.3s cubic-bezier(0.4, 0, 0.2, 1), background 0.3s;
+  outline: none;
+}
+
+.bs-dot:hover {
+  background: var(--tt-muted, #888);
+}
+
+.bs-dot.bs-dot-active {
+  width: 22px;
+  background: var(--tt-flame, #FF4D00);
+}
+
+/* ═══════════════════════════════════════
+   RESPONSIVE — Mobile first
+   ═══════════════════════════════════════ */
+
+/* Small phones: single-column, hide icon block ring decorations */
+@media (max-width: 480px) {
+  .bs-content-wrap {
+    padding: 1.1rem;
+    gap: 0.75rem;
+  }
+
+  .bs-image-block {
+    height: 100px;
+  }
+
+  .bs-icon-block {
+    width: 100%;
+    flex-direction: row;
+    justify-content: flex-start;
+    gap: 0.75rem;
+  }
+
+  .bs-icon-container {
+    width: 70px;
+    height: 70px;
+    border-radius: var(--tt-radius-md);
+  }
+
+  .bs-icon-ring-wrap {
+    display: none;
+  }
+
+  .bs-accent-circle {
+    display: none;
+  }
+
+  .bs-stats-row {
+    justify-content: flex-start;
+    flex-direction: column;
+    gap: 0.35rem;
+  }
+
+  .bs-title {
+    font-size: clamp(1.1rem, 5vw, 1.4rem);
+  }
+
+  .bs-description {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+
+  .bs-arrow {
+    display: none;
+  }
+}
+
+/* Tablets: partial layout */
+@media (min-width: 481px) and (max-width: 768px) {
+  .bs-content-wrap {
+    padding: 1.5rem;
+    gap: 1rem;
+  }
+
+  .bs-image-block {
+    width: 35%;
+  }
+
+  .bs-icon-block {
+    width: 35%;
+  }
+
+  .bs-icon-container {
+    width: 90px;
+    height: 90px;
+  }
+
+  .bs-title {
+    font-size: clamp(1.2rem, 4vw, 1.65rem);
+  }
+
+  .bs-features-list {
+    display: none; /* hide on tablets to save space */
+  }
+}

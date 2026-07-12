@@ -11,7 +11,7 @@ export default function Footer() {
         padding: '3rem 0 2rem',
       }}
     >
-      <div className="tt-container">
+      <div className="tt-container tt-container-padding">
         <div
           style={{
             display: 'grid',

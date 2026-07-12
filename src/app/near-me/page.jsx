@@ -36,7 +36,7 @@ export default function NearMePage() {
   }, [allProducts, location, radius]);
 
   return (
-    <div className="tt-container" style={{ padding: '2rem 1.5rem', minHeight: '80vh' }}>
+    <div className="tt-container tt-container-padding" style={{ padding: '2rem 1.5rem', minHeight: '80vh' }}>
       <div style={{ textAlign: 'center', marginBottom: '3rem' }}>
         <h1 className="tt-section-title">
           Deals <span>Near Me</span>

@@ -61,3 +61,9 @@ export function resizedImage(imgUrl = '', desiredSize, width=true) {
     return '/images/bg/fallback2-md.jpg'
   } */
 }
+
+
+export const randomEither = (array) => {
+    const randomIndex = Math.floor(Math.random() * array.length);
+    return array[randomIndex];
+}

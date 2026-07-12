@@ -45,7 +45,7 @@ export default function PromoBanners2({ items = DEFAULT_BANNERS_WITH_IMAGES }) {
 
   return (
     <section className="pb-8 pt-4">
-      <div className="tt-container grid grid-cols-1 md:grid-cols-[auto_300px] lg:grid-cols-[auto_400px] gap-3 md:gap-6">
+      <div className="tt-container tt-container-padding grid grid-cols-1 md:grid-cols-[auto_300px] lg:grid-cols-[auto_400px] gap-3 md:gap-6">
         {/* Main rotating banner with image */}
         <div className="relative w-full overflow-hidden rounded-[var(--tt-radius-xl)] shadow-lg min-h-[250px]">
           {items.map((banner, i) => (

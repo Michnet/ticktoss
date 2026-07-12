@@ -130,7 +130,7 @@ export default function Navbar() {
       }}
     >
       <div
-        className="tt-container h-full flex items-center gap-6"
+        className="tt-container tt-container-padding h-full flex items-center gap-6"
       >
         {/* Logo */}
         <Link

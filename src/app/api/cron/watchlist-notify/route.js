@@ -8,14 +8,15 @@ const supabaseAdmin = createClient(
 
 /**
  * GET /api/cron/watchlist-notify
- * Triggered daily by Vercel Cron (see vercel.json).
- * Finds all users with a watch schedule for today, inserts one notification
- * per user, then deletes the processed schedule rows.
- * The push_notices trigger on the notifications table fires automatically
- * for each INSERT → delivers a Web Push to the user.
+ * Triggered daily by Vercel Cron (vercel.json → "0 6 * * *").
+ *
+ * 1. Reads product_watch_schedule rows where sale_date = today
+ * 2. Inserts ONE notification per user into the notifications table
+ *    → push_notices DB trigger fires automatically → Web Push delivered
+ * 3. Deletes the processed schedule rows
  */
 export async function GET(request) {
-  // Authorize — Vercel Cron sends this header automatically in production
+  // Authorisation — Vercel Cron attaches this header automatically in production
   const authHeader = request.headers.get('authorization');
   if (
     process.env.CRON_SECRET &&
@@ -36,42 +37,45 @@ export async function GET(request) {
     if (fetchError) throw fetchError;
 
     if (!scheduleRows || scheduleRows.length === 0) {
-      return NextResponse.json({ message: 'No watchlist notifications to send today.', date: today });
+      return NextResponse.json({
+        message: 'No watchlist notifications to send today.',
+        date: today,
+      });
     }
 
-    // 2. Build one notification per user
+    // 2. Build one notification object per user
     const notifications = scheduleRows.map((row) => ({
-      user_id:   row.user_id,
-      title:     '🔥 Your watchlist items go on sale today!',
-      message:   'Deals you\'ve been watching are live right now. Tap to see them before they sell out.',
-      type:      'watchlist_sale_live',
-      link:      '/watchlist',
-      is_read:   false,
-      metadata:  { sale_date: today },
+      user_id: row.user_id,
+      title:   '🔥 Your watchlist items go on sale today!',
+      message: "Deals you've been watching are live right now. Tap to see them before they sell out.",
+      type:    'watchlist_sale_live',
+      link:    '/watchlist',
+      is_read: false,
+      metadata: { sale_date: today },
     }));
 
-    // 3. Insert notifications — push_notices trigger fires per row
+    // 3. Bulk-insert — push_notices trigger fires per row → Web Push sent automatically
     const { error: insertError } = await supabaseAdmin
       .from('notifications')
       .insert(notifications);
 
     if (insertError) throw insertError;
 
-    // 4. Delete the processed schedule rows for today
+    // 4. Delete the processed schedule rows so they are not re-processed
     const { error: deleteError } = await supabaseAdmin
       .from('product_watch_schedule')
       .delete()
       .eq('sale_date', today);
 
     if (deleteError) {
-      // Non-fatal: log but don't fail — notifications were already sent
+      // Non-fatal — notifications were already sent; log and continue
       console.error('Failed to clean up schedule rows:', deleteError);
     }
 
     return NextResponse.json({
-      success: true,
+      success:  true,
       notified: scheduleRows.length,
-      date: today,
+      date:     today,
     });
 
   } catch (error) {

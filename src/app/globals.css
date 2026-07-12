@@ -128,7 +128,6 @@ body {
 /* ── Typography ── */
 h1, h2, h3, h4, h5, h6 {
   font-family: var(--font-heading), var(--font-body), sans-serif;
-  font-weight: 700;
   line-height: 1.2;
   color: var(--tt-text);
 }
@@ -164,7 +163,10 @@ a {
 .tt-container {
   width: 100%;
   max-width: 1280px;
-  margin: 0 auto;
+  margin-left:auto;
+  margin-right:auto;
+}
+.tt-container-padding {
   padding: 0 1.5rem;
 }
 
@@ -436,7 +438,7 @@ a {
     grid-template-columns: 1fr 1fr;
     gap: 0.75rem;
   }
-  .tt-container {
+  .tt-container-padding {
     padding: 0 1rem;
   }
 }

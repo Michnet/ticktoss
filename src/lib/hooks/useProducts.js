@@ -17,7 +17,7 @@ export const productKeys = {
 /**
  * Fetch products with optional filters.
  */
-async function fetchProducts({ categorySlug, categoryId, locationId, tagIds, search, minPrice, maxPrice, isFeatured, limit = 40, offset = 0 } = {}) {
+async function fetchProducts({ categorySlug, categoryId, locationId, tagIds, search, minPrice, maxPrice, isFeatured, clusters, orderBy, limit = 40, offset = 0 } = {}) {
   let query = supabase
     .from('products')
     .select(`
@@ -58,8 +58,75 @@ async function fetchProducts({ categorySlug, categoryId, locationId, tagIds, sea
     query = query.eq('is_featured', true);
   }
 
+  if (clusters && clusters.length > 0) {
+    const now = new Date();
+    const next24h = new Date(now.getTime() + 24 * 60 * 60 * 1000);
+    const next72h = new Date(now.getTime() + 72 * 60 * 60 * 1000);
+    const _14daysAgo = new Date(now.getTime() - 14 * 24 * 60 * 60 * 1000);
+
+    clusters.forEach(cluster => {
+      switch(cluster) {
+        case 'dropping-today':
+          query = query.gt('sale_start_date', now.toISOString()).lte('sale_start_date', next24h.toISOString());
+          break;
+        case 'coming-soon':
+          query = query.gt('sale_start_date', next24h.toISOString());
+          break;
+        case 'ending-today':
+          query = query.gt('sale_end_date', now.toISOString()).lte('sale_end_date', next24h.toISOString());
+          break;
+        case 'ending-soon':
+          query = query.gt('sale_end_date', now.toISOString()).lte('sale_end_date', next72h.toISOString());
+          break;
+        case 'below-10k':
+          query = query.lt('sale_price', 10000);
+          break;
+        case 'top-rated':
+          query = query.gte('rating', 4).gte('reviews', 3);
+          break;
+        case 'high-demand':
+          query = query.gte('urgency_score', 50);
+          break;
+        case 'flash-sale':
+          query = query.eq('is_flash_sale', true);
+          break;
+        case 'new':
+          query = query.gte('created_at', _14daysAgo.toISOString());
+          break;
+        default:
+          break;
+      }
+    });
+  }
+
+  if (orderBy) {
+    switch (orderBy) {
+      case 'price_asc':
+        query = query.order('sale_price', { ascending: true, nullsFirst: false });
+        break;
+      case 'price_desc':
+        query = query.order('sale_price', { ascending: false, nullsFirst: false });
+        break;
+      case 'newest':
+        query = query.order('created_at', { ascending: false });
+        break;
+      case 'rating':
+        query = query.order('rating', { ascending: false, nullsFirst: false });
+        break;
+      case 'urgency':
+        query = query.order('urgency_score', { ascending: false });
+        break;
+      default:
+        break;
+    }
+  }
+
   const { data, error } = await query;
   if (error) throw error;
+  
+  if (orderBy && orderBy !== 'urgency') {
+    return data ?? [];
+  }
   return sortByUrgency(data ?? []);
 }
 

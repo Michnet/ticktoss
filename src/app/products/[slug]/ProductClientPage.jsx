@@ -25,7 +25,7 @@ export default function ProductClientPage({ slug }) {
 
   if (isLoading) {
     return (
-      <div className="tt-container" style={{ padding: '4rem 1.5rem' }}>
+      <div className="tt-container tt-container-padding" style={{ padding: '4rem 1.5rem' }}>
         <div className="tt-skeleton" style={{ height: '60vh', borderRadius: 'var(--tt-radius-xl)' }} />
       </div>
     );
@@ -33,7 +33,7 @@ export default function ProductClientPage({ slug }) {
 
   if (error || !product) {
     return (
-      <div className="tt-container" style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>
+      <div className="tt-container tt-container-padding" style={{ padding: '4rem 1.5rem', textAlign: 'center' }}>
         <h2 style={{ color: 'var(--tt-danger)' }}>Product not found</h2>
         <p style={{ color: 'var(--tt-muted)', marginTop: '1rem' }}>
           {error?.message || 'The listing may have been removed or expired.'}

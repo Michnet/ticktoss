@@ -33,7 +33,7 @@ export default function VendorDashboardLayout({ children }) {
 
   if (isAuthLoading || !isAuthorized) {
     return (
-      <div className="tt-container" style={{ padding: '4rem', textAlign: 'center' }}>
+      <div className="tt-container tt-container-padding" style={{ padding: '4rem', textAlign: 'center' }}>
         <div className="tt-skeleton" style={{ height: '200px', maxWidth: '400px', margin: '0 auto' }} />
       </div>
     );
@@ -53,7 +53,7 @@ export default function VendorDashboardLayout({ children }) {
   };
 
   return (
-    <div className="tt-container" style={{ padding: '2rem 1.5rem', display: 'flex', gap: '2rem', flexWrap: 'wrap', minHeight: '80vh' }}>
+    <div className="tt-container tt-container-padding" style={{ padding: '2rem 1.5rem', display: 'flex', gap: '2rem', flexWrap: 'wrap', minHeight: '80vh' }}>
       
       {/* Sidebar Navigation */}
       <aside style={{ flex: '0 0 240px', width: '100%' }}>

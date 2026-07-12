@@ -1,5 +1,5 @@
 import Link from 'next/link';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@supabase/supabase-js';
 
 // Assign visual weight relative to max count for the "cloud" effect
 function sizeClass(count, maxCount) {
@@ -12,7 +12,10 @@ function sizeClass(count, maxCount) {
 }
 
 export default async function TagCloud() {
-  const supabase = await createClient();
+  const supabase = createClient(
+    process.env.NEXT_PUBLIC_SUPABASE_URL,
+    process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
+  );
   const { data: TAGS, error } = await supabase
     .from('product_tags')
     .select('*')
@@ -27,7 +30,7 @@ export default async function TagCloud() {
 
   return (
     <section className="pb-5">
-      <div className="tt-container">
+      <div className="tt-container tt-container-padding">
         <div className="mb-5">
           <h2 className="font-['Syne',sans-serif] font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">
             Explore by{' '}

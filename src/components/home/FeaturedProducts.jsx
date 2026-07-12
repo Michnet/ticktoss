@@ -120,7 +120,7 @@ function FeaturedCard({ product, index, cardWidth='300px' }) {
 export default function FeaturedProducts({cardWidth='300px'}) {
   const { data: products, isLoading } = useFeaturedProducts();
   return (
-    <section className="pb-5">
+    <section className="tt-container">
         <div className="flex items-end justify-between px-5 mb-5 gap-4 flex-wrap">
           <div>
             <h2 className="font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">

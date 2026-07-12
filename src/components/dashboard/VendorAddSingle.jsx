@@ -77,6 +77,31 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   // Array to store the hierarchy of selected category IDs
   const [selectedCatIds, setSelectedCatIds] = useState([]);
   
+  const slugify = (str) => {
+    if (!str) return '';
+    return str.toString().toLowerCase()
+      .replace(/\s+/g, '-')
+      .replace(/[^\w\-]+/g, '')
+      .replace(/\-\-+/g, '-')
+      .replace(/^-+/, '')
+      .replace(/-+$/, '');
+  };
+
+  const [attributesList, setAttributesList] = useState(() => {
+    let initialAttrs = {};
+    try {
+      initialAttrs = typeof initialData?.attributes === 'string' 
+        ? JSON.parse(initialData.attributes) 
+        : (initialData?.attributes || {});
+    } catch {
+      initialAttrs = {};
+    }
+    return Object.values(initialAttrs).map(attr => ({
+      name: attr.name || '',
+      valuesString: (attr.values || []).map(v => v.name).join(', ')
+    }));
+  });
+  
   const [openSection, setOpenSection] = useState('basic');
 
   const isEditMode = !!initialData;
@@ -242,6 +267,23 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
 
     setIsSubmitting(true);
     try {
+      const attributesObj = {};
+      attributesList.forEach(attr => {
+        const trimmedName = attr.name.trim();
+        if (trimmedName && attr.valuesString) {
+          const slug = slugify(trimmedName);
+          const valuesArray = attr.valuesString.split(',').map(v => v.trim()).filter(v => v);
+          if (valuesArray.length > 0) {
+            attributesObj[slug] = {
+              name: trimmedName,
+              slug: slug,
+              values: valuesArray.map(v => ({ name: v, slug: slugify(v) })),
+              is_variation: false
+            };
+          }
+        }
+      });
+
       const payload = {
         name: data.name,
         short_description: data.short_description,
@@ -262,6 +304,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
         pickup_lat: pickup_lat,
         pickup_lng: pickup_lng,
         tt_location: selectedStore,
+        attributes: Object.keys(attributesObj).length > 0 ? attributesObj : null,
         status: 'published' // Publish immediately for MVP
       };
 
@@ -682,8 +725,76 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
           </ExpandableSection>
 
           <ExpandableSection 
+            id="attributes" 
+            title="5. Product Attributes (Optional)" 
+            isOpen={openSection === 'attributes'} 
+            onToggle={toggleSection}
+            hasError={false}
+          >
+            <div>
+              <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)', marginBottom: '1rem' }}>
+                Add custom attributes to your product (e.g. Brand, Skin Type, Ingredients, Country of Origin).
+                Separate multiple values with a comma.
+              </p>
+              
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                {attributesList.map((attr, idx) => (
+                  <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'flex-start' }}>
+                    <div style={{ flex: '1 1 150px' }}>
+                      <input 
+                        type="text" 
+                        className="tt-input" 
+                        placeholder="Name (e.g. Skin Type)" 
+                        value={attr.name}
+                        onChange={(e) => {
+                          const newList = [...attributesList];
+                          newList[idx].name = e.target.value;
+                          setAttributesList(newList);
+                        }}
+                      />
+                    </div>
+                    <div style={{ flex: '2 1 250px' }}>
+                      <input 
+                        type="text" 
+                        className="tt-input" 
+                        placeholder="Values (e.g. Oily, Dry, Normal)" 
+                        value={attr.valuesString}
+                        onChange={(e) => {
+                          const newList = [...attributesList];
+                          newList[idx].valuesString = e.target.value;
+                          setAttributesList(newList);
+                        }}
+                      />
+                    </div>
+                    <button 
+                      type="button" 
+                      onClick={() => {
+                        const newList = attributesList.filter((_, i) => i !== idx);
+                        setAttributesList(newList);
+                      }}
+                      style={{ padding: '0.8rem', background: 'var(--tt-surface-2)', border: '1px solid var(--tt-border)', borderRadius: 'var(--tt-radius-sm)', color: 'var(--tt-danger)', cursor: 'pointer' }}
+                      title="Remove attribute"
+                    >
+                      &times;
+                    </button>
+                  </div>
+                ))}
+              </div>
+
+              <button 
+                type="button" 
+                onClick={() => setAttributesList([...attributesList, { name: '', valuesString: '' }])}
+                className="tt-btn tt-btn-ghost"
+                style={{ marginTop: '1rem', width: 'fit-content' }}
+              >
+                + Add Attribute
+              </button>
+            </div>
+          </ExpandableSection>
+
+          <ExpandableSection 
             id="location" 
-            title="5. Scheduling & Location" 
+            title="6. Scheduling & Location" 
             isOpen={openSection === 'location'} 
             onToggle={toggleSection}
             hasError={hasErrors(['sale_start_date', 'sale_end_date', 'store_index'])}

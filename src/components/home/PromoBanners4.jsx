@@ -24,7 +24,7 @@ const DEFAULT_SPLIT_BANNERS = [
 export default function PromoBanners4({ items = DEFAULT_SPLIT_BANNERS }) {
   return (
     <section className="pb-8">
-      <div className="tt-container">
+      <div className="tt-container tt-container-padding">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {items.slice(0, 2).map((banner) => (
             <div 

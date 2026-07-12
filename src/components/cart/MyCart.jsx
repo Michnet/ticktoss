@@ -3,7 +3,7 @@
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useAppStore from '@/store/useAppStore';
-import { Trash2, ShoppingCart, Plus, Minus } from 'lucide-react';
+import { Trash2, ShoppingCart, Plus, Minus, Store, AlertTriangle } from 'lucide-react';
 import Link from 'next/link';
 import { useCheckout } from '@/hooks/useCheckout';
 import { resizedImage } from '@/helpers/universal';
@@ -63,8 +63,9 @@ export default function MyCart() {
     );
   }
 
+
   return (
-    <div className="max-w-5xl mx-auto p-4 sm:p-0">
+    <div className="max-w-5xl mx-auto">
       <h1 className="text-2xl font-bold mb-6 flex items-center gap-2">
         <ShoppingCart size={28} />
         My Cart
@@ -76,7 +77,7 @@ export default function MyCart() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
         <div className="lg:col-span-2 flex flex-col gap-4">
           <AnimatePresence>
             {cartItems.map((item) => (
@@ -86,7 +87,7 @@ export default function MyCart() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, scale: 0.95 }}
                 key={item.id} 
-                className="bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-[var(--tt-radius-md)] p-4 flex flex-col sm:flex-row items-start sm:items-center gap-4 shadow-sm"
+                className="relative bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-[var(--tt-radius-md)] p-4 flex flex-row items-start sm:items-center gap-4 shadow-sm"
               >
                 {item?.featured_image ? (
                   <img src={resizedImage(item.featured_image?.url, 'thumbnail')} alt={item.name} className="w-20 h-20 object-cover rounded-[var(--tt-radius-sm)] bg-[var(--tt-surface-2)]" />
@@ -97,15 +98,41 @@ export default function MyCart() {
                 )}
                 
                 <div className="flex-1">
-                  <Link href={`/products/${item.slug || item.id}`} className="font-semibold text-[var(--tt-text)] hover:text-[var(--tt-flame)] transition-colors line-clamp-2">
+                  <div className="flex items-center gap-2 mb-1">
+                    {item.product_categories?.name && (
+                      <span className="text-[10px] uppercase font-bold tracking-wider bg-[var(--tt-surface-2)] text-[var(--tt-muted)] px-2 py-0.5 rounded-full">
+                        {item.product_categories.name}
+                      </span>
+                    )}
+                    {item.vendor?.tt_stores?.[0]?.name && (
+                      <span className="text-xs text-[var(--tt-muted)] flex items-center gap-1">
+                        <Store size={12} />
+                        {item.vendor.tt_stores[0].name}
+                      </span>
+                    )}
+                  </div>
+                  <Link href={`/products/${item.slug || item.id}`} className="font-semibold text-sm text-[var(--tt-text)] hover:text-[var(--tt-flame)] transition-colors line-clamp-2">
                     {item.name}
                   </Link>
-                  <div className="text-[var(--tt-flame)] font-bold mt-1">
-                    UGX {(item.price || item.sale_price || 0).toLocaleString()}
+                  <div className="flex items-center gap-3 mt-1">
+                    <div className="text-[var(--tt-flame)] font-bold">
+                      UGX {(item.sale_price || item.price || 0).toLocaleString()}
+                    </div>
+                    {item.price && item.sale_price && item.price > item.sale_price && (
+                      <div className="text-xs text-[var(--tt-muted-2)] line-through">
+                        UGX {item.price.toLocaleString()}
+                      </div>
+                    )}
                   </div>
+                  {item.stock !== undefined && item.stock <= (item.stock_alert_level || 5) && (
+                    <div className="text-xs text-red-500 flex items-center gap-1 mt-1">
+                      <AlertTriangle size={12} />
+                      Only {item.stock} left in stock
+                    </div>
+                  )}
                 </div>
 
-                <div className="flex items-center gap-3 bg-[var(--tt-surface-2)] rounded-full px-2 py-1 border border-[var(--tt-border)]">
+                <div className="flex flex-col-reverse sm:flex-row items-center gap-3 bg-[var(--tt-surface-2)] rounded-full px-2 py-1 border border-[var(--tt-border)]">
                   <button 
                     onClick={() => updateQuantity(item.id, (item.quantity || 1) - 1)}
                     className="p-1 hover:bg-[var(--tt-surface)] rounded-full transition-colors text-[var(--tt-muted)] hover:text-[var(--tt-text)]"
@@ -123,7 +150,7 @@ export default function MyCart() {
 
                 <button 
                   onClick={() => removeFromCart(item.id)}
-                  className="p-2 text-[var(--tt-muted-2)] hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors self-end sm:self-auto"
+                  className="absolute top-2 right-2 p-2 text-[var(--tt-muted-2)] hover:text-red-500 hover:bg-red-500/10 rounded-full transition-colors self-end sm:self-auto"
                   title="Remove item"
                 >
                   <Trash2 size={18} />

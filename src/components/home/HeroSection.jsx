@@ -103,7 +103,7 @@ export default function HeroSection() {
   return (
     <section className="py-[2rem] px-0 bg-[var(--tt-surface)] relative overflow-hidden">
 
-      <div className="tt-container relative z-10">
+      <div className="tt-container tt-container-padding relative z-10">
         <div className="grid grid-cols-1 md:grid-cols-[minmax(0,1fr)_320px] gap-8 md:gap-12 items-center">
           {/* LEFT: headline + CTAs */}
           <div>

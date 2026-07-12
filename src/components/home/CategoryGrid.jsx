@@ -11,7 +11,7 @@ export default function CategoryGrid({ CardStyle = 'default' }) {
   if (isLoading) {
     return (
       <section className="pb-5">
-        <div className="tt-container">
+        <div className="tt-container tt-container-padding">
           <div className="tt-shimmer h-[30px] w-[200px] bg-[var(--tt-surface)] rounded-[4px] mb-5" />
           <div className={
             CardStyle === 'pills' 
@@ -33,7 +33,7 @@ export default function CategoryGrid({ CardStyle = 'default' }) {
 
   return (
     <section className="pb-5">
-      <div className="tt-container">
+      <div className="tt-container tt-container-padding">
         {/* Header */}
         <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
           <div>

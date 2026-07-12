@@ -86,7 +86,7 @@ function StarRating({ value }) {
 export default function FeaturedVendors({ vendors = VENDORS }) {
   return (
     <section className="pb-5">
-      <div className="tt-container">
+      <div className="tt-container tt-container-padding">
         <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
           <div>
             <h2 className="font-['Syne',sans-serif] font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">

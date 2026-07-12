@@ -29,6 +29,9 @@ function ProductsContent() {
   const categoryId = searchParams.get('category_id');
   const tagIds = searchParams.get('tag_ids');
   const isFeatured = searchParams.get('isFeatured') === 'true';
+  const clustersParam = searchParams.get('clusters');
+  const clusters = clustersParam ? clustersParam.split(',') : [];
+  const orderBy = searchParams.get('orderBy');
 
   const { data: products, isLoading, error } = useProducts({ 
     search: debouncedSearch,
@@ -37,7 +40,9 @@ function ProductsContent() {
     categorySlug,
     categoryId,
     isFeatured,
-    tagIds
+    tagIds,
+    clusters: clusters.length > 0 ? clusters : undefined,
+    orderBy
   });
 
   return (
@@ -134,7 +139,7 @@ function ProductsContent() {
 
 export default function BrowseProductsPage() {
   return (
-    <Suspense fallback={<div className="tt-container" style={{ padding: '2rem 1.5rem', minHeight: '80vh' }}><div className="tt-skeleton" style={{ height: '60px', marginBottom: '2rem' }}></div><div className="tt-grid-products ">{Array.from({ length: 8 }).map((_, i) => (<div key={i} className="tt-skeleton" style={{ height: '360px' }} />))}</div></div>}>
+    <Suspense fallback={<div className="tt-container tt-container-padding" style={{ padding: '2rem 1.5rem', minHeight: '80vh' }}><div className="tt-skeleton" style={{ height: '60px', marginBottom: '2rem' }}></div><div className="tt-grid-products ">{Array.from({ length: 8 }).map((_, i) => (<div key={i} className="tt-skeleton" style={{ height: '360px' }} />))}</div></div>}>
       <ProductsContent />
     </Suspense>
   );

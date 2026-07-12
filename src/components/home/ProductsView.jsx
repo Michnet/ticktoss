@@ -5,13 +5,29 @@ import Link from 'next/link';
 import { useFeaturedProducts, useNewArrivals, useUpcomingDeals } from '@/hooks/useHomeData';
 import ProductCard from '@/components/product/ProductCard';
 import Carousel from '../ui/Carousel';
-//Dynamically import hooks based on source
+import DualColorHeading from '../ui/DualColorHeading';
+import { useProducts } from '@/lib/hooks/useProducts';
+
+//Dynamically import cards based on cardType
+import ProductCard1 from '../product/cards/ProductCard1';
 
 
-export default function ProductsView({ cardWidth = 'auto', source = 'upcoming',ui = 'carousel', title = 'Upcoming',subTitle = 'Deals',description = null}) {
+export default function ProductsView({cardType = 0, itemExClass='', cardWidth = 'auto', source = 'upcoming',ui = 'carousel', title = 'Upcoming',subTitle = 'Deals',description = null, filters=[]}) {
   
 
-  let callerHook = null, ctaLink = null;
+  let callerHook = null, ctaLink = null, Card = null;
+
+  switch (cardType) {
+    case 0:
+      Card = ProductCard;
+      break;
+    case 1:
+      Card = ProductCard1;
+      break;
+    default:
+      Card = ProductCard;
+      break;
+  }
 
   switch (source) {
     case 'upcoming':
@@ -26,9 +42,14 @@ export default function ProductsView({ cardWidth = 'auto', source = 'upcoming',u
       ctaLink = '/products?sort=new';
       callerHook = useNewArrivals;
       break;
+    case 'custom':
+      const hasClusters = Array.isArray(filters) && filters.length > 0;
+      ctaLink = hasClusters ? `/products?clusters=${filters.join(',')}` : '/products';
+      callerHook = () => useProducts({ clusters: Array.isArray(filters) ? filters : [] });
+      break;
     default:
-      ctaLink = '/products?sort=upcoming';
-      callerHook = useUpcomingDeals;
+      ctaLink = `/products`;
+      callerHook = useProducts;
       break;
   }
 
@@ -41,37 +62,26 @@ export default function ProductsView({ cardWidth = 'auto', source = 'upcoming',u
       ));
     }
     return products?.map((p, i) => (
-      <ProductCard key={p.id} product={p} index={i} />
+      <Card key={p.id} product={p} index={i} cardWidth={cardWidth}/>
     ));
   };
 
   if(products?.length > 0){
   return (
-    <section className="pb-5">
-      <div className="tt-container">
+      <div>
         <div className="flex items-center justify-between mb-5 gap-4 flex-nowrap">
-          <div>
-            <h2 className="font-['Syne',sans-serif] font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">
-              {title}{' '}
-              {subTitle && <span className="bg-[image:var(--tt-gradient-flame)] bg-clip-text text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
-                {subTitle}
-              </span>}
-            </h2>
-            {description && <p className="text-[var(--tt-muted)] text-[0.875rem] mt-1">
-              {description}
-            </p>}
-          </div>
+          <DualColorHeading title={title} subTitle={subTitle} description={description} />
           {ctaLink && <Link
             href={ctaLink}
             className="tt-btn tt-btn-ghost text-[0.82rem] px-4 py-[0.45rem]"
           >
-            See All New →
+            View All →
           </Link>}
         </div>
 
         {/* Product items container */}
         {ui === 'carousel' ? (
-          <Carousel itemWidth={cardWidth} autoWidth trackClassName="gap-2" itemClassName="w-[150px] sm:w-[180px]">
+          <Carousel itemWidth={cardWidth} autoWidth={true} trackClassName="gap-2" itemClassName={`${itemExClass}`}>
             {renderItems()}
           </Carousel>
         ) : (
@@ -80,7 +90,6 @@ export default function ProductsView({ cardWidth = 'auto', source = 'upcoming',u
           </div>
         )}
       </div>
-    </section>
   );
 }else{
   return <></>

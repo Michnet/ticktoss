@@ -1,7 +1,6 @@
 'use client';
 
 import { useState, useEffect, useCallback } from 'react';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import useAppStore from '@/store/useAppStore';
 
 /**
@@ -11,46 +10,20 @@ import useAppStore from '@/store/useAppStore';
  * @param {string} saleDate  - The product's sale_start_date as 'YYYY-MM-DD'
  * @returns {{ isWatching: boolean, watchers: number, toggleWatch: Function, loading: boolean }}
  */
-export function useWatchlist(productId, saleDate) {
+export function useWatchlist(productId, saleDate, initialWatchers = 0) {
   const user = useAppStore((s) => s.user);
+  const profile = useAppStore((s) => s.profile);
+  const setProfile = useAppStore((s) => s.setProfile);
   const setAuthModalOpen = useAppStore((s) => s.setAuthModalOpen);
 
-  const [isWatching, setIsWatching]   = useState(false);
-  const [watchers,   setWatchers]     = useState(0);
-  const [loading,    setLoading]      = useState(true);
-  const [fetched,    setFetched]      = useState(false);
+  const isWatching = profile?.watched_products?.includes(productId) ?? false;
+  const [watchers, setWatchers] = useState(initialWatchers);
+  const [loading, setLoading] = useState(false);
 
-  // Fetch initial state once we have a productId
+  // Sync state if initialWatchers changes
   useEffect(() => {
-    if (!productId) { setLoading(false); return; }
-
-    const supabase = getSupabaseBrowserClient();
-
-    async function fetchStatus() {
-      setLoading(true);
-      // Always fetch watchers count (public); only check watching if logged in
-      const { data: product } = await supabase
-        .from('products')
-        .select('watchers')
-        .eq('id', productId)
-        .single();
-
-      setWatchers(product?.watchers ?? 0);
-
-      if (user?.id) {
-        const res = await fetch(`/api/watchlist?product_id=${productId}`);
-        if (res.ok) {
-          const json = await res.json();
-          setIsWatching(json.watching ?? false);
-        }
-      }
-
-      setLoading(false);
-      setFetched(true);
-    }
-
-    fetchStatus();
-  }, [productId, user?.id]);
+    setWatchers(initialWatchers);
+  }, [initialWatchers]);
 
   const toggleWatch = useCallback(async () => {
     // Guest: open login modal
@@ -64,10 +37,19 @@ export function useWatchlist(productId, saleDate) {
       return;
     }
 
+    const wasWatching = profile?.watched_products?.includes(productId) ?? false;
+    const currentWatched = profile?.watched_products ?? [];
+    
     // Optimistic update
-    const wasWatching = isWatching;
-    setIsWatching(!wasWatching);
+    const newWatched = wasWatching
+      ? currentWatched.filter(id => id !== productId)
+      : [...currentWatched, productId];
+      
+    if (profile) {
+      setProfile({ ...profile, watched_products: newWatched });
+    }
     setWatchers((c) => Math.max(0, wasWatching ? c - 1 : c + 1));
+    setLoading(true);
 
     try {
       const method = wasWatching ? 'DELETE' : 'POST';
@@ -80,16 +62,21 @@ export function useWatchlist(productId, saleDate) {
       if (!res.ok) throw new Error('Request failed');
 
       const json = await res.json();
-      // Sync with server truth
-      setIsWatching(json.watching);
-      setWatchers(json.watchers);
+      // Sync with server truth for watchers count
+      if (json.watchers !== undefined) {
+        setWatchers(json.watchers);
+      }
     } catch (err) {
       // Revert on failure
       console.error('toggleWatch error:', err);
-      setIsWatching(wasWatching);
+      if (profile) {
+        setProfile({ ...profile, watched_products: currentWatched });
+      }
       setWatchers((c) => Math.max(0, wasWatching ? c + 1 : c - 1));
+    } finally {
+      setLoading(false);
     }
-  }, [user?.id, isWatching, productId, saleDate, setAuthModalOpen]);
+  }, [user?.id, profile, productId, saleDate, setAuthModalOpen, setProfile]);
 
   return { isWatching, watchers, toggleWatch, loading };
 }

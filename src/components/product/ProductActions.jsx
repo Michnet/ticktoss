@@ -12,7 +12,7 @@ function WatchlistButton({ product, iconSize = 16 }) {
     ? new Date(product.sale_start_date).toISOString().split('T')[0]
     : null;
 
-  const { isWatching, watchers, toggleWatch, loading } = useWatchlist(product?.id, saleDate);
+  const { isWatching, watchers, toggleWatch, loading } = useWatchlist(product?.id, saleDate, product?.watchers ?? 0);
 
   if (!saleDate) return null;
 

@@ -34,7 +34,7 @@ export default function HowItWorks() {
 
   return (
     <section className="pb-14">
-      <div className="tt-container">
+      <div className="tt-container tt-container-padding">
         <div className="text-center mb-8">
           <h2 className="font-['Syne',sans-serif] font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">
             How{' '}

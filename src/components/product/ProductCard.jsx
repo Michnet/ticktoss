@@ -12,6 +12,7 @@ import { resizedImage } from '@/helpers/universal';
 import ProductActions from './ProductActions';
 import { getStringStyle } from '@/lib/colors';
 import UrgencyCircle from './UrgencyCircle';
+import { ProductLabelRow } from '../ui/ProductLabel';
 
 function getTimeAgo(dateStr) {
   if (!dateStr) return '';
@@ -68,9 +69,9 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
       transition={{ delay: index * 0.06, duration: 0.3, type: 'spring', stiffness: 260, damping: 26 }}
       style={{ position: 'relative' }}
     >
-      <div className="no-underline block h-full">
+      <div className="no-underline block h-full group">
         <div
-          className="cursor-pointer flex flex-col transition-all duration-200 hover:-translate-y-[3px] hover:shadow-xl overflow-hidden rounded-[var(--tt-radius-md)]"
+          className="cursor-pointer flex flex-col transition-all duration-200 hover:-translate-y-[3px] hover:shadow-xl overflow-hidden"
           style={{
             height: '100%',
             boxShadow: level === 'critical'
@@ -95,9 +96,9 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
             </Link>
             
             {/* NEW badge */}
-            <div className="absolute top-[6px] left-[6px] bg-[rgba(255,77,0,0.12)] border border-[rgba(255,77,0,0.3)] text-[var(--tt-flame-2)] backdrop-blur-[4px] text-[0.58rem] font-extrabold px-[6px] py-[1px] rounded-full tracking-[0.06em]">
+            {/* <div className="absolute top-[6px] left-[6px] bg-[rgba(255,77,0,0.12)] border border-[rgba(255,77,0,0.3)] text-[var(--tt-flame-2)] backdrop-blur-[4px] text-[0.58rem] font-extrabold px-[6px] py-[1px] rounded-full tracking-[0.06em]">
               NEW
-            </div>
+            </div> */}
             
             {/* Discount */}
             {calculatedDiscountPct > 0 && (
@@ -166,7 +167,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
           </div>
 
           {/* Body */}
-          <div className="flex-1 flex flex-col justify-between gap-2">
+          <div className="flex-1 flex flex-col justify-between gap-1">
             <div className='p-3 pb-0'>
               {/* Category pill */}
             {categoryName && categoryName !== 'Uncategorized' && (
@@ -179,16 +180,18 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
                 {categoryName}
               </div>
             )}
+            <ProductLabelRow random={true} className='flex-nowrap mb-1' max={4} itemStyle={{borderRadius:'5px'}} noIcon noBg product={product} size="md" />
             {/* Name */}
             <Link href={`/products/${slug}`}>
-            <h3 className="font-normal leading-[1.35] mb-[0.4rem] line-clamp-1 text-[var(--tt-text)]">
+            <h3 className="font-light leading-[1.35] line-clamp-1 text-sm text-[var(--tt-text)]">
               {name}
             </h3>
             </Link>
             
+            
             {/* Prices */}
-            <div className="flex items-baseline flex-col">
-              <span className="font-['Syne',sans-serif] font-bold text-[0.88rem]" style={{ color: level === 'critical' ? 'var(--tt-danger)' : 'var(--tt-text)' }}>
+            <div className="flex items-baseline flex-col mb-1">
+              <span className="font-['Syne',sans-serif] font-bold text-[1rem]" style={{ color: level === 'critical' ? 'var(--tt-danger)' : 'var(--tt-text)' }}>
                 {formatUGX(sale_price)}
               </span>
               {/* {price && price > sale_price && (
@@ -199,18 +202,19 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
             </div>
 
             {/* Low stock warning */}
-            {isLowStock && !isOutOfStock && (
+            {/* {isLowStock && !isOutOfStock && (
               <p style={{ fontSize: '0.72rem', color: 'var(--tt-danger)', fontWeight: 600, marginBottom: '0.5rem' }}>
                 🔥 Only {stock} left!
               </p>
-            )}
+            )} */}
+            
             
             {/* Urgency bar */}
             {/* <UrgencyBar saleEndDate={sale_end_date} showLabel={true} /> */}
 
             {/* Time Warning Overlay */}
             {sale_end_date && !isOutOfStock && (
-                <div className="flex items-center gap-2">
+                <div className="flex items-center justify-between gap-2">
                   {/* <span className="text-[0.65rem] text-white/90 font-bold uppercase tracking-widest">
                     ⏱️
                   </span> */}
@@ -218,10 +222,12 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
                   <UrgencyCircle saleEndDate={sale_end_date} showLabel={false} />
                 </div>
             )}
+            
             </div>
 
-            {/* Actions */}
-            <ProductActions product={product} storeData={tt_location || vendor} />
+            {/* Actions: change the hover opacity change to work at group level on-hover */}
+            
+            <ProductActions exClass='opacity-40 group-hover:opacity-100' product={product} storeData={tt_location || vendor} />
 
           </div>
         </div>
