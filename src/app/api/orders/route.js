@@ -41,6 +41,38 @@ export async function POST(req) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
+    // Re-verify sale window and stock server-side — the cart items sent by the
+    // client are just a UI snapshot and can't be trusted for authorization.
+    const productIds = [...new Set(cartItems.map(item => item.id || item.product_id).filter(Boolean))];
+    const { data: liveProducts, error: liveProductsError } = await supabaseAdmin
+      .from('products')
+      .select('id, name, stock, sale_start_date')
+      .in('id', productIds);
+
+    if (liveProductsError) throw liveProductsError;
+
+    const liveProductById = new Map((liveProducts || []).map(p => [p.id, p]));
+    const requestedQtyById = new Map();
+    for (const item of cartItems) {
+      const id = item.id || item.product_id;
+      requestedQtyById.set(id, (requestedQtyById.get(id) || 0) + (item.quantity || 1));
+    }
+
+    for (const [id, qty] of requestedQtyById) {
+      const live = liveProductById.get(id);
+      if (!live) {
+        return Response.json({ error: 'One of the items in your cart is no longer available.' }, { status: 400 });
+      }
+      if (live.sale_start_date && new Date(live.sale_start_date) > new Date()) {
+        return Response.json({
+          error: `"${live.name}" isn't available for purchase yet — remove it from your cart or add it to your watchlist instead.`
+        }, { status: 400 });
+      }
+      if (live.stock !== null && live.stock < qty) {
+        return Response.json({ error: `Insufficient stock for "${live.name}".` }, { status: 400 });
+      }
+    }
+
     // Group items by vendor
     const vendorClusters = clusterItemsByVendor(cartItems);
     const createdOrders = [];

@@ -1,13 +1,28 @@
+import { cache } from 'react';
 import { notFound } from 'next/navigation';
-import { createClient } from '@/lib/supabase/server';
+import { createClient } from '@/lib/supabase/public';
 import { mapProductData } from '@/lib/productHelpers';
 import { constructMetadata, generateProductSchema } from '@/lib/seo';
 import ProductClientPage from './ProductClientPage';
 import { resizedImage } from '@/helpers/universal';
 
-// Helper function to fetch product for SEO
-async function getProductForSEO(slug) {
-  const supabase = await createClient();
+// Revalidate every 60s — flash-sale price/stock changes stay reasonably fresh
+// without rebuilding the whole site on every write.
+export const revalidate = 60;
+
+export async function generateStaticParams() {
+  const supabase = createClient();
+  const { data } = await supabase
+    .from('products')
+    .select('slug')
+    .eq('status', 'published');
+
+  return (data ?? []).map(({ slug }) => ({ slug }));
+}
+
+// Shared per-request so generateMetadata and the page body don't double-fetch.
+const getProduct = cache(async (slug) => {
+  const supabase = createClient();
   const { data, error } = await supabase
     .from('products')
     .select(`
@@ -43,11 +58,11 @@ async function getProductForSEO(slug) {
   }
 
   return mapProductData({ ...data, tags: resolvedTags, all_categories: resolvedCategories });
-}
+});
 
 export async function generateMetadata({ params }) {
   const { slug } = await params;
-  const product = await getProductForSEO(slug);
+  const product = await getProduct(slug);
 
   if (!product) {
     return constructMetadata({
@@ -70,7 +85,7 @@ export async function generateMetadata({ params }) {
 
 export default async function ProductDetailPage({ params }) {
   const { slug } = await params;
-  const product = await getProductForSEO(slug);
+  const product = await getProduct(slug);
 
   if (!product) {
     notFound();
@@ -84,7 +99,7 @@ export default async function ProductDetailPage({ params }) {
         type="application/ld+json"
         dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
       />
-      <ProductClientPage slug={slug} />
+      <ProductClientPage product={product} />
     </>
   );
 }

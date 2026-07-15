@@ -1,4 +1,15 @@
-import { s3RenderedAppMediaUrl, s3RenderedMediaUrl } from "./base";
+import { s3MediaUrl, s3RenderedAppMediaUrl, s3RenderedMediaUrl } from "./base";
+
+// Normalizes any previously-saved image reference (a bare storage path, an
+// object-endpoint public URL, or a render-endpoint URL with size params)
+// down to the bare "{userId}/{fileName}" storage path.
+export function getStoragePath(url) {
+  if (!url || typeof url !== 'string') return null;
+  const bases = [s3MediaUrl, s3RenderedMediaUrl, s3RenderedAppMediaUrl];
+  const base = bases.find(b => url.includes(b));
+  const path = base ? url.slice(url.indexOf(base) + base.length) : url;
+  return path.split('?')[0];
+}
 
 export function translateSize(size){
   switch (size) {

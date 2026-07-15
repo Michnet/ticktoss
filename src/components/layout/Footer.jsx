@@ -5,19 +5,20 @@ import Link from 'next/link';
 export default function Footer() {
   return (
     <footer
+    className='px-3'
       style={{
         background: 'var(--tt-surface)',
         borderTop: '1px solid var(--tt-border)',
-        padding: '3rem 0 2rem',
+        padding: '1rem 0 2rem',
       }}
     >
       <div className="tt-container tt-container-padding">
-        <div
+        <div className='px-3'
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
             gap: '2rem',
-            marginBottom: '2.5rem',
+            marginBottom: '1rem',
           }}
         >
           {/* Brand */}
@@ -38,7 +39,7 @@ export default function Footer() {
                 TickToss
               </span>
             </div>
-            <p style={{ color: 'var(--tt-muted)', fontSize: '0.85rem', lineHeight: 1.6, maxWidth: '220px' }}>
+            <p className='max-w-sm' style={{ color: 'var(--tt-muted)', fontSize: '0.85rem' }}>
               Uganda&apos;s urgency marketplace. Every deal has a clock. Don&apos;t let it run out.
             </p>
           </div>
@@ -98,7 +99,9 @@ export default function Footer() {
               {[
                 { href: '/login', label: 'Sign In' },
                 { href: '/register', label: 'Create Account' },
-                { href: '/buyer/bookings', label: 'My Bookings' },
+                { href: '/dashboard?view=my_orders', label: 'My Orders' },
+                { href: '/dashboard?view=my_cart', label: 'My Cart' },
+                { href: '/dashboard?view=saved', label: 'Saved Items' },
               ].map(({ href, label }) => (
                 <li key={href}>
                   <Link href={href} style={{ color: 'var(--tt-muted)', fontSize: '0.875rem', textDecoration: 'none', transition: 'color 0.2s' }}

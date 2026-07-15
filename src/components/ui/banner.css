@@ -14,7 +14,7 @@
 .banner-slider-track {
   position: relative;
   width: 100%;
-  border-radius: var(--tt-radius-xl);
+  border-radius: var(--tt-radius-md);
   overflow: hidden;
 }
 
@@ -49,7 +49,6 @@
   overflow: hidden;
   display: flex;
   align-items: center;
-  border-radius: var(--tt-radius-xl);
 }
 
 /* ── Grain texture overlay ──────────────────────────────────── */

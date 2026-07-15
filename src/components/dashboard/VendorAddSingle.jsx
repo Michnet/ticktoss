@@ -9,19 +9,29 @@ import useAppStore from '@/store/useAppStore';
 import { computeUrgencyScore } from '@/lib/urgency';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { resizedImage } from '@/helpers/universal';
+import { generateBlurhash } from '@/helpers/blurhash';
+import TiptapEditor from '@/components/common/TiptapEditor';
+import MediaLibraryModal from './MediaLibraryModal';
+
+function stripHtml(html) {
+  return (html || '').replace(/<[^>]*>/g, '').trim();
+}
 
 const productSchema = z.object({
   name: z.string().min(5, 'Product name is too short'),
-  short_description: z.string().min(10, 'Provide a brief description'),
+  product_type: z.enum(['simple', 'subscription', 'booking', 'downloadable', 'virtual']).default('simple'),
+  short_description: z.string().refine(val => stripHtml(val).length >= 10, 'Provide a brief description'),
   long_description: z.string().optional(),
   price: z.number().min(1000, 'Original price must be valid'),
   sale_price: z.number().min(1000, 'Sale price must be valid'),
   stock: z.number().min(1, 'Must have at least 1 in stock'),
+  stock_alert_level: z.number().optional().nullable(),
   unit_cost: z.number().optional().nullable(),
   sale_start_date: z.string().min(1, 'Please select a start date'),
   sale_end_date: z.string().min(1, 'Please select an end date'),
   store_index: z.string().min(1, 'Please select a store'),
   category: z.string().min(1, 'Please select a main category'),
+  location: z.string().min(1, 'Please select a location'),
 }).refine(data => data.sale_price < data.price, {
   message: "Sale price must be lower than the original price",
   path: ['sale_price'],
@@ -36,13 +46,18 @@ const productSchema = z.object({
 }, {
   message: "End date must be after the start date",
   path: ['sale_end_date'],
+}).refine(data => {
+  return data.stock_alert_level == null || data.stock_alert_level < data.stock;
+}, {
+  message: "Alert level must be less than total stock",
+  path: ['stock_alert_level'],
 });
 
 function ExpandableSection({ id, title, isOpen, onToggle, children, hasError }) {
   return (
     <div style={{ border: '1px solid var(--tt-border)', borderRadius: 'var(--tt-radius-sm)', marginBottom: '1rem', overflow: 'hidden', background: 'var(--tt-surface-2)' }}>
-      <button 
-        type="button" 
+      <button
+        type="button"
         onClick={() => onToggle(id)}
         style={{ width: '100%', padding: '1rem', display: 'flex', justifyContent: 'space-between', alignItems: 'center', background: 'transparent', border: 'none', cursor: 'pointer', fontWeight: 600, color: hasError ? 'var(--tt-danger)' : 'var(--tt-text)' }}
       >
@@ -64,23 +79,43 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   const stores = profile?.tt_stores || [];
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [success, setSuccess] = useState(false);
-  
+
   const [categories, setCategories] = useState([]);
-  const [tags, setTags] = useState([]);
-  const [tagSearch, setTagSearch] = useState('');
   const [fullProductData, setFullProductData] = useState(initialData);
-  const [selectedTags, setSelectedTags] = useState(initialData?.tag_ids || []);
+  const [selectedTags, setSelectedTags] = useState([]); // Array of {id, name} tag objects
+  const [tagSearch, setTagSearch] = useState('');
+  const [tagResults, setTagResults] = useState([]);
+  const [searchingTags, setSearchingTags] = useState(false);
+  const [tagPage, setTagPage] = useState(0);
+  const [hasMoreTags, setHasMoreTags] = useState(false);
   const [imageFile, setImageFile] = useState(null);
+  const [featuredImage, setFeaturedImage] = useState(initialData?.featured_image || null);
   const [galleryFiles, setGalleryFiles] = useState([]);
   const [existingGallery, setExistingGallery] = useState([]);
-  
+  const [showMediaModal, setShowMediaModal] = useState(false);
+  const [mediaModalMode, setMediaModalMode] = useState('featured'); // 'featured' or 'gallery'
+
+  const [productMeta, setProductMeta] = useState(() => {
+    try {
+      return typeof initialData?.meta === 'string' ? JSON.parse(initialData.meta) : (initialData?.meta || {});
+    } catch {
+      return {};
+    }
+  });
+
+  const [codeViews, setCodeViews] = useState({ short: false, long: false });
+
   // Array to store the hierarchy of selected category IDs
   const [selectedCatIds, setSelectedCatIds] = useState([]);
-  
+
+  const [locations, setLocations] = useState([]);
+  // Array to store the hierarchy of selected location IDs
+  const [selectedLocIds, setSelectedLocIds] = useState([]);
+
   const [attributeSelections, setAttributeSelections] = useState(() => {
     try {
-      return typeof initialData?.attributes === 'string' 
-        ? JSON.parse(initialData.attributes) 
+      return typeof initialData?.attributes === 'string'
+        ? JSON.parse(initialData.attributes)
         : (initialData?.attributes || {});
     } catch {
       return {};
@@ -88,6 +123,9 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   });
 
   const [availableAttributes, setAvailableAttributes] = useState([]);
+  const [newOptionInputs, setNewOptionInputs] = useState({}); // { attributeId: "new option name" }
+  const [addingOption, setAddingOption] = useState(false);
+  const [variations, setVariations] = useState([]);
 
   useEffect(() => {
     async function fetchAttributes() {
@@ -95,15 +133,15 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
         setAvailableAttributes([]);
         return;
       }
-      
+
       const { data: mappings, error } = await supabase
         .from('product_cat_attributes')
         .select(`
-          attribute_id, 
+          attribute_id,
           product_attributes(id, name, slug, options, custom_options)
         `)
         .in('category_id', selectedCatIds);
-        
+
       if (mappings && !error) {
         const uniqueAttrs = new Map();
         mappings.forEach(m => {
@@ -116,7 +154,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
     }
     fetchAttributes();
   }, [selectedCatIds]);
-  
+
   const [openSection, setOpenSection] = useState('basic');
 
   const isEditMode = !!initialData;
@@ -125,17 +163,22 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
     async function fetchData() {
       const promises = [
         supabase.from('product_categories').select('id, name, parent').order('name'),
-        supabase.from('tags').select('id, name').order('name')
+        supabase.from('locations').select('id, name, parent').order('name'),
       ];
 
       if (isEditMode && initialData?.id) {
         promises.push(supabase.from('products').select('*').eq('id', initialData.id).single());
+        promises.push(supabase.from('product_variations').select('*').eq('product_id', initialData.id));
       }
 
-      const [catsRes, tagsRes, productRes] = await Promise.all(promises);
-      
+      const results = await Promise.all(promises);
+      const catsRes = results[0];
+      const locsRes = results[1];
+      const productRes = isEditMode ? results[2] : null;
+      const variationsRes = isEditMode ? results[3] : null;
+
       const cats = catsRes?.data;
-      const tg = tagsRes?.data;
+      const locs = locsRes?.data;
       const product = productRes?.data;
 
       const dataToUse = product || initialData;
@@ -150,32 +193,62 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
           setSelectedCatIds([dataToUse.category]);
         }
       }
-      if (tg) setTags(tg);
-      
-      if (dataToUse?.tag_ids) {
-        setSelectedTags(dataToUse.tag_ids);
+
+      if (locs) {
+        setLocations(locs);
+        // If dataToUse has loc_ids, set them
+        if (dataToUse?.loc_ids && dataToUse.loc_ids.length > 0) {
+          setSelectedLocIds(dataToUse.loc_ids);
+        } else if (dataToUse?.location) {
+          setSelectedLocIds([dataToUse.location]);
+        }
+      }
+
+      if (dataToUse?.tag_ids?.length > 0) {
+        const { data: tagRows } = await supabase.from('tags').select('id, name').in('id', dataToUse.tag_ids);
+        if (tagRows) setSelectedTags(tagRows);
       }
       if (dataToUse?.gallery) {
         setExistingGallery(dataToUse.gallery);
+      }
+      if (dataToUse?.featured_image) {
+        setFeaturedImage(dataToUse.featured_image);
+      }
+      if (variationsRes?.data) {
+        setVariations(variationsRes.data);
       }
 
       // Populate form values if full product data was fetched
       if (product) {
         setValue('name', product.name || '');
+        setValue('product_type', product.product_type || 'simple');
         setValue('short_description', product.short_description || '');
         setValue('long_description', product.long_description || '');
         setValue('price', product.price || '');
         setValue('sale_price', product.sale_price || '');
         setValue('stock', product.stock ?? 1);
+        setValue('stock_alert_level', product.stock_alert_level ?? '');
         setValue('unit_cost', product.unit_cost || '');
-        
+
+        try {
+          setProductMeta(typeof product.meta === 'string' ? JSON.parse(product.meta) : (product.meta || {}));
+        } catch {
+          setProductMeta({});
+        }
+
+        try {
+          setAttributeSelections(typeof product.attributes === 'string' ? JSON.parse(product.attributes) : (product.attributes || {}));
+        } catch {
+          setAttributeSelections({});
+        }
+
         if (product.sale_start_date) {
           setValue('sale_start_date', new Date(product.sale_start_date).toISOString().slice(0, 16));
         }
         if (product.sale_end_date) {
           setValue('sale_end_date', new Date(product.sale_end_date).toISOString().slice(0, 16));
         }
-        
+
         if (product.tt_location) {
           // Find the store index
           // We need access to `stores` which is from `profile?.tt_stores || []`
@@ -185,7 +258,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
             setValue('store_index', idx.toString());
           }
         }
-        
+
         if (product.category) {
           setValue('category', String(product.category));
         }
@@ -195,12 +268,91 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [initialData]);
 
+  // Debounced server-side tag search
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      if (tagSearch.length >= 3) {
+        searchTags();
+      } else {
+        setTagResults([]);
+      }
+    }, 2000);
+    return () => clearTimeout(timer);
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [tagSearch]);
+
+  const searchTags = async () => {
+    setSearchingTags(true);
+    setTagPage(0);
+    try {
+      const res = await fetch(`/api/tags?q=${encodeURIComponent(tagSearch)}&page=0&limit=50`);
+      const data = await res.json();
+      setTagResults(data.data || []);
+      setHasMoreTags(data.hasMore || false);
+    } catch (error) {
+      console.error('Tag search failed:', error);
+    } finally {
+      setSearchingTags(false);
+    }
+  };
+
+  const loadMoreTags = async () => {
+    if (searchingTags || !hasMoreTags) return;
+    setSearchingTags(true);
+    const nextPage = tagPage + 1;
+    try {
+      const res = await fetch(`/api/tags?q=${encodeURIComponent(tagSearch)}&page=${nextPage}&limit=50`);
+      const data = await res.json();
+      setTagResults(prev => [...prev, ...(data.data || [])]);
+      setTagPage(nextPage);
+      setHasMoreTags(data.hasMore || false);
+    } catch (error) {
+      console.error('Loading more tags failed:', error);
+    } finally {
+      setSearchingTags(false);
+    }
+  };
+
+  const handleTagSelect = (tag) => {
+    if (!selectedTags.some(t => t.id === tag.id)) {
+      setSelectedTags(prev => [...prev, tag]);
+    }
+    setTagSearch('');
+    setTagResults([]);
+  };
+
+  const removeTag = (tagId) => {
+    setSelectedTags(prev => prev.filter(t => t.id !== tagId));
+  };
+
+  const createNewTag = async () => {
+    if (!tagSearch || searchingTags) return;
+    setSearchingTags(true);
+    try {
+      const res = await fetch('/api/tags', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ name: tagSearch }),
+      });
+      const newTag = await res.json();
+      if (newTag.id) {
+        handleTagSelect(newTag);
+      } else {
+        addToast({ type: 'error', message: newTag.error || 'Failed to create tag' });
+      }
+    } catch (error) {
+      console.error('Failed to create tag:', error);
+    } finally {
+      setSearchingTags(false);
+    }
+  };
+
   let defaultStoreIndex = stores.length === 1 ? '0' : '';
   if (initialData?.tt_location) {
     const idx = stores.findIndex(s => s.name === initialData.tt_location.name);
     if (idx !== -1) defaultStoreIndex = idx.toString();
   }
-  
+
   const formatForDateTimeLocal = (dateString) => {
     if (!dateString) return '';
     return new Date(dateString).toISOString().slice(0, 16);
@@ -216,16 +368,19 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
     resolver: zodResolver(productSchema),
     defaultValues: {
       name: initialData?.name || '',
+      product_type: initialData?.product_type || 'simple',
       short_description: initialData?.short_description || '',
       long_description: initialData?.long_description || '',
       price: initialData?.price || '',
       sale_price: initialData?.sale_price || '',
       stock: initialData?.stock ?? 1,
+      stock_alert_level: initialData?.stock_alert_level ?? '',
       unit_cost: initialData?.unit_cost || '',
       sale_start_date: formatForDateTimeLocal(initialData?.sale_start_date) || formatForDateTimeLocal(new Date().toISOString()),
       sale_end_date: formatForDateTimeLocal(initialData?.sale_end_date) || formatForDateTimeLocal(new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString()),
       store_index: defaultStoreIndex,
       category: initialData?.category ? String(initialData.category) : '',
+      location: initialData?.location ? String(initialData.location) : '',
     },
   });
 
@@ -234,6 +389,25 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   const watchStartDate = watch('sale_start_date');
   const watchEndDate = watch('sale_end_date');
   const watchStock = watch('stock');
+  const watchProductType = watch('product_type');
+  const watchShortDescription = watch('short_description');
+  const watchLongDescription = watch('long_description');
+
+  // Keep the RHF `category` field in sync with the category-hierarchy picker,
+  // which is driven by plain state rather than a registered input.
+  useEffect(() => {
+    const lastCat = selectedCatIds.length > 0 ? String(selectedCatIds[selectedCatIds.length - 1]) : '';
+    setValue('category', lastCat, { shouldValidate: false });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedCatIds]);
+
+  // Keep the RHF `location` field in sync with the location-hierarchy picker,
+  // which is driven by plain state rather than a registered input.
+  useEffect(() => {
+    const lastLoc = selectedLocIds.length > 0 ? String(selectedLocIds[selectedLocIds.length - 1]) : '';
+    setValue('location', lastLoc, { shouldValidate: false });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [selectedLocIds]);
 
   const getFormattedDate = (val) => {
     if (!val) return null;
@@ -246,9 +420,9 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   const originalPrice = Number(watchPrice) || 0;
   const salePrice = Number(watchSalePrice) || 0;
   const discountPct = originalPrice > 0 ? ((originalPrice - salePrice) / originalPrice) * 100 : 0;
-  
+
   const hours_remaining = (watchStartDate && watchEndDate) ? Math.max(1, Math.round((new Date(watchEndDate) - new Date()) / (1000 * 60 * 60))) : 24;
-  
+
   const estimatedScore = computeUrgencyScore({
     discount_pct: discountPct,
     hours_remaining: hours_remaining,
@@ -264,10 +438,147 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
     setOpenSection(openSection === id ? null : id);
   };
 
-  const handleTagToggle = (tagId) => {
-    setSelectedTags(prev => 
-      prev.includes(tagId) ? prev.filter(id => id !== tagId) : [...prev, tagId]
-    );
+  const toggleAttributeOption = (attr, opt) => {
+    const slug = attr.slug;
+    setAttributeSelections(prev => {
+      const currentAttr = prev[slug] || {
+        name: attr.name,
+        slug: attr.slug,
+        values: [],
+        is_variation: false
+      };
+
+      const isSelected = currentAttr.values.some(v => v.slug === opt.slug);
+      let newValues;
+
+      if (isSelected) {
+        newValues = currentAttr.values.filter(v => v.slug !== opt.slug);
+      } else {
+        newValues = [...currentAttr.values, { name: opt.name, slug: opt.slug }];
+      }
+
+      if (newValues.length === 0) {
+        const newState = { ...prev };
+        delete newState[slug];
+        return newState;
+      }
+
+      return {
+        ...prev,
+        [slug]: {
+          ...currentAttr,
+          values: newValues
+        }
+      };
+    });
+  };
+
+  const handleVariationToggle = (slug) => {
+    setAttributeSelections(prev => {
+      if (!prev[slug]) return prev;
+      return {
+        ...prev,
+        [slug]: {
+          ...prev[slug],
+          is_variation: !prev[slug].is_variation
+        }
+      };
+    });
+  };
+
+  const handleAddCustomOption = async (attr) => {
+    const optionName = newOptionInputs[attr.id];
+    if (!optionName || !optionName.trim() || addingOption) return;
+
+    setAddingOption(true);
+    try {
+      const res = await fetch('/api/vendor/products/attributes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ attribute_id: attr.id, option_name: optionName }),
+      });
+      const result = await res.json();
+
+      if (res.ok && result.attribute) {
+        setAvailableAttributes(prev => prev.map(a => (a.id === attr.id ? result.attribute : a)));
+        setNewOptionInputs(prev => ({ ...prev, [attr.id]: '' }));
+      } else {
+        addToast({ type: 'error', message: result.error || 'Failed to add option' });
+      }
+    } catch (error) {
+      console.error('Error adding custom option:', error);
+      addToast({ type: 'error', message: 'An error occurred while adding the option.' });
+    } finally {
+      setAddingOption(false);
+    }
+  };
+
+  const generateVariations = () => {
+    const varAttrs = Object.values(attributeSelections).filter(a => a.is_variation);
+    if (varAttrs.length === 0) {
+      addToast({ type: 'error', message: 'No attributes marked for variations.' });
+      return;
+    }
+
+    // Cartesian product generator
+    const cartesian = (...a) => a.reduce((a, b) => a.flatMap(d => b.map(e => [d, e].flat())));
+
+    const attrValues = varAttrs.map(a => a.values.map(v => ({
+      attr_slug: a.slug,
+      val_slug: v.slug,
+      val_name: v.name
+    })));
+
+    const combinations = varAttrs.length > 1 ? cartesian(...attrValues) : attrValues[0].map(v => [v]);
+
+    const newVariations = combinations.map(combo => {
+      const comboAttrObj = {};
+      combo.forEach(c => { comboAttrObj[c.attr_slug] = c.val_slug; });
+
+      // Preserve edits already made to this combination, if it existed before
+      const existing = variations.find(v => JSON.stringify(v.attributes) === JSON.stringify(comboAttrObj));
+      if (existing) return existing;
+
+      return {
+        attributes: comboAttrObj,
+        sku: Object.values(comboAttrObj).join('-'),
+        price: watchPrice || null,
+        sale_price: watchSalePrice || null,
+        unit_cost: null,
+        stock_quantity: 0
+      };
+    });
+
+    setVariations(newVariations);
+  };
+
+  const handleVariationDataChange = (index, field, value) => {
+    const newVars = [...variations];
+    newVars[index] = { ...newVars[index], [field]: value };
+    setVariations(newVars);
+  };
+
+  const removeVariation = (index) => {
+    setVariations(variations.filter((_, i) => i !== index));
+  };
+
+  const openMediaLibrary = (mode) => {
+    setMediaModalMode(mode);
+    setShowMediaModal(true);
+  };
+
+  const handleMediaSelect = (selected) => {
+    if (mediaModalMode === 'featured') {
+      setFeaturedImage(selected);
+    } else {
+      const items = Array.isArray(selected) ? selected : [selected];
+      setExistingGallery(prev => {
+        const urls = new Set(prev.map(i => i.url));
+        const additions = items.filter(i => i?.url && !urls.has(i.url));
+        return [...prev, ...additions];
+      });
+    }
+    setShowMediaModal(false);
   };
 
   const onSubmit = async (data) => {
@@ -276,7 +587,13 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
       addToast({ type: 'error', message: 'Please select a valid store.' });
       return;
     }
-    
+
+    const totalVariationStock = variations.reduce((sum, v) => sum + (parseFloat(v.stock_quantity) || 0), 0);
+    if (variations.length > 0 && totalVariationStock > data.stock) {
+      addToast({ type: 'error', message: `Total variation stock (${totalVariationStock}) cannot exceed main product stock (${data.stock}).` });
+      return;
+    }
+
     const pickup_lat = selectedStore.pickup_lat || selectedStore.lat || selectedStore.latitude || null;
     const pickup_lng = selectedStore.pickup_lng || selectedStore.lng || selectedStore.longitude || null;
 
@@ -284,15 +601,19 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
     try {
       const payload = {
         name: data.name,
+        product_type: data.product_type,
         short_description: data.short_description,
         long_description: data.long_description || null,
         price: data.price,
         sale_price: data.sale_price,
         stock: data.stock,
+        stock_alert_level: data.stock_alert_level ?? null,
         unit_cost: data.unit_cost || null,
         category: selectedCatIds.length > 0 ? selectedCatIds[selectedCatIds.length - 1] : null,
         cat_ids: selectedCatIds,
-        tag_ids: selectedTags,
+        location: selectedLocIds.length > 0 ? selectedLocIds[selectedLocIds.length - 1] : null,
+        loc_ids: selectedLocIds,
+        tag_ids: selectedTags.map(t => t.id),
         discount_pct: discountPct,
         sale_start_date: new Date(data.sale_start_date).toISOString(),
         sale_end_date: new Date(data.sale_end_date).toISOString(),
@@ -303,11 +624,19 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
         pickup_lng: pickup_lng,
         tt_location: selectedStore,
         attributes: Object.keys(attributeSelections).length > 0 ? attributeSelections : null,
+        featured_image: featuredImage || null,
+        meta: Object.keys(productMeta).length > 0 ? productMeta : null,
         status: 'published' // Publish immediately for MVP
       };
 
       if (!payload.category) {
         addToast({ type: 'error', message: 'Please select a category.' });
+        setIsSubmitting(false);
+        return;
+      }
+
+      if (!payload.location) {
+        addToast({ type: 'error', message: 'Please select a location.' });
         setIsSubmitting(false);
         return;
       }
@@ -323,7 +652,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
             ...payload
           }),
         });
-        
+
         if (!res.ok) {
           const errData = await res.json();
           throw new Error(errData.error || 'Failed to update deal');
@@ -334,7 +663,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
         });
-        
+
         if (!res.ok) {
           const errData = await res.json();
           throw new Error(errData.error || 'Failed to create deal');
@@ -343,30 +672,26 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
         productId = responseData.product.id;
       }
 
-      // Handle Image Upload if a file was selected
+      // Handle Image Upload if a file was selected. Store the storage path
+      // (not the public URL) as `url` so it matches the shape produced by
+      // the media library, and attach a blurhash for blur-up rendering.
       if (imageFile && productId) {
         const fileExt = imageFile.name.split('.').pop();
         const fileName = `featured_${Date.now()}.${fileExt}`;
-        const filePath = `${user.id}/${productId}/${fileName}`;
+        const filePath = `${user.id}/${fileName}`;
 
-        const { error: uploadError } = await supabase.storage
-          .from('uploads')
-          .upload(filePath, imageFile, { upsert: true });
+        const [{ error: uploadError }, blurhash] = await Promise.all([
+          supabase.storage.from('uploads').upload(filePath, imageFile, { upsert: true }),
+          generateBlurhash(imageFile),
+        ]);
 
         if (uploadError) {
           throw new Error('Product saved, but image upload failed: ' + uploadError.message);
         }
 
-        const { data: publicUrlData } = supabase.storage
-          .from('uploads')
-          .getPublicUrl(filePath);
-
-        // Update product with the featured_image JSON
-        if (publicUrlData?.publicUrl) {
-          await supabase.from('products').update({
-            featured_image: { url: publicUrlData.publicUrl }
-          }).eq('id', productId);
-        }
+        await supabase.from('products').update({
+          featured_image: { url: filePath, blurhash }
+        }).eq('id', productId);
       }
 
       // Handle Gallery Images Upload
@@ -376,23 +701,20 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
         const uploadPromises = galleryFiles.map(async (file, index) => {
           const fileExt = file.name.split('.').pop();
           const fileName = `gallery_${Date.now()}_${index}.${fileExt}`;
-          const filePath = `${user.id}/${productId}/${fileName}`;
-          
-          const { error: uploadError } = await supabase.storage
-            .from('uploads')
-            .upload(filePath, file, { upsert: true });
+          const filePath = `${user.id}/${fileName}`;
+
+          const [{ error: uploadError }, blurhash] = await Promise.all([
+            supabase.storage.from('uploads').upload(filePath, file, { upsert: true }),
+            generateBlurhash(file),
+          ]);
 
           if (uploadError) throw new Error('Gallery image upload failed: ' + uploadError.message);
-          
-          const { data: publicUrlData } = supabase.storage
-            .from('uploads')
-            .getPublicUrl(filePath);
 
-          return publicUrlData?.publicUrl;
+          return { url: filePath, blurhash };
         });
 
-        const newGalleryUrls = await Promise.all(uploadPromises);
-        updatedGalleryUrls = [...updatedGalleryUrls, ...newGalleryUrls.filter(url => url)];
+        const newGalleryEntries = await Promise.all(uploadPromises);
+        updatedGalleryUrls = [...updatedGalleryUrls, ...newGalleryEntries.filter(entry => entry.url)];
       }
 
       // Update the gallery in the database if it changed
@@ -402,8 +724,32 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
          }).eq('id', productId);
       }
 
+      // Save variations (replaces the full set for this product)
+      if (productId) {
+        const finalizedVariations = variations.map(v => ({
+          ...(v.id ? { id: v.id } : {}),
+          sku: `product-${productId}-${Object.values(v.attributes).join('-')}`,
+          price: v.price ?? null,
+          sale_price: v.sale_price ?? null,
+          unit_cost: v.unit_cost ?? null,
+          stock_quantity: v.stock_quantity ?? 0,
+          attributes: v.attributes,
+        }));
+
+        const variationsRes = await fetch('/api/vendor/products/variations', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ product_id: productId, variations: finalizedVariations }),
+        });
+
+        if (!variationsRes.ok) {
+          const errData = await variationsRes.json();
+          throw new Error(errData.error || 'Failed to save variations');
+        }
+      }
+
       addToast({ type: 'success', message: isEditMode ? 'Deal updated successfully!' : 'Deal posted successfully!' });
-      
+
       if (onSuccess) {
         onSuccess();
       } else {
@@ -420,7 +766,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   // Derive dropdown options for category tiering
   const getChildren = (parentId) => categories.filter(c => c.parent === parentId);
   const dropdownLevels = [getChildren(null)];
-  
+
   for (let i = 0; i < selectedCatIds.length; i++) {
     const children = getChildren(selectedCatIds[i]);
     if (children.length > 0) {
@@ -443,7 +789,29 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
     setSelectedCatIds([]);
   };
 
-  const filteredTags = tags.filter(tag => tag.name.toLowerCase().includes(tagSearch.toLowerCase()));
+  // Derive dropdown options for location tiering
+  const getLocChildren = (parentId) => locations.filter(l => l.parent === parentId);
+  const locDropdownLevels = [getLocChildren(null)];
+
+  for (let i = 0; i < selectedLocIds.length; i++) {
+    const children = getLocChildren(selectedLocIds[i]);
+    if (children.length > 0) {
+      locDropdownLevels.push(children);
+    }
+  }
+
+  const handleLocationChange = (levelIndex, selectedId) => {
+    if (!selectedId) {
+      setSelectedLocIds(prev => prev.slice(0, levelIndex));
+    } else {
+      const newSelection = [...selectedLocIds.slice(0, levelIndex), parseInt(selectedId)];
+      setSelectedLocIds(newSelection);
+    }
+  };
+
+  const handleResetLocations = () => {
+    setSelectedLocIds([]);
+  };
 
   const hasErrors = (fields) => fields.some(field => errors[field]);
 
@@ -475,14 +843,14 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
       </div>
 
       <div className='grid grid-cols-1 lg:grid-cols-[1fr_300px] gap-5' style={{ alignItems: 'start' }}>
-        
+
         {/* Form */}
         <form className='relative' onSubmit={handleSubmit(onSubmit)} style={{ display: 'flex', flexDirection: 'column' }}>
-          
-          <ExpandableSection 
-            id="basic" 
-            title="1. Basic Information" 
-            isOpen={openSection === 'basic'} 
+
+          <ExpandableSection
+            id="basic"
+            title="1. Basic Information"
+            isOpen={openSection === 'basic'}
             onToggle={toggleSection}
             hasError={hasErrors(['name', 'short_description', 'long_description'])}
           >
@@ -493,23 +861,84 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
             </div>
 
             <div>
-              <label className="tt-label">Short Description</label>
-              <textarea className="tt-input" rows={2} placeholder="Brief details about the condition and items included." {...register('short_description')} />
+              <label className="tt-label">Product Type</label>
+              <select className="tt-input" {...register('product_type')}>
+                <option value="simple">📦 Simple Product</option>
+                <option value="subscription">💳 Subscription</option>
+                <option value="booking">📅 Booking / Appointment</option>
+                <option value="downloadable">📥 Downloadable Digital Product</option>
+                <option value="virtual">☁️ Virtual Product</option>
+              </select>
+            </div>
+
+            <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <label className="tt-label" style={{ marginBottom: 0 }}>Short Description</label>
+                <button
+                  type="button"
+                  onClick={() => setCodeViews(prev => ({ ...prev, short: !prev.short }))}
+                  className="tt-btn tt-btn-ghost"
+                  style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}
+                >
+                  {codeViews.short ? 'View Formatted' : 'Raw Mode'}
+                </button>
+              </div>
+              {codeViews.short ? (
+                <textarea
+                  className="tt-input"
+                  rows={4}
+                  style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                  value={watchShortDescription}
+                  onChange={(e) => setValue('short_description', e.target.value, { shouldValidate: true })}
+                />
+              ) : (
+                <TiptapEditor
+                  value={watchShortDescription}
+                  onChange={(html) => setValue('short_description', html, { shouldValidate: true })}
+                  placeholder="Brief details about the condition and items included."
+                  style={{ height: '120px' }}
+                />
+              )}
               {errors.short_description && <span style={{ color: 'var(--tt-danger)', fontSize: '0.8rem' }}>{errors.short_description.message}</span>}
             </div>
 
             <div>
-              <label className="tt-label">Long Description (Optional)</label>
-              <textarea className="tt-input" rows={4} placeholder="Full product details, specifications, and terms." {...register('long_description')} />
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <label className="tt-label" style={{ marginBottom: 0 }}>Long Description (Optional)</label>
+                <button
+                  type="button"
+                  onClick={() => setCodeViews(prev => ({ ...prev, long: !prev.long }))}
+                  className="tt-btn tt-btn-ghost"
+                  style={{ fontSize: '0.75rem', padding: '0.2rem 0.6rem' }}
+                >
+                  {codeViews.long ? 'View Formatted' : 'Raw Mode'}
+                </button>
+              </div>
+              {codeViews.long ? (
+                <textarea
+                  className="tt-input"
+                  rows={6}
+                  style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                  value={watchLongDescription}
+                  onChange={(e) => setValue('long_description', e.target.value)}
+                />
+              ) : (
+                <TiptapEditor
+                  value={watchLongDescription}
+                  onChange={(html) => setValue('long_description', html)}
+                  placeholder="Full product details, specifications, and terms."
+                  style={{ height: '200px' }}
+                />
+              )}
             </div>
           </ExpandableSection>
 
-          <ExpandableSection 
-            id="pricing" 
-            title="2. Pricing & Inventory" 
-            isOpen={openSection === 'pricing'} 
+          <ExpandableSection
+            id="pricing"
+            title="2. Pricing & Inventory"
+            isOpen={openSection === 'pricing'}
             onToggle={toggleSection}
-            hasError={hasErrors(['price', 'sale_price', 'stock', 'unit_cost'])}
+            hasError={hasErrors(['price', 'sale_price', 'stock', 'unit_cost', 'stock_alert_level'])}
           >
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 200px' }}>
@@ -534,13 +963,81 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
                 <label className="tt-label">Unit Cost (UGX - Optional)</label>
                 <input type="number" className="tt-input" placeholder="For your profit tracking" {...register('unit_cost', { setValueAs: v => v === '' || Number.isNaN(Number(v)) ? null : Number(v) })} />
               </div>
+              <div style={{ flex: '1 1 200px' }}>
+                <label className="tt-label">Low Stock Alert Level (Optional)</label>
+                <input type="number" className="tt-input" placeholder="0" {...register('stock_alert_level', { setValueAs: v => v === '' || Number.isNaN(Number(v)) ? null : Number(v) })} />
+                {errors.stock_alert_level && <span style={{ color: 'var(--tt-danger)', fontSize: '0.8rem' }}>{errors.stock_alert_level.message}</span>}
+              </div>
             </div>
+
+            {watchProductType === 'subscription' && (
+              <div style={{ padding: '1rem', border: '1px solid var(--tt-border)', borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface-2)' }}>
+                <label className="tt-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--tt-flame)' }}>Subscription Settings</label>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
+                  <div style={{ flex: '1 1 150px' }}>
+                    <label className="tt-label">Billing Interval</label>
+                    <input type="number" className="tt-input" placeholder="1" value={productMeta.subscription_interval || ''} onChange={(e) => setProductMeta(prev => ({ ...prev, subscription_interval: e.target.value === '' ? null : parseFloat(e.target.value) }))} />
+                  </div>
+                  <div style={{ flex: '1 1 150px' }}>
+                    <label className="tt-label">Billing Period</label>
+                    <select className="tt-input" value={productMeta.subscription_period || 'month'} onChange={(e) => setProductMeta(prev => ({ ...prev, subscription_period: e.target.value }))}>
+                      <option value="day">Day(s)</option>
+                      <option value="week">Week(s)</option>
+                      <option value="month">Month(s)</option>
+                      <option value="year">Year(s)</option>
+                    </select>
+                  </div>
+                  <div style={{ flex: '1 1 150px' }}>
+                    <label className="tt-label">Trial Period (Days)</label>
+                    <input type="number" className="tt-input" placeholder="0" value={productMeta.subscription_trial || ''} onChange={(e) => setProductMeta(prev => ({ ...prev, subscription_trial: e.target.value === '' ? null : parseFloat(e.target.value) }))} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {watchProductType === 'booking' && (
+              <div style={{ padding: '1rem', border: '1px solid var(--tt-border)', borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface-2)' }}>
+                <label className="tt-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--tt-flame)' }}>Booking Settings</label>
+                <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap', marginTop: '0.75rem' }}>
+                  <div style={{ flex: '1 1 200px' }}>
+                    <label className="tt-label">Duration (Minutes)</label>
+                    <input type="number" className="tt-input" placeholder="60" value={productMeta.booking_duration || ''} onChange={(e) => setProductMeta(prev => ({ ...prev, booking_duration: e.target.value === '' ? null : parseFloat(e.target.value) }))} />
+                  </div>
+                  <div style={{ flex: '1 1 200px' }}>
+                    <label className="tt-label">Slots / Capacity</label>
+                    <input type="number" className="tt-input" placeholder="1" value={productMeta.booking_slots || ''} onChange={(e) => setProductMeta(prev => ({ ...prev, booking_slots: e.target.value === '' ? null : parseFloat(e.target.value) }))} />
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {watchProductType === 'downloadable' && (
+              <div style={{ padding: '1rem', border: '1px solid var(--tt-border)', borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface-2)' }}>
+                <label className="tt-label" style={{ textTransform: 'uppercase', fontSize: '0.75rem', color: 'var(--tt-flame)' }}>Downloadable Settings</label>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', marginTop: '0.75rem' }}>
+                  <div>
+                    <label className="tt-label">File URL / Source</label>
+                    <input type="text" className="tt-input" placeholder="https://..." value={productMeta.download_url || ''} onChange={(e) => setProductMeta(prev => ({ ...prev, download_url: e.target.value }))} />
+                  </div>
+                  <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
+                    <div style={{ flex: '1 1 200px' }}>
+                      <label className="tt-label">Download Limit</label>
+                      <input type="number" className="tt-input" placeholder="Unlimited" value={productMeta.download_limit || ''} onChange={(e) => setProductMeta(prev => ({ ...prev, download_limit: e.target.value === '' ? null : parseFloat(e.target.value) }))} />
+                    </div>
+                    <div style={{ flex: '1 1 200px' }}>
+                      <label className="tt-label">Download Expiry (Days)</label>
+                      <input type="number" className="tt-input" placeholder="Never" value={productMeta.download_expiry || ''} onChange={(e) => setProductMeta(prev => ({ ...prev, download_expiry: e.target.value === '' ? null : parseFloat(e.target.value) }))} />
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
           </ExpandableSection>
 
-          <ExpandableSection 
-            id="meta" 
-            title="3. Categorization" 
-            isOpen={openSection === 'meta'} 
+          <ExpandableSection
+            id="meta"
+            title="3. Categorization"
+            isOpen={openSection === 'meta'}
             onToggle={toggleSection}
             hasError={selectedCatIds.length === 0}
           >
@@ -553,7 +1050,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
                   </button>
                 )}
               </div>
-              
+
               {selectedCatIds.length > 0 && (
                 <div style={{ marginBottom: '1rem', padding: '0.8rem', background: 'var(--tt-surface)', borderRadius: 'var(--tt-radius-sm)', border: '1px solid var(--tt-border)' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--tt-muted)', display: 'block', marginBottom: '0.3rem' }}>Selected Path:</span>
@@ -574,10 +1071,10 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
 
               <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
                 {dropdownLevels.map((options, index) => (
-                  <select 
-                    key={`cat-level-${index}`} 
-                    className="tt-input" 
-                    value={selectedCatIds[index] || ''} 
+                  <select
+                    key={`cat-level-${index}`}
+                    className="tt-input"
+                    value={selectedCatIds[index] || ''}
                     onChange={(e) => handleCategoryChange(index, e.target.value)}
                   >
                     <option value="">-- Select {index === 0 ? 'Main Category' : 'Subcategory'} --</option>
@@ -592,118 +1089,152 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
 
             <div>
               <label className="tt-label">Tags</label>
-              
+
               {selectedTags.length > 0 && (
                 <div style={{ marginBottom: '1rem', padding: '0.8rem', background: 'var(--tt-surface)', borderRadius: 'var(--tt-radius-sm)', border: '1px solid var(--tt-border)' }}>
                   <span style={{ fontSize: '0.75rem', color: 'var(--tt-muted)', display: 'block', marginBottom: '0.5rem' }}>Selected Tags:</span>
                   <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.4rem' }}>
-                    {selectedTags.map(id => {
-                      const tag = tags.find(t => t.id === id);
-                      if (!tag) return null;
-                      return (
-                        <span key={id} style={{
-                          background: 'var(--tt-flame)',
-                          color: '#fff',
-                          padding: '0.2rem 0.6rem',
-                          borderRadius: '99px',
-                          fontSize: '0.8rem',
-                          display: 'flex',
-                          alignItems: 'center',
-                          gap: '0.4rem'
-                        }}>
-                          {tag.name}
-                          <button type="button" onClick={() => handleTagToggle(id)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0, lineHeight: 1, fontSize: '1rem' }}>&times;</button>
-                        </span>
-                      );
-                    })}
+                    {selectedTags.map(tag => (
+                      <span key={tag.id} style={{
+                        background: 'var(--tt-flame)',
+                        color: '#fff',
+                        padding: '0.2rem 0.6rem',
+                        borderRadius: '99px',
+                        fontSize: '0.8rem',
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '0.4rem'
+                      }}>
+                        {tag.name}
+                        <button type="button" onClick={() => removeTag(tag.id)} style={{ background: 'transparent', border: 'none', color: '#fff', cursor: 'pointer', padding: 0, lineHeight: 1, fontSize: '1rem' }}>&times;</button>
+                      </span>
+                    ))}
                   </div>
                 </div>
               )}
 
-              <input 
-                type="text" 
-                placeholder="Search tags..." 
-                className="tt-input" 
-                value={tagSearch}
-                onChange={(e) => setTagSearch(e.target.value)}
-                style={{ marginBottom: '0.5rem' }}
-              />
-              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', maxHeight: '150px', overflowY: 'auto', padding: '0.5rem', border: '1px solid var(--tt-border)', borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface)' }}>
-                {filteredTags.map(tag => (
-                  <button
-                    key={tag.id}
-                    type="button"
-                    onClick={() => handleTagToggle(tag.id)}
-                    style={{
-                      padding: '0.3rem 0.6rem',
-                      fontSize: '0.8rem',
-                      borderRadius: '99px',
-                      border: '1px solid',
-                      borderColor: selectedTags.includes(tag.id) ? 'var(--tt-flame)' : 'var(--tt-border)',
-                      background: selectedTags.includes(tag.id) ? 'rgba(255, 77, 0, 0.1)' : 'transparent',
-                      color: selectedTags.includes(tag.id) ? 'var(--tt-flame)' : 'var(--tt-text)',
-                      cursor: 'pointer'
-                    }}
-                  >
-                    {tag.name}
-                  </button>
-                ))}
-                {filteredTags.length === 0 && <span style={{ fontSize: '0.8rem', color: 'var(--tt-muted)' }}>No tags found.</span>}
+              <div style={{ position: 'relative' }}>
+                <input
+                  type="text"
+                  placeholder="Search tags (min 3 characters)..."
+                  className="tt-input"
+                  value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)}
+                />
+
+                {tagSearch.length >= 3 && (
+                  <div style={{ border: '1px solid var(--tt-border)', borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface)', marginTop: '0.5rem', padding: '0.75rem', maxHeight: '200px', overflowY: 'auto' }}>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', alignItems: 'center' }}>
+                      {searchingTags && tagResults.length === 0 && (
+                        <span style={{ fontSize: '0.8rem', color: 'var(--tt-muted)' }}>Searching...</span>
+                      )}
+                      {tagResults.map(tag => (
+                        <button
+                          key={tag.id}
+                          type="button"
+                          onClick={() => handleTagSelect(tag)}
+                          disabled={selectedTags.some(t => t.id === tag.id)}
+                          style={{
+                            padding: '0.3rem 0.6rem',
+                            fontSize: '0.8rem',
+                            borderRadius: '99px',
+                            border: '1px solid var(--tt-border)',
+                            background: 'transparent',
+                            color: 'var(--tt-text)',
+                            cursor: 'pointer'
+                          }}
+                        >
+                          {tag.name}
+                        </button>
+                      ))}
+
+                      {hasMoreTags && (
+                        <button
+                          type="button"
+                          onClick={loadMoreTags}
+                          disabled={searchingTags}
+                          style={{ fontSize: '0.8rem', color: 'var(--tt-flame)', background: 'transparent', border: 'none', cursor: 'pointer' }}
+                        >
+                          Load More
+                        </button>
+                      )}
+
+                      {!searchingTags && !tagResults.some(t => t.name.toLowerCase() === tagSearch.toLowerCase()) && (
+                        <button
+                          type="button"
+                          onClick={createNewTag}
+                          style={{ fontSize: '0.8rem', color: 'var(--tt-flame)', fontWeight: 600, background: 'transparent', border: 'none', cursor: 'pointer' }}
+                        >
+                          + Create New Tag: "{tagSearch}"
+                        </button>
+                      )}
+                    </div>
+                  </div>
+                )}
               </div>
+              <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)', marginTop: '0.5rem' }}>Type at least 3 characters to search for tags. If not found, you can create it.</p>
             </div>
           </ExpandableSection>
 
-          <ExpandableSection 
-            id="media" 
-            title="4. Media & Assets" 
-            isOpen={openSection === 'media'} 
+          <ExpandableSection
+            id="media"
+            title="4. Media & Assets"
+            isOpen={openSection === 'media'}
             onToggle={toggleSection}
             hasError={false}
           >
             <div>
               <label className="tt-label">Featured Image</label>
-              {fullProductData?.featured_image?.url && !imageFile && (
-                <div style={{ marginBottom: '1rem' }}>
-                  <img src={resizedImage(fullProductData.featured_image.url, 'thumbnail')} alt="Current featured" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: 'var(--tt-radius-sm)' }} />
-                  <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)' }}>Current image. Upload a new one below to replace.</p>
+              {featuredImage?.url && !imageFile && (
+                <div style={{ marginBottom: '1rem', display: 'flex', alignItems: 'center', gap: '0.75rem' }}>
+                  <img src={resizedImage(featuredImage.url, 'thumbnail')} alt="Current featured" style={{ width: '100px', height: '100px', objectFit: 'cover', borderRadius: 'var(--tt-radius-sm)' }} />
+                  <button type="button" onClick={() => setFeaturedImage(null)} style={{ fontSize: '0.8rem', color: 'var(--tt-danger)', background: 'transparent', border: 'none', cursor: 'pointer' }}>Remove</button>
                 </div>
               )}
-              <input 
-                type="file" 
-                accept="image/*"
-                className="tt-input" 
-                onChange={e => {
-                  if (e.target.files && e.target.files[0]) {
-                    setImageFile(e.target.files[0]);
-                  }
-                }}
-              />
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  className="tt-input"
+                  style={{ flex: '1 1 200px' }}
+                  onChange={e => {
+                    if (e.target.files && e.target.files[0]) {
+                      setImageFile(e.target.files[0]);
+                    }
+                  }}
+                />
+                <button type="button" className="tt-btn tt-btn-ghost" onClick={() => openMediaLibrary('featured')}>Browse Library</button>
+              </div>
               <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)', marginTop: '0.5rem' }}>Max file size: 5MB. Recommended square aspect ratio.</p>
             </div>
 
             <div style={{ marginTop: '1.5rem', paddingTop: '1.5rem', borderTop: '1px solid var(--tt-border)' }}>
               <label className="tt-label">Product Gallery</label>
-              <input 
-                type="file" 
-                accept="image/*"
-                multiple
-                className="tt-input" 
-                onChange={e => {
-                  if (e.target.files) {
-                    setGalleryFiles(prev => [...prev, ...Array.from(e.target.files)]);
-                  }
-                }}
-              />
+              <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                <input
+                  type="file"
+                  accept="image/*"
+                  multiple
+                  className="tt-input"
+                  style={{ flex: '1 1 200px' }}
+                  onChange={e => {
+                    if (e.target.files) {
+                      setGalleryFiles(prev => [...prev, ...Array.from(e.target.files)]);
+                    }
+                  }}
+                />
+                <button type="button" className="tt-btn tt-btn-ghost" onClick={() => openMediaLibrary('gallery')}>Browse Library</button>
+              </div>
               <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)', marginTop: '0.5rem' }}>Upload additional angles or details. Max 5MB per image.</p>
-              
+
               {/* Gallery Previews */}
               {(existingGallery.length > 0 || galleryFiles.length > 0) && (
                 <div style={{ display: 'flex', flexWrap: 'wrap', gap: '1rem', marginTop: '1rem' }}>
                   {existingGallery.map((img, idx) => (
                     <div key={`exist-${idx}`} style={{ position: 'relative' }}>
                       <img src={resizedImage(img.url, 'thumbnail')} alt={`Gallery ${idx}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: 'var(--tt-radius-sm)', border: '1px solid var(--tt-border)' }} />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setExistingGallery(prev => prev.filter((_, i) => i !== idx))}
                         style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'var(--tt-danger)', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>&times;</button>
                     </div>
@@ -711,8 +1242,8 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
                   {galleryFiles.map((file, idx) => (
                     <div key={`new-${idx}`} style={{ position: 'relative' }}>
                       <img src={URL.createObjectURL(file)} alt={`New Gallery ${idx}`} style={{ width: '80px', height: '80px', objectFit: 'cover', borderRadius: 'var(--tt-radius-sm)', border: '1px solid var(--tt-border)' }} />
-                      <button 
-                        type="button" 
+                      <button
+                        type="button"
                         onClick={() => setGalleryFiles(prev => prev.filter((_, i) => i !== idx))}
                         style={{ position: 'absolute', top: '-5px', right: '-5px', background: 'var(--tt-danger)', color: '#fff', border: 'none', borderRadius: '50%', width: '20px', height: '20px', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '0.8rem' }}>&times;</button>
                     </div>
@@ -722,48 +1253,75 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
             </div>
           </ExpandableSection>
 
-          <ExpandableSection 
-            id="attributes" 
-            title="5. Product Attributes (Optional)" 
-            isOpen={openSection === 'attributes'} 
+          <ExpandableSection
+            id="attributes"
+            title="5. Product Attributes (Optional)"
+            isOpen={openSection === 'attributes'}
             onToggle={toggleSection}
             hasError={false}
           >
             <div>
               {availableAttributes.length > 0 ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '1.25rem' }}>
                   {availableAttributes.map(attr => (
-                    <div key={attr.id} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
-                      <div style={{ flex: '1 1 150px' }}>
+                    <div key={attr.id}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                         <label className="tt-label" style={{ marginBottom: 0 }}>{attr.name}</label>
+                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--tt-muted)', cursor: attributeSelections[attr.slug] ? 'pointer' : 'not-allowed' }}>
+                          <input
+                            type="checkbox"
+                            checked={attributeSelections[attr.slug]?.is_variation || false}
+                            onChange={() => handleVariationToggle(attr.slug)}
+                            disabled={!attributeSelections[attr.slug]}
+                          />
+                          Use for variations
+                        </label>
                       </div>
-                      <div style={{ flex: '2 1 250px' }}>
-                        <select 
-                          className="tt-input" 
-                          value={attributeSelections[attr.slug]?.values?.[0]?.slug || ''}
-                          onChange={(e) => {
-                            const selectedOption = attr.options?.find(o => o.slug === e.target.value);
-                            setAttributeSelections(prev => {
-                              const next = { ...prev };
-                              if (!selectedOption) {
-                                delete next[attr.slug];
-                              } else {
-                                next[attr.slug] = {
-                                  name: attr.name,
-                                  slug: attr.slug,
-                                  values: [{ name: selectedOption.name, slug: selectedOption.slug }],
-                                  is_variation: false
-                                };
-                              }
-                              return next;
-                            });
-                          }}
-                        >
-                          <option value="">-- Select {attr.name} --</option>
-                          {attr.options?.map(opt => (
-                            <option key={opt.slug} value={opt.slug}>{opt.name}</option>
-                          ))}
-                        </select>
+                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', padding: '0.5rem', border: '1px solid var(--tt-border)', borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface)' }}>
+                        {attr.options?.map(opt => {
+                          const isSelected = attributeSelections[attr.slug]?.values?.some(v => v.slug === opt.slug);
+                          return (
+                            <button
+                              key={opt.slug}
+                              type="button"
+                              onClick={() => toggleAttributeOption(attr, opt)}
+                              style={{
+                                padding: '0.3rem 0.6rem',
+                                fontSize: '0.8rem',
+                                borderRadius: '99px',
+                                border: '1px solid',
+                                borderColor: isSelected ? 'var(--tt-flame)' : 'var(--tt-border)',
+                                background: isSelected ? 'rgba(255, 77, 0, 0.1)' : 'transparent',
+                                color: isSelected ? 'var(--tt-flame)' : 'var(--tt-text)',
+                                cursor: 'pointer'
+                              }}
+                            >
+                              {opt.name}
+                            </button>
+                          );
+                        })}
+                        {attr.custom_options && (
+                          <div style={{ display: 'flex', gap: '0.4rem' }}>
+                            <input
+                              type="text"
+                              placeholder="Add custom..."
+                              className="tt-input"
+                              style={{ width: '150px', padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
+                              value={newOptionInputs[attr.id] || ''}
+                              onChange={(e) => setNewOptionInputs(prev => ({ ...prev, [attr.id]: e.target.value }))}
+                              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomOption(attr))}
+                            />
+                            <button
+                              type="button"
+                              onClick={() => handleAddCustomOption(attr)}
+                              disabled={addingOption || !newOptionInputs[attr.id]?.trim()}
+                              className="tt-btn tt-btn-ghost"
+                              style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
+                            >
+                              {addingOption ? '...' : '+ Add'}
+                            </button>
+                          </div>
+                        )}
                       </div>
                     </div>
                   ))}
@@ -773,15 +1331,75 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
                   Select a category to see relevant attributes.
                 </p>
               )}
+
+              {Object.values(attributeSelections).some(a => a.is_variation) && (
+                variations.length > 0 ? (
+                  <div style={{ marginTop: '1.5rem' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+                      <label className="tt-label" style={{ marginBottom: 0 }}>Product Variations</label>
+                      <button type="button" onClick={generateVariations} className="tt-btn tt-btn-ghost" style={{ fontSize: '0.8rem' }}>Re-generate</button>
+                    </div>
+                    <div style={{ overflowX: 'auto' }}>
+                      <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '0.85rem' }}>
+                        <thead>
+                          <tr style={{ textAlign: 'left', color: 'var(--tt-muted)', textTransform: 'uppercase', fontSize: '0.7rem' }}>
+                            <th style={{ padding: '0.5rem' }}>Attributes</th>
+                            <th style={{ padding: '0.5rem' }}>SKU</th>
+                            <th style={{ padding: '0.5rem' }}>Unit Cost</th>
+                            <th style={{ padding: '0.5rem' }}>Price</th>
+                            <th style={{ padding: '0.5rem' }}>Sale Price</th>
+                            <th style={{ padding: '0.5rem' }}>Stock</th>
+                            <th style={{ padding: '0.5rem' }}></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {variations.map((v, idx) => (
+                            <tr key={idx} style={{ borderTop: '1px solid var(--tt-border)' }}>
+                              <td style={{ padding: '0.5rem' }}>
+                                <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.3rem' }}>
+                                  {Object.values(v.attributes).map((val, i) => (
+                                    <span key={i} style={{ background: 'var(--tt-surface-2)', border: '1px solid var(--tt-border)', borderRadius: '6px', padding: '0.1rem 0.4rem', fontSize: '0.75rem' }}>{val}</span>
+                                  ))}
+                                </div>
+                              </td>
+                              <td style={{ padding: '0.5rem', color: 'var(--tt-muted)' }}>{v.sku}</td>
+                              <td style={{ padding: '0.5rem' }}>
+                                <input type="number" className="tt-input" style={{ width: '100px' }} value={v.unit_cost ?? ''} onChange={(e) => handleVariationDataChange(idx, 'unit_cost', e.target.value === '' ? null : parseFloat(e.target.value))} />
+                              </td>
+                              <td style={{ padding: '0.5rem' }}>
+                                <input type="number" className="tt-input" style={{ width: '100px' }} value={v.price ?? ''} onChange={(e) => handleVariationDataChange(idx, 'price', e.target.value === '' ? null : parseFloat(e.target.value))} />
+                              </td>
+                              <td style={{ padding: '0.5rem' }}>
+                                <input type="number" className="tt-input" style={{ width: '100px' }} value={v.sale_price ?? ''} onChange={(e) => handleVariationDataChange(idx, 'sale_price', e.target.value === '' ? null : parseFloat(e.target.value))} />
+                              </td>
+                              <td style={{ padding: '0.5rem' }}>
+                                <input type="number" className="tt-input" style={{ width: '80px' }} value={v.stock_quantity ?? 0} onChange={(e) => handleVariationDataChange(idx, 'stock_quantity', parseInt(e.target.value) || 0)} />
+                              </td>
+                              <td style={{ padding: '0.5rem' }}>
+                                <button type="button" onClick={() => removeVariation(idx)} style={{ background: 'transparent', border: 'none', color: 'var(--tt-danger)', cursor: 'pointer', fontSize: '1rem' }}>&times;</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
+                  </div>
+                ) : (
+                  <div style={{ textAlign: 'center', marginTop: '1.5rem', padding: '1.5rem', border: '1px dashed var(--tt-border)', borderRadius: 'var(--tt-radius-sm)' }}>
+                    <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)', marginBottom: '0.75rem' }}>You have attributes set for variations. Generate them to set specific prices and stock.</p>
+                    <button type="button" onClick={generateVariations} className="tt-btn tt-btn-primary" style={{ padding: '0.5rem 1.5rem' }}>Generate Variations</button>
+                  </div>
+                )
+              )}
             </div>
           </ExpandableSection>
 
-          <ExpandableSection 
-            id="location" 
-            title="6. Scheduling & Location" 
-            isOpen={openSection === 'location'} 
+          <ExpandableSection
+            id="location"
+            title="6. Scheduling & Location"
+            isOpen={openSection === 'location'}
             onToggle={toggleSection}
-            hasError={hasErrors(['sale_start_date', 'sale_end_date', 'store_index'])}
+            hasError={hasErrors(['sale_start_date', 'sale_end_date', 'store_index', 'location']) || selectedLocIds.length === 0}
           >
             <div style={{ display: 'flex', gap: '1rem', flexWrap: 'wrap' }}>
               <div style={{ flex: '1 1 200px' }}>
@@ -805,6 +1423,52 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
             </div>
 
             <div>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
+                <label className="tt-label" style={{ marginBottom: 0 }}>Listing Location</label>
+                {selectedLocIds.length > 0 && (
+                  <button type="button" onClick={handleResetLocations} style={{ fontSize: '0.8rem', color: 'var(--tt-flame)', background: 'transparent', border: 'none', cursor: 'pointer' }}>
+                    Reset Location
+                  </button>
+                )}
+              </div>
+
+              {selectedLocIds.length > 0 && (
+                <div style={{ marginBottom: '1rem', padding: '0.8rem', background: 'var(--tt-surface)', borderRadius: 'var(--tt-radius-sm)', border: '1px solid var(--tt-border)' }}>
+                  <span style={{ fontSize: '0.75rem', color: 'var(--tt-muted)', display: 'block', marginBottom: '0.3rem' }}>Selected Path:</span>
+                  <div style={{ display: 'flex', flexWrap: 'wrap', alignItems: 'center', gap: '0.4rem', fontSize: '0.9rem' }}>
+                    {selectedLocIds.map((id, idx) => {
+                      const loc = locations.find(l => l.id === id);
+                      if (!loc) return null;
+                      return (
+                        <span key={id} style={{ display: 'flex', alignItems: 'center', gap: '0.4rem' }}>
+                          <span style={{ fontWeight: 600, color: 'var(--tt-flame)' }}>{loc.name}</span>
+                          {idx < selectedLocIds.length - 1 && <span style={{ color: 'var(--tt-muted)' }}>›</span>}
+                        </span>
+                      );
+                    })}
+                  </div>
+                </div>
+              )}
+
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+                {locDropdownLevels.map((options, index) => (
+                  <select
+                    key={`loc-level-${index}`}
+                    className="tt-input"
+                    value={selectedLocIds[index] || ''}
+                    onChange={(e) => handleLocationChange(index, e.target.value)}
+                  >
+                    <option value="">-- Select {index === 0 ? 'Region' : 'Sub-location'} --</option>
+                    {options.map(loc => (
+                      <option key={loc.id} value={loc.id}>{loc.name}</option>
+                    ))}
+                  </select>
+                ))}
+              </div>
+              {selectedLocIds.length === 0 && <span style={{ color: 'var(--tt-danger)', fontSize: '0.8rem' }}>Please select at least a top-level location</span>}
+            </div>
+
+            <div>
               <label className="tt-label">Select Store</label>
               <select className="tt-input" {...register('store_index')}>
                 <option value="">-- Choose a store --</option>
@@ -825,10 +1489,10 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
                 ⚠️ Please fix the errors in the sections above before submitting.
               </div>
             )}
-            <button 
-              type="submit" 
+            <button
+              type="submit"
               disabled={isSubmitting}
-              className="tt-btn tt-btn-primary tt-shimmer" 
+              className="tt-btn tt-btn-primary tt-shimmer"
               style={{ width: '100%', padding: '1rem' }}
             >
               {isSubmitting ? 'Saving...' : isEditMode ? 'Save Changes' : 'Publish Deal Now'}
@@ -842,7 +1506,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
           <h3 style={{ fontFamily: 'Syne', fontSize: '1.1rem', marginBottom: '1.5rem', borderBottom: '1px solid var(--tt-border)', paddingBottom: '0.5rem' }}>
             Algorithm Predictor
           </h3>
-          
+
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', marginBottom: '2rem' }}>
             <div style={{ display: 'flex', justifyContent: 'space-between' }}>
               <span style={{ color: 'var(--tt-muted)' }}>Discount:</span>
@@ -874,6 +1538,16 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
         </div> */}
 
       </div>
+
+      {showMediaModal && (
+        <MediaLibraryModal
+          userId={user?.id}
+          multiple={mediaModalMode === 'gallery'}
+          linkedImages={[featuredImage, ...existingGallery].filter(img => img?.url)}
+          onSelect={handleMediaSelect}
+          onClose={() => setShowMediaModal(false)}
+        />
+      )}
     </div>
   );
 }

@@ -48,7 +48,7 @@ function FeaturedCard({ product, index, cardWidth='300px' }) {
       className="h-full flex"
     >
         <div
-          className="tt-card cursor-pointer w-full h-full transition-all duration-200 hover:-translate-y-1 flex flex-col"
+          className="bg-[var(--tt-theme)] border border-[var(--tt-surface)] w-full h-full transition-all duration-200 hover:-translate-y-1 flex flex-col"
           onMouseEnter={(e) => {
             e.currentTarget.style.boxShadow = `0 16px 48px rgba(0,0,0,0.5), 0 0 0 1px ${catColor}40`;
           }}
@@ -85,12 +85,12 @@ function FeaturedCard({ product, index, cardWidth='300px' }) {
           {/* Body */}
           <div className="p-[0.875rem] flex-grow flex flex-col justify-between gap-1">
             <div>
-              <div className="inline-block px-[0.6rem] py-[0.25rem] mb-[0.5rem] rounded-full bg-[var(--tt-surface-2)] border border-[var(--tt-border)] text-[var(--tt-muted-2)] text-[0.65rem] font-semibold uppercase tracking-[0.06em]">
+              <div className="inline-block px-[0.6rem] py-[0.25rem] mb-[0.5rem] rounded-full bg-[var(--tt-surface-2)] border border-[var(--tt-border)] text-[var(--tt-muted-2)] text-[10px] font-semibold">
               {categoryName}
             </div>
-            <h3 className="text-[0.88rem] font-semibold leading-[1.3] mb-2 line-clamp-2">
+            <Link href={hrefLink} className="text-[0.88rem] font-semibold leading-[1.3] mb-2 line-clamp-2">
               {product.name}
-            </h3>
+            </Link>
 
             <div className="flex items-baseline gap-[0.4rem] mb-[0.4rem]">
               <span className="font-bold text-base text-[var(--tt-flame)]">

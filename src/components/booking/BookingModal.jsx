@@ -7,24 +7,32 @@ import { formatUGX } from '@/lib/currency';
 import useAppStore from '@/store/useAppStore';
 import Image from 'next/image';
 
-export default function BookingModal({ product, onClose }) {
-  const { profile } = useAppStore();
+export default function BookingModal({ product, selectedVariation, onClose }) {
+  const { profile, addToast } = useAppStore();
   const { mutate: createBooking, isPending } = useCreateBooking();
-  
+
   const [quantity, setQuantity] = useState(1);
   const [address, setAddress] = useState('');
-  
+
   // For MVP, if they don't have addresses saved, we just take a raw string input
   const savedAddresses = profile?.shopping_addresses ?? [];
   const hasSavedAddresses = savedAddresses.length > 0;
-  
+
   const [selectedAddressIndex, setSelectedAddressIndex] = useState(hasSavedAddresses ? 0 : -1);
 
-  const total = product.sale_price * quantity;
+  const isFutureSale = product?.sale_start_date && new Date(product.sale_start_date) > new Date();
+  const unitPrice = selectedVariation?.sale_price || selectedVariation?.price || product.sale_price;
+  const maxQuantity = selectedVariation?.stock_quantity ?? product.stock;
+  const total = unitPrice * quantity;
 
   const handleSubmit = (e) => {
     e.preventDefault();
-    
+
+    if (isFutureSale) {
+      addToast({ type: 'error', message: 'This item is not yet available for purchase.' });
+      return;
+    }
+
     let finalAddress = null;
     if (selectedAddressIndex >= 0 && hasSavedAddresses) {
       finalAddress = savedAddresses[selectedAddressIndex];
@@ -41,6 +49,7 @@ export default function BookingModal({ product, onClose }) {
 
     createBooking({
       product_id: product.id,
+      variation_id: selectedVariation?.id ?? null,
       quantity,
       shipping_address: finalAddress,
     }, {
@@ -51,7 +60,7 @@ export default function BookingModal({ product, onClose }) {
     });
   };
 
-  const imageUrl = product.featured_image?.url ?? product.featured_image?.src ?? null;
+  const imageUrl = selectedVariation?.featured_image?.url ?? product.featured_image?.url ?? product.featured_image?.src ?? null;
 
   return (
     <AnimatePresence>
@@ -127,7 +136,12 @@ export default function BookingModal({ product, onClose }) {
             )}
             <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
               <h4 style={{ fontSize: '0.9rem', fontWeight: 600, color: 'var(--tt-text)', marginBottom: '0.25rem' }}>{product.name}</h4>
-              <p style={{ color: 'var(--tt-flame)', fontWeight: 700 }}>{formatUGX(product.sale_price)} <span style={{ fontSize: '0.75rem', color: 'var(--tt-muted)', fontWeight: 400 }}>each</span></p>
+              <p style={{ color: 'var(--tt-flame)', fontWeight: 700 }}>{formatUGX(unitPrice)} <span style={{ fontSize: '0.75rem', color: 'var(--tt-muted)', fontWeight: 400 }}>each</span></p>
+              {selectedVariation?.attributes && (
+                <p style={{ fontSize: '0.78rem', color: 'var(--tt-muted-2)' }}>
+                  {Object.values(selectedVariation.attributes).join(', ')}
+                </p>
+              )}
             </div>
           </div>
 
@@ -146,13 +160,13 @@ export default function BookingModal({ product, onClose }) {
                 <span style={{ fontSize: '1.2rem', fontWeight: 700, minWidth: '2ch', textAlign: 'center' }}>{quantity}</span>
                 <button 
                   type="button"
-                  onClick={() => setQuantity(q => Math.min(product.stock, q + 1))}
+                  onClick={() => setQuantity(q => Math.min(maxQuantity, q + 1))}
                   className="tt-btn tt-btn-ghost"
                   style={{ padding: '0.5rem 1rem' }}
                 >+</button>
-                
+
                 <span style={{ marginLeft: 'auto', color: 'var(--tt-muted)', fontSize: '0.85rem' }}>
-                  Max: {product.stock}
+                  Max: {maxQuantity}
                 </span>
               </div>
             </div>

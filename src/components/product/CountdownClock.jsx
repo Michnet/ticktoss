@@ -1,5 +1,6 @@
 'use client';
 
+import { useEffect, useRef, useState } from 'react';
 import { useCountdown } from '@/lib/hooks/useCountdown';
 
 const LEVEL_COLORS = {
@@ -30,10 +31,29 @@ function Digit({ value, pad = 2 }) {
  * CountdownClock — flip-digit style countdown timer.
  * @param {{ saleEndDate: string|Date, size?: 'sm'|'md'|'lg' }} props
  */
-export default function CountdownClock({ includeMilliSeconds = false, saleEndDate, size = 'md' }) {
+export default function CountdownClock({counterLabel=null, includeMilliSeconds = false, saleEndDate, size = 'md',  startDate = false, saleStartDate }) {
+  const containerRef = useRef(null);
+  const [isActive, setIsActive] = useState(false);
+
+  useEffect(() => {
+    const el = containerRef.current;
+    if (!el || typeof IntersectionObserver === 'undefined') {
+      setIsActive(true);
+      return;
+    }
+
+    const observer = new IntersectionObserver(
+      ([entry]) => setIsActive(entry.isIntersecting),
+      { rootMargin: '200px' },
+    );
+    observer.observe(el);
+
+    return () => observer.disconnect();
+  }, []);
+
   const { days, hours, minutes, seconds, cs, expired, level } = useCountdown(
-    saleEndDate,
-    { includeMs: includeMilliSeconds },
+    startDate ? saleStartDate : saleEndDate,
+    { includeMs: includeMilliSeconds, active: isActive },
   );
 
   const sizes = {
@@ -48,6 +68,7 @@ export default function CountdownClock({ includeMilliSeconds = false, saleEndDat
   if (expired) {
     return (
       <span
+        ref={containerRef}
         style={{ fontSize, color: 'var(--tt-muted)', fontFamily: 'Syne, monospace', fontWeight: 700 }}
       >
         ENDED
@@ -57,6 +78,7 @@ export default function CountdownClock({ includeMilliSeconds = false, saleEndDat
 
   return (
     <div
+      ref={containerRef}
       style={{
         display: 'inline-flex',
         alignItems: 'center',
@@ -69,6 +91,7 @@ export default function CountdownClock({ includeMilliSeconds = false, saleEndDat
         transition: 'color 0.5s',
       }}
     >
+      {counterLabel && <span className='leading-tight text-[var(--tt-text)]'>{counterLabel}</span>}
       {days > 0 && (
         <>
           <Digit value={days} />

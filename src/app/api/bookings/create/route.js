@@ -34,10 +34,10 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Product ID is required' }, { status: 400 });
     }
 
-    // 1. Fetch product to verify stock and price
+    // 1. Fetch product to verify stock, price, and sale window
     const { data: product, error: productError } = await supabase
       .from('products')
-      .select('id, stock, sale_price, user_id')
+      .select('id, stock, sale_price, user_id, sale_start_date')
       .eq('id', product_id)
       .single();
 
@@ -45,32 +45,71 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Product not found' }, { status: 404 });
     }
 
-    if (product.stock < quantity) {
-      return NextResponse.json({ error: 'Insufficient stock available' }, { status: 400 });
+    if (product.sale_start_date && new Date(product.sale_start_date) > new Date()) {
+      return NextResponse.json({
+        error: "This item isn't available for purchase yet — add it to your watchlist to be notified when it launches."
+      }, { status: 400 });
     }
 
-    // 2. Perform atomic stock decrement using RPC or simply by decrementing
-    // (In a full prod environment, you'd use a Postgres function to prevent race conditions.
-    // For MVP, we update directly via API, though it can suffer from race conditions)
-    const newStock = product.stock - quantity;
-    const { error: updateError } = await supabase
-      .from('products')
-      .update({ stock: newStock })
-      .eq('id', product_id);
+    // 2. If a variation was selected, validate and decrement its stock instead
+    // of the parent product's — variation stock is tracked independently.
+    let unitPrice = product.sale_price;
+    let originalVariationStock = null;
+    if (variation_id) {
+      const { data: variation, error: variationError } = await supabase
+        .from('product_variations')
+        .select('id, stock_quantity, price, sale_price')
+        .eq('id', variation_id)
+        .eq('product_id', product_id)
+        .single();
 
-    if (updateError) {
-      throw updateError;
+      if (variationError || !variation) {
+        return NextResponse.json({ error: 'Selected option is no longer available' }, { status: 404 });
+      }
+
+      if (variation.stock_quantity < quantity) {
+        return NextResponse.json({ error: 'Insufficient stock available' }, { status: 400 });
+      }
+
+      unitPrice = variation.sale_price || variation.price || product.sale_price;
+      originalVariationStock = variation.stock_quantity;
+
+      const { error: updateError } = await supabase
+        .from('product_variations')
+        .update({ stock_quantity: variation.stock_quantity - quantity })
+        .eq('id', variation_id);
+
+      if (updateError) {
+        throw updateError;
+      }
+    } else {
+      if (product.stock < quantity) {
+        return NextResponse.json({ error: 'Insufficient stock available' }, { status: 400 });
+      }
+
+      // Perform atomic stock decrement using RPC or simply by decrementing
+      // (In a full prod environment, you'd use a Postgres function to prevent race conditions.
+      // For MVP, we update directly via API, though it can suffer from race conditions)
+      const newStock = product.stock - quantity;
+      const { error: updateError } = await supabase
+        .from('products')
+        .update({ stock: newStock })
+        .eq('id', product_id);
+
+      if (updateError) {
+        throw updateError;
+      }
     }
 
     // 3. Insert the order/booking
-    const total_amount = product.sale_price * quantity;
+    const total_amount = unitPrice * quantity;
     const orderData = {
       user_id: user.id,
       vendor_id: product.user_id,
       product_id: product.id,
       variation_id: variation_id || null,
       quantity,
-      unit_price: product.sale_price,
+      unit_price: unitPrice,
       total_amount,
       shipping_address,
       status: 'pending',
@@ -86,7 +125,11 @@ export async function POST(request) {
 
     if (orderError) {
       // Rollback stock (best effort)
-      await supabase.from('products').update({ stock: product.stock }).eq('id', product_id);
+      if (variation_id) {
+        await supabase.from('product_variations').update({ stock_quantity: originalVariationStock }).eq('id', variation_id);
+      } else {
+        await supabase.from('products').update({ stock: product.stock }).eq('id', product_id);
+      }
       throw orderError;
     }
 

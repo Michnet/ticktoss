@@ -12,7 +12,7 @@ import { useProducts } from '@/lib/hooks/useProducts';
 import ProductCard1 from '../product/cards/ProductCard1';
 
 
-export default function ProductsView({cardType = 0, itemExClass='', cardWidth = 'auto', source = 'upcoming',ui = 'carousel', title = 'Upcoming',subTitle = 'Deals',description = null, filters=[]}) {
+export default function ProductsView({cardType = 0, itemExClass='', cardWidth = 'auto', source = 'upcoming',ui = 'carousel', title = 'Upcoming', authorId, excludeCat = null, excludeId = null, subTitle = 'Deals',description = null, filters=[]}) {
   
 
   let callerHook = null, ctaLink = null, Card = null;
@@ -28,6 +28,21 @@ export default function ProductsView({cardType = 0, itemExClass='', cardWidth = 
       Card = ProductCard;
       break;
   }
+
+  let customFilters = {};
+  if(filters?.length >  0){
+    customFilters.clusters = filters
+  }
+  if(authorId){
+    customFilters.authorId = authorId
+  }
+  if(excludeCat){
+    customFilters.excludeCat = excludeCat
+  }
+  if(excludeId){
+    customFilters.excludeId = excludeId
+  }
+
 
   switch (source) {
     case 'upcoming':
@@ -45,7 +60,7 @@ export default function ProductsView({cardType = 0, itemExClass='', cardWidth = 
     case 'custom':
       const hasClusters = Array.isArray(filters) && filters.length > 0;
       ctaLink = hasClusters ? `/products?clusters=${filters.join(',')}` : '/products';
-      callerHook = () => useProducts({ clusters: Array.isArray(filters) ? filters : [] });
+      callerHook = () => useProducts(customFilters);
       break;
     default:
       ctaLink = `/products`;
@@ -62,7 +77,7 @@ export default function ProductsView({cardType = 0, itemExClass='', cardWidth = 
       ));
     }
     return products?.map((p, i) => (
-      <Card key={p.id} product={p} index={i} cardWidth={cardWidth}/>
+      <Card counterLabel={source==='upcoming' ? 'Starts: ' : null} startDate={source==='upcoming'} key={p.id} product={p} index={i} cardWidth={cardWidth}/>
     ));
   };
 

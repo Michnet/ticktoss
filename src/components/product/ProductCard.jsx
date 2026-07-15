@@ -29,12 +29,12 @@ function getTimeAgo(dateStr) {
  *
  * @param {{ product: object, rank?: number, prevRank?: number, priority?: boolean, index?: number }} props
  */
-export default function ProductCard({ product, rank, prevRank, priority = false, index = 0 }) {
+export default function ProductCard({ product, counterLabel=null, startDate=false, rank, prevRank, priority = false, index = 0 }) {
   if (!product) return null;
   const {
     id, name, slug,
     price, sale_price,
-    sale_end_date,
+    sale_end_date,sale_start_date,
     featured_image,
     stock, stock_alert_level,
     discount_pct,
@@ -170,7 +170,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
           <div className="flex-1 flex flex-col justify-between gap-1">
             <div className='p-3 pb-0'>
               {/* Category pill */}
-            {categoryName && categoryName !== 'Uncategorized' && (
+            {/* {categoryName && categoryName !== 'Uncategorized' && (
               <div className='leading-tight line-clamp-1 mb-1 text-gray-500'
                 style={{
                   fontSize: '0.7rem',
@@ -179,7 +179,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
               >
                 {categoryName}
               </div>
-            )}
+            )} */}
             <ProductLabelRow random={true} className='flex-nowrap mb-1' max={4} itemStyle={{borderRadius:'5px'}} noIcon noBg product={product} size="md" />
             {/* Name */}
             <Link href={`/products/${slug}`}>
@@ -218,7 +218,7 @@ export default function ProductCard({ product, rank, prevRank, priority = false,
                   {/* <span className="text-[0.65rem] text-white/90 font-bold uppercase tracking-widest">
                     ⏱️
                   </span> */}
-                  <CountdownClock saleEndDate={sale_end_date} size="sm" />
+                  <CountdownClock counterLabel={counterLabel} startDate={startDate} saleStartDate={sale_start_date} saleEndDate={sale_end_date} size="sm" />
                   <UrgencyCircle saleEndDate={sale_end_date} showLabel={false} />
                 </div>
             )}

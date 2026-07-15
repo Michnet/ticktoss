@@ -17,7 +17,7 @@ export const productKeys = {
 /**
  * Fetch products with optional filters.
  */
-async function fetchProducts({ categorySlug, categoryId, locationId, tagIds, search, minPrice, maxPrice, isFeatured, clusters, orderBy, limit = 40, offset = 0 } = {}) {
+async function fetchProducts({ categorySlug, categoryId, locationId, tagIds,locIds,catIds,excludeId, minPrice, maxPrice, isFeatured, clusters, orderBy, limit = 40, offset = 0 } = {}) {
   let query = supabase
     .from('products')
     .select(`
@@ -39,6 +39,12 @@ async function fetchProducts({ categorySlug, categoryId, locationId, tagIds, sea
   if (tagIds) {
     query = query.overlaps('tag_ids', [tagIds]);
   }
+  if (catIds) {
+    query = query.overlaps('cat_ids', [catIds]);
+  }
+  if (locIds) {
+    query = query.overlaps('loc_ids', [locIds]);
+  }
   if (categorySlug) {
     query = query.eq('product_categories.slug', categorySlug);
   }
@@ -56,6 +62,9 @@ async function fetchProducts({ categorySlug, categoryId, locationId, tagIds, sea
   }
   if (isFeatured) {
     query = query.eq('is_featured', true);
+  }
+  if (excludeId) {
+    query = query.neq('id', excludeId);
   }
 
   if (clusters && clusters.length > 0) {
@@ -181,12 +190,13 @@ export function useProducts(filters = {}) {
   });
 }
 
-export function useProduct(slug) {
+export function useProduct(slug, initialData) {
   return useQuery({
     queryKey: productKeys.detail(slug),
     queryFn: () => fetchProductBySlug(slug),
     enabled: !!slug,
     staleTime: 60 * 1000,
+    ...(initialData ? { initialData } : {}),
   });
 }
 

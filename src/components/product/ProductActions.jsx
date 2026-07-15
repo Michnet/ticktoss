@@ -3,6 +3,7 @@
 import { MessageSquare, Share2, Heart, ShoppingCart, Bell, BellOff } from 'lucide-react';
 import useAppStore from '@/store/useAppStore';
 import { useWatchlist } from '@/hooks/useWatchlist';
+import { useProductLike } from '@/lib/hooks/useProducts';
 
 /**
  * WatchlistButton — shown only when the product's sale_start_date is in the future.
@@ -40,11 +41,26 @@ function WatchlistButton({ product, iconSize = 16 }) {
 export default function ProductActions({ product, iconSize = 16, leftExtraClass = 'bg-[var(--tt-surface)]', exClass= '' }) {
   const addToCart = useAppStore(state => state.addToCart);
   const addToast  = useAppStore(state => state.addToast);
+  const user = useAppStore(state => state.user);
+  const profile = useAppStore(state => state.profile);
+  const setAuthModalOpen = useAppStore(state => state.setAuthModalOpen);
+  const { mutate: toggleLike, isPending: isLiking } = useProductLike(product?.id);
   const {tt_location, vendor} = product ?? {}
-  const storeData = tt_location || vendor 
+  const storeData = tt_location || vendor
 
   const isFutureSale =
     product?.sale_start_date && new Date(product.sale_start_date) > new Date();
+
+  const isLiked = profile?.product_likes?.includes(product?.id) ?? false;
+
+  const handleLike = (e) => {
+    e.preventDefault();
+    if (!user?.id) {
+      setAuthModalOpen(true);
+      return;
+    }
+    toggleLike({ userId: user.id });
+  };
 
   const handleContact = (e) => {
     e.preventDefault();
@@ -94,27 +110,32 @@ export default function ProductActions({ product, iconSize = 16, leftExtraClass 
           <Share2 size={iconSize} strokeWidth={2} />
         </button>
         <button
-          onClick={(e) => e.preventDefault()}
-          className="flex items-center justify-center text-[var(--tt-text)] px-[0.6rem] hover:bg-[var(--tt-surface)] hover:text-red-500 hover:border-red-500/30 transition-colors"
-          title="Save to Favourites"
+          onClick={handleLike}
+          disabled={isLiking}
+          className={`flex items-center justify-center px-[0.6rem] transition-colors ${
+            isLiked ? 'text-red-500' : 'text-[var(--tt-text)] hover:text-red-500'
+          }`}
+          title={isLiked ? 'Remove from Favourites' : 'Save to Favourites'}
         >
-          <Heart size={iconSize} strokeWidth={2} />
+          <Heart size={iconSize} strokeWidth={2} fill={isLiked ? 'currentColor' : 'none'} />
         </button>
         {/* Watchlist button — only for products with a future sale start date */}
         {isFutureSale && <WatchlistButton product={product} iconSize={iconSize} />}
       </div>
 
-      <button
-        onClick={(e) => {
-          e.preventDefault();
-          addToCart(product, 1);
-          addToast({ title: 'Added to Cart', message: `${product.name} has been added to your cart.` });
-        }}
-        className="shadow aspect-square w-[35px] bg-[var(--tt-flame-light)] shrink-0 text-[var(--tt-flame)] tt-shimmer py-2 flex items-center justify-center"
-        title="Book Now"
-      >
-        <ShoppingCart size={iconSize} strokeWidth={2} />
-      </button>
+      {!isFutureSale && (
+        <button
+          onClick={(e) => {
+            e.preventDefault();
+            addToCart(product, 1);
+            addToast({ title: 'Added to Cart', message: `${product.name} has been added to your cart.` });
+          }}
+          className="shadow aspect-square w-[35px] bg-[var(--tt-flame-light)] shrink-0 text-[var(--tt-flame)] tt-shimmer py-2 flex items-center justify-center"
+          title="Book Now"
+        >
+          <ShoppingCart size={iconSize} strokeWidth={2} />
+        </button>
+      )}
     </div>
   );
 }
