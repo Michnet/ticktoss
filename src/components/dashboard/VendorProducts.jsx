@@ -45,7 +45,7 @@ export default function VendorProducts() {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
     
     try {
-      const res = await fetch(`/api/vendor/products?id=${productId}`, {
+      const res = await fetch(`/api/vendors/products?id=${productId}`, {
         method: 'DELETE',
       });
       if (!res.ok) {

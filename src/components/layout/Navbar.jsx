@@ -16,12 +16,14 @@ const NAV_LINKS = [
   { href: '/categories', label: 'Categories' },
 ];
 
-export default function Navbar() {
+export default function Navbar({ variant = 'solid' }) {
+  const isTransparent = variant === 'transparent';
   const { user, profile, isVendor, clearAuth, authModalOpen: storeAuthModalOpen, setAuthModalOpen: setStoreAuthModalOpen } = useAppStore();
   const [mobileOpen, setMobileOpen]       = useState(false);
   const [userMenuOpen, setUserMenuOpen]   = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [authModalMode, setAuthModalMode] = useState('login');
+  const [scrolled, setScrolled]           = useState(false);
 
   const { unreadCount } = useNotifications(user?.id ?? null);
 
@@ -33,6 +35,13 @@ export default function Navbar() {
       setStoreAuthModalOpen(false); // reset the store flag immediately
     }
   }, [storeAuthModalOpen, setStoreAuthModalOpen]);
+
+  // Toggle 'heady' class after 50px of vertical scroll
+  useEffect(() => {
+    const onScroll = () => setScrolled(window.scrollY > 50);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
 
   let userView = null;
 
@@ -118,17 +127,11 @@ export default function Navbar() {
   return (
   <>
       <header
+        className={`w-full md:shadow h-[var(--tt-nav-height)] ${isTransparent ? `transparent ${scrolled ? '' : 'absolute md:relative'}` : ''} ${scrolled ? 'heady bg-[var(--tt-theme)]' : ''}`}
         style={{
-          position: 'sticky',
-          top: 0,
           zIndex: 1000,
-          height: 'var(--tt-nav-height)',
-          background: 'var(--tt-nav-bg)',
-        backdropFilter: 'blur(20px)',
-        WebkitBackdropFilter: 'blur(20px)',
-        borderBottom: '1px solid var(--tt-border)',
-      }}
-    >
+        }}
+      >
       <div
         className="tt-container tt-container-padding h-full flex items-center gap-6"
       >

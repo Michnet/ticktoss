@@ -65,7 +65,7 @@ export default function BannerSlide({ item }) {
       />
 
       {/* Content */}
-      <div className={`bs-content-wrap ${imageSide === 'left' ? 'bs-content-reverse' : ''}`}>
+      <div className={`bs-content-wrap !pt-[var(--tt-nav-height)] ${imageSide === 'left' ? 'bs-content-reverse' : ''}`}>
         {/* Text block */}
         <div className="bs-text-block">
           {/* Badge */}

@@ -1,4 +1,5 @@
 import { createClient } from '@supabase/supabase-js';
+import { unstable_cache } from 'next/cache';
 
 /**
  * Formats a UGX number: 1_400_000 → "UGX 1.4M", 250_000 → "UGX 250K"
@@ -14,7 +15,7 @@ function fmtUGX(n) {
  * Falls back gracefully — if any query fails the rest still work.
  * Returns: string[]
  */
-export async function getTickerItems() {
+async function _getTickerItems() {
   const supabase = createClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL,
     process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY
@@ -184,12 +185,16 @@ export async function getTickerItems() {
   items.push(`⏰ Every deal has a countdown — book before time runs out`);
   items.push(`📦 Cash on delivery — shop confidently, pay on arrival`);
 
-  // Shuffle slightly so the ticker isn't always in the same order
-  // (deterministic seeding not needed; just a light shuffle at build/request time)
-  for (let i = items.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [items[i], items[j]] = [items[j], items[i]];
-  }
-
   return items;
 }
+
+/**
+ * Cached version — computed once at build time and revalidated every hour via ISR.
+ * Math.random() shuffle intentionally removed: non-deterministic output opts Next.js
+ * out of static generation.
+ */
+export const getTickerItems = unstable_cache(
+  _getTickerItems,
+  ['ticker-items'],
+  { revalidate: 3600, tags: ['ticker'] }
+);

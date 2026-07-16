@@ -35,7 +35,7 @@ export default function CategoryGrid({ CardStyle = 'default' }) {
     <section className="pb-5">
       <div className="tt-container tt-container-padding">
         {/* Header */}
-        <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
+        <div className="flex md:items-end text-center md:text-left items-center md:justify-between justify-center mb-5 gap-4 flex-wrap">
           <div>
             <h2 className="font-['Syne',sans-serif] font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">
               Browse by{' '}
@@ -44,11 +44,11 @@ export default function CategoryGrid({ CardStyle = 'default' }) {
               </span>
             </h2>
             <p className="text-[var(--tt-muted)] text-[0.875rem] mt-1">
-              Every category has live countdown deals
+              Discover the latest discounts from stores all over Uganda. Shop by category
             </p>
           </div>
           <Link
-            href="/categories"
+            href="/products"
             className="tt-btn tt-btn-ghost text-[0.82rem] px-4 py-[0.45rem]"
           >
             All Categories →

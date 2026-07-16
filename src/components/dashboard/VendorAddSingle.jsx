@@ -109,8 +109,18 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   const [selectedCatIds, setSelectedCatIds] = useState([]);
 
   const [locations, setLocations] = useState([]);
-  // Array to store the hierarchy of selected location IDs
-  const [selectedLocIds, setSelectedLocIds] = useState([]);
+  // Array to store the hierarchy of selected location IDs. For a new product,
+  // default to the vendor's first store so the fields aren't left empty.
+  const [selectedLocIds, setSelectedLocIds] = useState(() => {
+    if (initialData) return [];
+    const defaultStore = stores[0];
+    if (defaultStore?.loc_ids?.length) return defaultStore.loc_ids;
+    if (defaultStore?.location) return [defaultStore.location];
+    return [];
+  });
+  // Tracks whether the vendor has manually edited the location picker, so a
+  // later store change doesn't clobber a deliberate choice.
+  const [locationTouched, setLocationTouched] = useState(false);
 
   const [attributeSelections, setAttributeSelections] = useState(() => {
     try {
@@ -392,6 +402,21 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   const watchProductType = watch('product_type');
   const watchShortDescription = watch('short_description');
   const watchLongDescription = watch('long_description');
+  const watchStoreIndex = watch('store_index');
+
+  // For a new product, adopt the selected store's location as the product's
+  // location, unless the vendor has deliberately edited the location picker.
+  useEffect(() => {
+    if (isEditMode || locationTouched) return;
+    const store = stores[parseInt(watchStoreIndex)];
+    if (!store) return;
+    if (store.loc_ids?.length) {
+      setSelectedLocIds(store.loc_ids);
+    } else if (store.location) {
+      setSelectedLocIds([store.location]);
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [watchStoreIndex]);
 
   // Keep the RHF `category` field in sync with the category-hierarchy picker,
   // which is driven by plain state rather than a registered input.
@@ -421,11 +446,9 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   const salePrice = Number(watchSalePrice) || 0;
   const discountPct = originalPrice > 0 ? ((originalPrice - salePrice) / originalPrice) * 100 : 0;
 
-  const hours_remaining = (watchStartDate && watchEndDate) ? Math.max(1, Math.round((new Date(watchEndDate) - new Date()) / (1000 * 60 * 60))) : 24;
-
   const estimatedScore = computeUrgencyScore({
-    discount_pct: discountPct,
-    hours_remaining: hours_remaining,
+    saleEndDate: watchEndDate || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    discountPct: discountPct,
     stock: Number(watchStock) || 1
   });
 
@@ -492,7 +515,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
 
     setAddingOption(true);
     try {
-      const res = await fetch('/api/vendor/products/attributes', {
+      const res = await fetch('/api/vendors/products/attributes', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ attribute_id: attr.id, option_name: optionName }),
@@ -619,7 +642,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
         sale_end_date: new Date(data.sale_end_date).toISOString(),
         user_id: user.id,
         urgency_score: estimatedScore,
-        pickup_address: selectedStore.location || selectedStore.name || '',
+        pickup_address: selectedStore.address || selectedStore.name || '',
         pickup_lat: pickup_lat,
         pickup_lng: pickup_lng,
         tt_location: selectedStore,
@@ -644,7 +667,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
       let productId = fullProductData?.id;
 
       if (isEditMode) {
-        const res = await fetch('/api/vendor/products', {
+        const res = await fetch('/api/vendors/products', {
           method: 'PATCH',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
@@ -658,7 +681,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
           throw new Error(errData.error || 'Failed to update deal');
         }
       } else {
-        const res = await fetch('/api/vendor/products', {
+        const res = await fetch('/api/vendors/products', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
@@ -736,7 +759,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
           attributes: v.attributes,
         }));
 
-        const variationsRes = await fetch('/api/vendor/products/variations', {
+        const variationsRes = await fetch('/api/vendors/products/variations', {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ product_id: productId, variations: finalizedVariations }),
@@ -801,6 +824,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   }
 
   const handleLocationChange = (levelIndex, selectedId) => {
+    setLocationTouched(true);
     if (!selectedId) {
       setSelectedLocIds(prev => prev.slice(0, levelIndex));
     } else {
@@ -811,6 +835,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
 
   const handleResetLocations = () => {
     setSelectedLocIds([]);
+    setLocationTouched(false);
   };
 
   const hasErrors = (fields) => fields.some(field => errors[field]);
@@ -1474,7 +1499,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
                 <option value="">-- Choose a store --</option>
                 {stores.map((store, idx) => (
                   <option key={idx} value={idx}>
-                    {store.name} {store.location ? `(${store.location})` : ''}
+                    {store.name} {store.address ? `(${store.address})` : ''}
                   </option>
                 ))}
               </select>

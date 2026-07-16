@@ -14,7 +14,6 @@
 .banner-slider-track {
   position: relative;
   width: 100%;
-  border-radius: var(--tt-radius-md);
   overflow: hidden;
 }
 

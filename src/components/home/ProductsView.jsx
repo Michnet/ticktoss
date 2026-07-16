@@ -12,7 +12,7 @@ import { useProducts } from '@/lib/hooks/useProducts';
 import ProductCard1 from '../product/cards/ProductCard1';
 
 
-export default function ProductsView({cardType = 0, itemExClass='', cardWidth = 'auto', source = 'upcoming',ui = 'carousel', title = 'Upcoming', authorId, excludeCat = null, excludeId = null, subTitle = 'Deals',description = null, filters=[]}) {
+export default function ProductsView({headingSize= 24, cardType = 0, itemExClass='', cardWidth = 'auto', source = 'upcoming',ui = 'carousel', title = 'Upcoming', customFilters = {}, subTitle = 'Deals',description = null, filters=[]}) {
   
 
   let callerHook = null, ctaLink = null, Card = null;
@@ -29,18 +29,8 @@ export default function ProductsView({cardType = 0, itemExClass='', cardWidth = 
       break;
   }
 
-  let customFilters = {};
   if(filters?.length >  0){
     customFilters.clusters = filters
-  }
-  if(authorId){
-    customFilters.authorId = authorId
-  }
-  if(excludeCat){
-    customFilters.excludeCat = excludeCat
-  }
-  if(excludeId){
-    customFilters.excludeId = excludeId
   }
 
 
@@ -85,10 +75,10 @@ export default function ProductsView({cardType = 0, itemExClass='', cardWidth = 
   return (
       <div>
         <div className="flex items-center justify-between mb-5 gap-4 flex-nowrap">
-          <DualColorHeading title={title} subTitle={subTitle} description={description} />
+          <DualColorHeading size={headingSize} title={title} subTitle={subTitle} description={description} />
           {ctaLink && <Link
             href={ctaLink}
-            className="tt-btn tt-btn-ghost text-[0.82rem] px-4 py-[0.45rem]"
+            className={`tt-btn tt-btn-ghost text-[${(headingSize*0.7).toFixed(0)}px] px-4 py-[0.45rem]`}
           >
             View All →
           </Link>}

@@ -38,7 +38,7 @@ export default function ProductCard({ product, counterLabel=null, startDate=fals
     featured_image,
     stock, stock_alert_level,
     discount_pct,
-    product_categories,
+    category,
     created_at, vendor, tt_location 
   } = product;
 
@@ -48,7 +48,7 @@ export default function ProductCard({ product, counterLabel=null, startDate=fals
   const rankChange = prevRank !== undefined && rank !== undefined ? prevRank - rank : 0;
 
   const imageUrl = featured_image?.url ?? featured_image?.src ?? null;
-  const categoryName = product_categories?.name || 'Uncategorized';
+  const categoryName = category?.name || 'Uncategorized';
   const { emoji, color: categoryColor } = getStringStyle(categoryName);
   
   // Calculate discount percentage based on price and sale_price if discount_pct is not provided
@@ -81,19 +81,17 @@ export default function ProductCard({ product, counterLabel=null, startDate=fals
         >
           {/* Image area */}
           <div className="flex items-center justify-center text-[2.8rem] relative bg-white  overflow-hidden" style={{ aspectRatio: '4/3' }}>
-            <Link href={`/products/${slug}`}>
             {imageUrl ? (
               <img
-                className='h-[180px] min-w-full object-contain transition-transform duration-400 hover:scale-105'
+                className='max-h-[180px] h-full min-w-full object-contain transition-transform duration-400 hover:scale-105'
                 src={resizedImage(imageUrl, 'medium')}
                 alt={name}
               />
             ) : (
-              <div className="h-[180px] flex items-center justify-center bg-[var(--tt-surface-2)] w-full">
+              <div className="max-h-[180px] h-full flex items-center justify-center bg-[var(--tt-surface-2)] w-full">
                 {emoji}
               </div>
             )}
-            </Link>
             
             {/* NEW badge */}
             {/* <div className="absolute top-[6px] left-[6px] bg-[rgba(255,77,0,0.12)] border border-[rgba(255,77,0,0.3)] text-[var(--tt-flame-2)] backdrop-blur-[4px] text-[0.58rem] font-extrabold px-[6px] py-[1px] rounded-full tracking-[0.06em]">

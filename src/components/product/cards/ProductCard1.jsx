@@ -33,7 +33,7 @@ export default function ProductCard1({ product, index, cardWidth = '300px' }) {
   const { featured_image, sale_price, price, discount_pct } = product ?? {}
 
   const discountPct = product.price > 0 ? Math.round(((product.price - product.sale_price) / product.price) * 100) : 0;
-  const categoryName = product.product_categories?.name || 'Uncategorized';
+  const categoryName = product.category?.name || 'Uncategorized';
   const { emoji, color: catColor } = getStyle(categoryName);
   let onSale = sale_price && price ? sale_price > 0 && sale_price < price : false;
 

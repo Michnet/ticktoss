@@ -3,7 +3,6 @@ import { Inter, Roboto } from 'next/font/google';
 import QueryProvider from '@/components/providers/QueryProvider';
 import ThemeProvider from '@/components/providers/ThemeProvider';
 import AuthProvider from '@/components/providers/AuthProvider';
-import Navbar from '@/components/layout/Navbar';
 import Footer from '@/components/layout/Footer';
 import ToastProvider from '@/components/notifications/ToastProvider';
 import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
@@ -55,7 +54,6 @@ export default function RootLayout({ children }) {
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <QueryProvider>
             <AuthProvider>
-              <Navbar />
               <main style={{ minHeight: 'calc(100vh - var(--tt-nav-height))' }}>
                 {children}
               </main>

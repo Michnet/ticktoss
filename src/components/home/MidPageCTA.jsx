@@ -9,7 +9,7 @@ export default function MidPageCTA() {
       <div className="tt-container tt-container-padding">
         <div className="grid grid-cols-[repeat(auto-fit,minmax(280px,1fr))] gap-4">
           {/* Vendor CTA */}
-          <div className="bg-[var(--tt-surface-2)] shadow rounded-[var(--tt-radius-xl)] p-6 relative overflow-hidden">
+          <div className="bg-[var(--tt-surface-2)] shadow p-6 relative overflow-hidden">
             <div className="text-[4.5rem] mb-3 absolute -left-5 -top-5 z-0 opacity-10 -rotate-20">
               <Store className='lucide-dark:invert' size={150} />
             </div>
@@ -33,7 +33,7 @@ export default function MidPageCTA() {
           </div>
 
           {/* Near Me CTA */}
-          <div className="relative theme-set shadow no-border rounded-[var(--tt-radius-xl)] p-6 overflow-hidden">
+          <div className="relative theme-set shadow no-border p-6 overflow-hidden">
             <div className="text-[4.5rem] mb-3 absolute -left-5 -top-5 z-0 opacity-10 -rotate-20">
               <MapPin className='lucide-dark:invert'  size={150} />
             </div>

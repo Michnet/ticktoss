@@ -17,7 +17,7 @@ export const productKeys = {
 /**
  * Fetch products with optional filters.
  */
-async function fetchProducts({ categorySlug, categoryId, locationId, tagIds,locIds,catIds,excludeId, minPrice, maxPrice, isFeatured, clusters, orderBy, limit = 40, offset = 0 } = {}) {
+async function fetchProducts({ search, categorySlug, category_id, locationId, tag_ids,loc_ids,catIds,excludeId, minPrice, maxPrice, isFeatured, clusters, orderBy, limit = 40, offset = 0 } = {}) {
   let query = supabase
     .from('products')
     .select(`
@@ -28,22 +28,22 @@ async function fetchProducts({ categorySlug, categoryId, locationId, tagIds,locI
       discount_pct, urgency_score,
       location, pickup_lat, pickup_lng, pickup_address,
       user_id,
-      product_categories!inner(id, name, slug, color)
+      category:product_categories!inner(id, name, slug, color)
     `)
     .eq('status', 'published')
     .range(offset, offset + limit - 1);
 
-  if (categoryId) {
-    query = query.overlaps('cat_ids', [categoryId]);
+  if (category_id) {
+    query = query.eq('category', category_id);
   }
-  if (tagIds) {
-    query = query.overlaps('tag_ids', [tagIds]);
+  if (tag_ids) {
+    query = query.overlaps('tag_ids', [tag_ids]);
   }
   if (catIds) {
     query = query.overlaps('cat_ids', [catIds]);
   }
-  if (locIds) {
-    query = query.overlaps('loc_ids', [locIds]);
+  if (loc_ids) {
+    query = query.overlaps('loc_ids', [loc_ids]);
   }
   if (categorySlug) {
     query = query.eq('product_categories.slug', categorySlug);
@@ -183,6 +183,7 @@ async function fetchProductBySlug(slug) {
 // ── Hooks ──
 
 export function useProducts(filters = {}) {
+  console.log({filters})
   return useQuery({
     queryKey: productKeys.lists(filters),
     queryFn: () => fetchProducts(filters),

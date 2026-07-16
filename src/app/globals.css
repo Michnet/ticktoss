@@ -32,6 +32,7 @@
   --tt-muted-2: #636366;
   --tt-success: #34C759;
   --tt-danger:  #FF3B30;
+  --tt-shadow: rgba(100, 100, 111, 0.2) 0px 7px 29px 0px;
 
   /* Gradients */
   --tt-gradient-flame: linear-gradient(135deg, #FF4D00 0%, #FF6A00 50%, #FFB800 100%);
@@ -75,6 +76,7 @@
   --tt-muted-2: #9A9ABF;
   --tt-success: #00E87A;
   --tt-danger:  #FF2D55;
+  --tt-shadow: rgba(217, 217, 217, 0.2) 0px 7px 29px 0px;
 
   /* Gradients */
   --tt-gradient-flame: linear-gradient(135deg, #FF4D00 0%, #FF6A00 50%, #FFB800 100%);
@@ -119,6 +121,14 @@ body {
   background-color: rgba(255,77,0,0.2);
   color: white;
   border-color: var(--tt-flame);
+}
+
+header.heady {
+    position: fixed;
+    top: -55px;
+    transform: translateY(55px);
+    transition: transform 1s;
+    box-shadow: var(--tt-shadow);
 }
 
 .no-border{

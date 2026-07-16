@@ -51,7 +51,7 @@ export default function MyStores() {
                   <h3 style={{ fontFamily: 'Syne', fontSize: '1.25rem', fontWeight: 700, margin: '0 0 0.25rem 0' }}>{store.name}</h3>
                   <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)', display: 'flex', alignItems: 'flex-start', gap: '0.5rem' }}>
                     <span>📍</span> 
-                    {store.location || 'No physical location provided'}
+                    {store.address || 'No physical location provided'}
                   </p>
                 </div>
                 
