@@ -10,6 +10,7 @@ export default function VendorDashboardPage() {
   const { user } = useAppStore();
   const supabase = getSupabaseBrowserClient();
   const [stats, setStats] = useState({ activeListings: 0, totalOrders: 0, revenue: 0 });
+  const [orderStats, setOrderStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -39,7 +40,19 @@ export default function VendorDashboardPage() {
       setIsLoading(false);
     }
 
+    async function fetchOrderStats() {
+      try {
+        const res = await fetch('/api/orders?intent=seller_stats');
+        if (!res.ok) return;
+        const data = await res.json();
+        setOrderStats(data.order_stats || {});
+      } catch (err) {
+        console.error('Failed to load seller performance stats:', err);
+      }
+    }
+
     fetchStats();
+    fetchOrderStats();
   }, [user, supabase]);
 
   if (isLoading) {
@@ -54,10 +67,10 @@ export default function VendorDashboardPage() {
           <p style={{ color: 'var(--tt-muted)' }}>Here is what's happening with your deals.</p>
         </div>
         <div style={{ display: 'flex', gap: '1rem' }}>
-          <Link href="/vendor/products/bulk" className="tt-btn tt-btn-ghost">
+          <Link href="/dashboard?view=add_bulk" className="tt-btn tt-btn-ghost">
             Bulk Add (AI)
           </Link>
-          <Link href="/vendor/products/new" className="tt-btn tt-btn-primary tt-shimmer">
+          <Link href="/dashboard?view=add_single" className="tt-btn tt-btn-primary tt-shimmer">
             + Post a Deal
           </Link>
         </div>
@@ -83,6 +96,35 @@ export default function VendorDashboardPage() {
           </p>
         </div>
       </div>
+
+      {orderStats?.orders_qty > 0 && (
+        <div className="tt-card tt-glass" style={{ padding: '2rem', marginBottom: '3rem' }}>
+          <h2 style={{ fontSize: '1.2rem', fontFamily: 'Syne', marginBottom: '0.25rem' }}>Seller Performance</h2>
+          <p style={{ color: 'var(--tt-muted)', marginBottom: '1.5rem', fontSize: '0.9rem' }}>
+            Buyers see your completion rate on every product page — accept orders promptly and follow through to keep it high.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '1.5rem' }}>
+            <div>
+              <p style={{ color: 'var(--tt-muted-2)', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Completion Rate</p>
+              <p style={{ fontSize: '1.8rem', fontWeight: 800, fontFamily: 'Syne', color: 'var(--tt-success)' }}>
+                {Math.round((orderStats.completion_rate || 0) * 100)}%
+              </p>
+            </div>
+            <div>
+              <p style={{ color: 'var(--tt-muted-2)', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Cancellation Rate</p>
+              <p style={{ fontSize: '1.8rem', fontWeight: 800, fontFamily: 'Syne', color: 'var(--tt-danger)' }}>
+                {Math.round((orderStats.vendor_cancellation_rate || 0) * 100)}%
+              </p>
+            </div>
+            <div>
+              <p style={{ color: 'var(--tt-muted-2)', fontSize: '0.85rem', marginBottom: '0.3rem' }}>Units Ordered</p>
+              <p style={{ fontSize: '1.8rem', fontWeight: 800, fontFamily: 'Syne', color: 'var(--tt-text)' }}>
+                {orderStats.orders_qty}
+              </p>
+            </div>
+          </div>
+        </div>
+      )}
 
       <div className="tt-card tt-glass" style={{ padding: '2rem' }}>
         <h2 style={{ fontSize: '1.2rem', fontFamily: 'Syne', marginBottom: '1.5rem' }}>Recent Bookings</h2>

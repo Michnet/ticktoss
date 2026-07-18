@@ -42,8 +42,9 @@ function FeaturedCard({ product, index, cardWidth='300px' }) {
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: index * 0.08, duration: 0.35 }}
+      whileInView={{ opacity: 1, y: 0 }}
+      viewport={{ once: true, amount: 0.2 }}
+      transition={{ delay: Math.min(index, 4) * 0.08, duration: 0.35 }}
       style={{ width: cardWidth }}
       className="h-full flex"
     >

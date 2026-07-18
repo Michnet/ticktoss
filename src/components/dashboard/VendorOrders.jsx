@@ -5,6 +5,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import useAppStore from '@/store/useAppStore';
 import { formatUGX } from '@/lib/currency';
 import Image from 'next/image';
+import OrderResolutionModal from './OrderResolutionModal';
 
 export default function VendorOrders() {
   const { user, addToast } = useAppStore();
@@ -12,6 +13,7 @@ export default function VendorOrders() {
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
+  const [resolving, setResolving] = useState(null); // { order, mode }
 
   useEffect(() => {
     if (!user) return;
@@ -40,8 +42,11 @@ export default function VendorOrders() {
     setIsLoading(false);
   }
 
+  // Handles the two simple whole-order transitions: accepting a pending
+  // booking, or cancelling one outright before it's ever been accepted.
+  // Concluding a `processing` order (complete or cancel) goes through the
+  // per-item resolution modal instead, since outcomes can be mixed.
   const handleStatusChange = async (orderId, newStatus) => {
-    // If cancelling, prompt for a reason (optional)
     let cancel_reason = '';
     if (newStatus === 'cancelled') {
       const confirmCancel = window.confirm('Are you sure you want to cancel this booking? This will return the items to your stock.');
@@ -68,6 +73,10 @@ export default function VendorOrders() {
     } finally {
       setUpdatingId(null);
     }
+  };
+
+  const handleResolved = (updatedOrder) => {
+    setOrders(prev => prev.map(o => o.id === updatedOrder.id ? { ...o, ...updatedOrder } : o));
   };
 
   const getStatusColor = (status) => {
@@ -155,9 +164,9 @@ export default function VendorOrders() {
                   )}
                   
                   {order.status === 'processing' && (
-                    <button 
+                    <button
                       disabled={updatingId === order.id}
-                      onClick={() => handleStatusChange(order.id, 'completed')}
+                      onClick={() => setResolving({ order, mode: 'complete' })}
                       className="tt-btn"
                       style={{ padding: '0.5rem', fontSize: '0.85rem', background: 'var(--tt-success)', color: '#000' }}
                     >
@@ -165,8 +174,8 @@ export default function VendorOrders() {
                     </button>
                   )}
 
-                  {(order.status === 'pending' || order.status === 'processing') && (
-                    <button 
+                  {order.status === 'pending' && (
+                    <button
                       disabled={updatingId === order.id}
                       onClick={() => handleStatusChange(order.id, 'cancelled')}
                       className="tt-btn tt-btn-ghost"
@@ -176,18 +185,48 @@ export default function VendorOrders() {
                     </button>
                   )}
 
-                  {order.status === 'cancelled' && order.cancel_reason && (
+                  {order.status === 'processing' && (
+                    <button
+                      disabled={updatingId === order.id}
+                      onClick={() => setResolving({ order, mode: 'cancel' })}
+                      className="tt-btn tt-btn-ghost"
+                      style={{ padding: '0.5rem', fontSize: '0.85rem', color: 'var(--tt-danger)', borderColor: 'var(--tt-danger)' }}
+                    >
+                      Cancel Booking
+                    </button>
+                  )}
+
+                  {order.status === 'cancelled' && !order.resolution && order.cancel_reason && (
                     <p style={{ fontSize: '0.75rem', color: 'var(--tt-danger)', textAlign: 'center', lineHeight: 1.3 }}>
                       Reason: {order.cancel_reason}
                     </p>
                   )}
-                  
+
+                  {order.resolution?.items?.length > 0 && (
+                    <div style={{ fontSize: '0.75rem', textAlign: 'center', lineHeight: 1.4 }}>
+                      {order.resolution.items.map((ri, i) => (
+                        <p key={i} style={{ margin: 0, color: ri.cancelled_qty > 0 ? 'var(--tt-danger)' : 'var(--tt-success)' }}>
+                          {ri.completed_qty}/{ri.quantity} completed{ri.cancelled_qty > 0 && ri.cancel_reason ? ` — ${ri.cancel_reason}` : ''}
+                        </p>
+                      ))}
+                    </div>
+                  )}
+
                 </div>
 
               </div>
             );
           })}
         </div>
+      )}
+
+      {resolving && (
+        <OrderResolutionModal
+          order={resolving.order}
+          defaultMode={resolving.mode}
+          onClose={() => setResolving(null)}
+          onResolved={handleResolved}
+        />
       )}
     </div>
   );

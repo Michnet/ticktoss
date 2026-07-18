@@ -8,14 +8,15 @@ import { formatUGX } from '@/lib/currency';
 import { resizedImage } from '@/helpers/universal';
 
 export default function MyOrders() {
-  const { user } = useAppStore();
+  const { user, addToast } = useAppStore();
   const supabase = getSupabaseBrowserClient();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [cancellingId, setCancellingId] = useState(null);
 
   useEffect(() => {
     if (!user) return;
-    
+
     const fetchOrders = async () => {
       try {
         const { data, error } = await supabase
@@ -38,6 +39,32 @@ export default function MyOrders() {
 
     fetchOrders();
   }, [user, supabase]);
+
+  // Buyers can only cancel an order before the vendor has accepted it —
+  // once it's `processing`, cancellation goes through the vendor's
+  // per-item resolution instead.
+  const handleCancel = async (orderId) => {
+    if (!window.confirm('Cancel this order? This cannot be undone.')) return;
+
+    setCancellingId(orderId);
+    try {
+      const res = await fetch('/api/bookings/update', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ order_id: orderId, new_status: 'cancelled' }),
+      });
+
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error);
+
+      setOrders((prev) => prev.map((o) => (o.id === orderId ? { ...o, ...result.order } : o)));
+      addToast({ type: 'success', message: 'Order cancelled' });
+    } catch (err) {
+      addToast({ type: 'error', message: err.message });
+    } finally {
+      setCancellingId(null);
+    }
+  };
 
   const getStatusBadge = (status) => {
     const statusMap = {
@@ -150,11 +177,37 @@ export default function MyOrders() {
                   })}
                 </div>
 
+                {order.resolution?.items?.length > 0 && (
+                  <div style={{ fontSize: '0.8rem', lineHeight: 1.4 }}>
+                    {order.resolution.items.map((ri, i) => (
+                      <p key={i} style={{ margin: 0, color: ri.cancelled_qty > 0 ? 'var(--tt-danger)' : 'var(--tt-success)' }}>
+                        {ri.completed_qty}/{ri.quantity} fulfilled{ri.cancelled_qty > 0 && ri.cancel_reason ? ` — ${ri.cancel_reason}` : ''}
+                      </p>
+                    ))}
+                  </div>
+                )}
+
+                {order.status === 'cancelled' && !order.resolution && order.cancel_reason && (
+                  <p style={{ fontSize: '0.8rem', color: 'var(--tt-danger)', margin: 0 }}>Reason: {order.cancel_reason}</p>
+                )}
+
                 <div style={{ height: '1px', background: 'var(--tt-border)', marginTop: '0.5rem' }} />
 
-                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '0.75rem' }}>
                   <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)' }}>via {order.payment_method?.replace(/_/g, ' ')}</p>
-                  <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--tt-flame)' }}>{formatUGX(order.total_amount)}</p>
+                  <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+                    {order.status === 'pending' && (
+                      <button
+                        disabled={cancellingId === order.id}
+                        onClick={() => handleCancel(order.id)}
+                        className="tt-btn tt-btn-ghost"
+                        style={{ padding: '0.4rem 0.8rem', fontSize: '0.8rem', color: 'var(--tt-danger)', borderColor: 'var(--tt-danger)' }}
+                      >
+                        Cancel Order
+                      </button>
+                    )}
+                    <p style={{ fontSize: '1.1rem', fontWeight: 800, color: 'var(--tt-flame)' }}>{formatUGX(order.total_amount)}</p>
+                  </div>
                 </div>
               </div>
             );

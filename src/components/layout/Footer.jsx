@@ -75,8 +75,8 @@ export default function Footer() {
             <ul style={{ listStyle: 'none', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
               {[
                 { href: '/apply-vendor', label: 'Become a Vendor' },
-                { href: '/vendor', label: 'Vendor Dashboard' },
-                { href: '/vendor/products/new', label: 'List a Product' },
+                { href: '/dashboard', label: 'Vendor Dashboard' },
+                { href: '/dashboard?view=add_single', label: 'List a Product' },
               ].map(({ href, label }) => (
                 <li key={href}>
                   <Link href={href} style={{ color: 'var(--tt-muted)', fontSize: '0.875rem', textDecoration: 'none', transition: 'color 0.2s' }}

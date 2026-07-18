@@ -37,7 +37,7 @@ export async function POST(request) {
     // 1. Fetch product to verify stock, price, and sale window
     const { data: product, error: productError } = await supabase
       .from('products')
-      .select('id, stock, sale_price, user_id, sale_start_date')
+      .select('id, name, stock, sale_price, user_id, sale_start_date, featured_image')
       .eq('id', product_id)
       .single();
 
@@ -102,6 +102,9 @@ export async function POST(request) {
     }
 
     // 3. Insert the order/booking
+    // `items` mirrors the singular columns above as a one-entry snapshot —
+    // it's what order_stats tracking and the vendor's resolution flow key
+    // off of, so every order (cart checkout or single booking) needs one.
     const total_amount = unitPrice * quantity;
     const orderData = {
       user_id: user.id,
@@ -114,7 +117,16 @@ export async function POST(request) {
       shipping_address,
       status: 'pending',
       payment_method: 'cash_on_delivery',
-      payment_status: 'pending'
+      payment_status: 'pending',
+      items: [{
+        product_id: product.id,
+        variation_id: variation_id || null,
+        name: product.name,
+        quantity,
+        price: unitPrice,
+        vendor_id: product.user_id,
+        image: product.featured_image || null,
+      }],
     };
 
     const { data: order, error: orderError } = await supabase

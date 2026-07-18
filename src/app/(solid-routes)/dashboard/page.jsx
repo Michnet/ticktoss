@@ -24,9 +24,6 @@ const MyStores = dynamic(() => import('@/components/dashboard/MyStores'), {
 const VendorProducts = dynamic(() => import('@/components/dashboard/VendorProducts'), {
   loading: () => <ViewLoader />,
 });
-const CustomerOrders = dynamic(() => import('@/components/dashboard/CustomerOrders'), {
-  loading: () => <ViewLoader />,
-});
 const MyCart = dynamic(() => import('@/components/cart/MyCart'), {
   loading: () => <ViewLoader />,
 });
@@ -65,7 +62,6 @@ function DashboardPageContent() {
       case 'vendor_overview': return <VendorOverview />;
       case 'vendor_stores': return <MyStores />;
       case 'vendor_products': return <VendorProducts />;
-      case 'customer_orders': return <CustomerOrders />;
       case 'vendor_orders': return <VendorOrders />;
       case 'add_single': return <VendorAddSingle />;
       case 'add_bulk': return <VendorAddBulk />;

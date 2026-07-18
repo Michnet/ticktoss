@@ -15,6 +15,7 @@ export default function VendorOverview() {
     activeOrders: 0,
     totalSales: 0,
   });
+  const [orderStats, setOrderStats] = useState(null);
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
@@ -27,7 +28,7 @@ export default function VendorOverview() {
           .from('products')
           .select('*', { count: 'exact', head: true })
           .eq('user_id', user.id);
-        
+
         if (productsError) throw productsError;
 
         // Fetch vendor orders
@@ -54,7 +55,19 @@ export default function VendorOverview() {
       }
     };
 
+    const fetchOrderStats = async () => {
+      try {
+        const res = await fetch('/api/orders?intent=seller_stats');
+        if (!res.ok) return;
+        const data = await res.json();
+        setOrderStats(data.order_stats || {});
+      } catch (err) {
+        console.error('Failed to load seller performance stats:', err);
+      }
+    };
+
     fetchStats();
+    fetchOrderStats();
   }, [user, supabase]);
 
   if (isLoading) {
@@ -106,6 +119,33 @@ export default function VendorOverview() {
         </div>
 
       </div>
+
+      {orderStats?.orders_qty > 0 && (
+        <div style={{ marginTop: '2rem', paddingTop: '2rem', borderTop: '1px solid var(--tt-border)' }}>
+          <h3 style={{ fontSize: '1rem', fontWeight: 700, marginBottom: '0.25rem', color: 'var(--tt-text)' }}>Seller Performance</h3>
+          <p style={{ color: 'var(--tt-muted)', marginBottom: '1.25rem', fontSize: '0.85rem' }}>
+            Buyers see your completion rate on every product page — accept orders promptly and follow through to keep it high.
+          </p>
+          <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))', gap: '1.5rem' }}>
+            <div>
+              <p style={{ color: 'var(--tt-muted-2)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Completion Rate</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--tt-success)' }}>
+                {Math.round((orderStats.completion_rate || 0) * 100)}%
+              </p>
+            </div>
+            <div>
+              <p style={{ color: 'var(--tt-muted-2)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Cancellation Rate</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--tt-danger)' }}>
+                {Math.round((orderStats.vendor_cancellation_rate || 0) * 100)}%
+              </p>
+            </div>
+            <div>
+              <p style={{ color: 'var(--tt-muted-2)', fontSize: '0.8rem', marginBottom: '0.25rem' }}>Units Ordered</p>
+              <p style={{ fontSize: '1.5rem', fontWeight: 800, color: 'var(--tt-text)' }}>{orderStats.orders_qty}</p>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

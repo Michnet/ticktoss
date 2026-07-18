@@ -19,7 +19,6 @@ export default function DashboardLayout({ children }) {
     { view: 'vendor_overview', label: 'Store Overview', icon: '🏪' },
     { view: 'vendor_stores', label: 'My Stores', icon: '🏬' },
     { view: 'vendor_products', label: 'Products', icon: '🏷️' },
-    { view: 'customer_orders', label: 'Customer Orders', icon: '🛒' },
     { view: 'vendor_orders', label: 'Orders & Bookings', icon: '📥' },
   ];
 

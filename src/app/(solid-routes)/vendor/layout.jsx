@@ -18,7 +18,7 @@ export default function VendorDashboardLayout({ children }) {
 
     // Only check once profile is loaded
     if (user === null) {
-      router.push('/login?redirectTo=/vendor');
+      router.push('/login?redirectTo=/dashboard');
       return;
     }
     
@@ -40,10 +40,10 @@ export default function VendorDashboardLayout({ children }) {
   }
 
   const links = [
-    { href: '/vendor', label: 'Dashboard' },
+    { href: '/dashboard', label: 'Dashboard' },
     { href: '/vendor/products', label: 'My Products' },
     { href: '/vendor/products/new', label: 'Post a Deal' },
-    { href: '/vendor/orders', label: 'Orders & Bookings' },
+    { href: '/dashboard?view=vendor_orders', label: 'Orders & Bookings' },
   ];
 
   const handleLogout = async () => {

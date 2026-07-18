@@ -169,6 +169,17 @@ function SingleProductView() {
                 <p className="font-bold truncate m-0 text-[0.88rem]" style={{ color: 'var(--tt-text)' }}>{product.profiles.display_name || 'Verified Vendor'}</p>
                 <p className="m-0 text-[0.7rem]" style={{ color: 'var(--tt-success)' }}>✓ Verified Vendor</p>
               </div>
+              {product.order_stats?.orders_qty >= 5 && (
+                <span
+                  className="tt-badge text-[0.7rem] ml-auto shrink-0"
+                  style={{
+                    background: 'color-mix(in srgb, var(--tt-success) 15%, transparent)',
+                    color: 'var(--tt-success)',
+                  }}
+                >
+                  {Math.round((product.order_stats.completion_rate || 0) * 100)}% Completion Rate
+                </span>
+              )}
             </div>
           )}
 

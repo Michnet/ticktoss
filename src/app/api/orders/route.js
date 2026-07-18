@@ -250,6 +250,18 @@ export async function GET(req) {
       return Response.json({ orders: data || [] });
     }
 
+    if (intent === 'seller_stats') {
+      const { data, error } = await supabaseAdmin
+        .from('profiles')
+        .select('order_stats')
+        .eq('user_id', user.id)
+        .single();
+
+      if (error) throw error;
+
+      return Response.json({ order_stats: data?.order_stats || {} });
+    }
+
     return Response.json({ error: 'Invalid intent' }, { status: 400 });
 
   } catch (error) {

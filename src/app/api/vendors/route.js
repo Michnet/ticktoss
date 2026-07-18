@@ -299,7 +299,7 @@ export async function POST(request) {
                 <p>Hello ${applicantName},</p>
                 <p>Great news! Your application to become a vendor has been approved.</p>
                 <p>You can now log in and access the Vendor Dashboard to start posting your flash deals.</p>
-                <p><a href="https://ticktoss.com/vendor">Go to Vendor Dashboard</a></p>
+                <p><a href="https://ticktoss.com/dashboard">Go to Vendor Dashboard</a></p>
                 <p>We are excited to see what you have to offer.</p>
                 <p>Thank you,<br/>TickToss Team</p>`
             }]
