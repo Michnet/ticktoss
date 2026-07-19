@@ -42,7 +42,18 @@ function shareProduct(product, addToast) {
 
 export default function ProductClientPage({ product: ssgProduct }) {
   const { data: product } = useProduct(ssgProduct.slug, ssgProduct);
-  
+
+  // Fire once per mount — a page view, not a data dependency of the query above.
+  const viewedRef = useRef(null);
+  useEffect(() => {
+    if (!ssgProduct?.id || viewedRef.current === ssgProduct.id) return;
+    viewedRef.current = ssgProduct.id;
+    fetch('/api/products?intent=add_view', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ product_id: ssgProduct.id }),
+    }).catch(() => {});
+  }, [ssgProduct?.id]);
 
   if (!product) {
     return (
@@ -79,7 +90,14 @@ function SingleProductView() {
     saleDateStr,
     product.watchers ?? 0
   );
-  const isLiked = profile?.product_likes?.includes(product.id) ?? false;
+  const profileIsLiked = profile?.product_likes?.includes(product.id) ?? false;
+  const [isLiked, setIsLiked] = useState(profileIsLiked);
+
+  // Keep in sync once the profile-derived value actually loads/changes —
+  // local state otherwise only moves in response to a click.
+  useEffect(() => {
+    setIsLiked(profileIsLiked);
+  }, [profileIsLiked]);
 
   // Price resolves through the selected variation first, falling back to the base product.
   const variationEffectivePrice = selectedVariation?.sale_price || selectedVariation?.price || null;
@@ -130,7 +148,10 @@ function SingleProductView() {
       window.location.href = `/login?redirectTo=/products/${product.slug}`;
       return;
     }
-    toggleLike({ userId: user.id });
+    setIsLiked((prev) => !prev);
+    toggleLike(undefined, {
+      onError: () => setIsLiked((prev) => !prev),
+    });
   };
 
   const imageUrl = product.featured_image?.url ?? product.featured_image?.src ?? null;
@@ -267,7 +288,7 @@ function SingleProductView() {
               </h3>
               <div className="flex flex-col gap-2">
                 {metaAttributes.map(attr => (
-                  <div key={attr.slug} className="flex justify-between border-b last:border-b-0 pb-2" style={{ borderColor: 'var(--tt-border)', opacity: 0.92 }}>
+                  <div key={attr.slug} className="flex justify-between border-b last:border-b-0 pb-2 gap-3" style={{ borderColor: 'var(--tt-border)', opacity: 0.92 }}>
                     <span className="text-[0.78rem]" style={{ color: 'var(--tt-muted-2)' }}>{attr.name}</span>
                     <span className="text-[0.78rem] font-semibold" style={{ color: 'var(--tt-text)' }}>
                       {attr.values?.map(v => v.name).join(', ')}

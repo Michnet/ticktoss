@@ -8,6 +8,7 @@ import { resizedImage } from '@/helpers/universal';
 import CountdownClock from '@/components/product/CountdownClock';
 import UrgencyBar from '@/components/product/UrgencyBar';
 import Carousel from '../ui/Carousel';
+import ProductCardCollage from '../product/concepts/ProductCardCollage';
 
 const CATEGORY_STYLES = {
   'Electronics': { emoji: '📱', color: '#4C8BFF' },
@@ -149,7 +150,7 @@ export default function FeaturedProducts({cardWidth='300px'}) {
              ))
           ) : (
             products?.map((p, i) => (
-              <FeaturedCard key={p.id} product={p} index={i} cardWidth={cardWidth} />
+              <ProductCardCollage key={p.id} product={p} index={i} cardWidth={cardWidth} />
             ))
           )}
         </Carousel>

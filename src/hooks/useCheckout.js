@@ -7,15 +7,16 @@ export function useCheckout() {
   const router = useRouter();
 
   /**
-   * Submits the cart items and address information to create an order.
+   * Submits cart items and a single address (used for both billing and
+   * shipping) to create an order per vendor represented in the items.
    * If the user is unauthenticated, they will be redirected to the login page.
    *
-   * @param {Array} cartItems - Array of product objects in the cart
-   * @param {Object} addresses - { shipping: {...}, billing: {...} }
+   * @param {Array} items - Array of product/cart items to order
+   * @param {Object} address - { firstName, lastName, phone, address, city, zipCode }
    * @param {String} paymentMethod - Payment method selected
    * @param {String} notes - Optional order notes
    */
-  const submitOrder = async (cartItems, addresses, paymentMethod = 'cash_on_delivery', notes = '') => {
+  const submitOrder = async (items, address, paymentMethod = 'cash_on_delivery', notes = '') => {
     setIsLoading(true);
     setError(null);
 
@@ -26,9 +27,8 @@ export function useCheckout() {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          cartItems,
-          shipping_address: addresses.shipping || {},
-          billing_address: addresses.billing || {},
+          items,
+          address,
           payment_method: paymentMethod,
           notes,
         }),

@@ -434,6 +434,9 @@ a {
   grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 1.25rem;
 }
+.item_card img {
+    filter: brightness(0.97);
+}
 
 @media (min-width: 769px) {
   .mobile-only { display: none !important; }

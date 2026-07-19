@@ -2,14 +2,21 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import Mailjet from 'node-mailjet';
-import { clusterItemsByVendor, calculateOrderTotal, generateTrackingNumber, formatLineItems } from '@/lib/orderUtils';
+import { clusterItemsByVendor, calculateOrderTotal, generateTrackingNumber } from '@/lib/orderUtils';
+
+const REQUIRED_ADDRESS_FIELDS = ['firstName', 'lastName', 'phone', 'address', 'city'];
 
 export async function POST(req) {
   try {
-    const { cartItems, shipping_address, billing_address, payment_method, notes } = await req.json();
+    const { items, address, payment_method, notes } = await req.json();
 
-    if (!cartItems || cartItems.length === 0) {
+    if (!items || items.length === 0) {
       return Response.json({ error: 'Cart is empty' }, { status: 400 });
+    }
+
+    const missingFields = REQUIRED_ADDRESS_FIELDS.filter((field) => !address?.[field]);
+    if (missingFields.length > 0) {
+      return Response.json({ error: `Missing required address fields: ${missingFields.join(', ')}` }, { status: 400 });
     }
 
     const cookieStore = await cookies();
@@ -41,25 +48,48 @@ export async function POST(req) {
       process.env.SUPABASE_SERVICE_ROLE_KEY
     );
 
-    // Re-verify sale window and stock server-side — the cart items sent by the
-    // client are just a UI snapshot and can't be trusted for authorization.
-    const productIds = [...new Set(cartItems.map(item => item.id || item.product_id).filter(Boolean))];
+    // Re-verify sale window, stock, price and vendor server-side — the cart
+    // items sent by the client are just a UI snapshot and can't be trusted
+    // for authorization or pricing.
+    const productIds = [...new Set(items.map(item => item.id || item.product_id).filter(Boolean))];
     const { data: liveProducts, error: liveProductsError } = await supabaseAdmin
       .from('products')
-      .select('id, name, stock, sale_start_date')
+      .select('id, name, stock, price, sale_price, user_id, sale_start_date, featured_image')
       .in('id', productIds);
 
     if (liveProductsError) throw liveProductsError;
 
     const liveProductById = new Map((liveProducts || []).map(p => [p.id, p]));
-    const requestedQtyById = new Map();
-    for (const item of cartItems) {
-      const id = item.id || item.product_id;
-      requestedQtyById.set(id, (requestedQtyById.get(id) || 0) + (item.quantity || 1));
+
+    const variationIds = [...new Set(items.map(item => item.variation_id).filter(Boolean))];
+    let liveVariationById = new Map();
+    if (variationIds.length > 0) {
+      const { data: liveVariations, error: liveVariationsError } = await supabaseAdmin
+        .from('product_variations')
+        .select('id, product_id, stock_quantity, price, sale_price, attributes')
+        .in('id', variationIds);
+
+      if (liveVariationsError) throw liveVariationsError;
+      liveVariationById = new Map((liveVariations || []).map(v => [v.id, v]));
     }
 
-    for (const [id, qty] of requestedQtyById) {
-      const live = liveProductById.get(id);
+    // Aggregate requested quantity per product/variation so a duplicated
+    // line item (or the same product added twice) is validated against its
+    // total, not checked twice against the same starting stock figure.
+    const requestedQtyByProductId = new Map();
+    const requestedQtyByVariationId = new Map();
+    for (const item of items) {
+      const productId = item.id || item.product_id;
+      const qty = item.quantity || 1;
+      if (item.variation_id) {
+        requestedQtyByVariationId.set(item.variation_id, (requestedQtyByVariationId.get(item.variation_id) || 0) + qty);
+      } else {
+        requestedQtyByProductId.set(productId, (requestedQtyByProductId.get(productId) || 0) + qty);
+      }
+    }
+
+    for (const [productId, qty] of requestedQtyByProductId) {
+      const live = liveProductById.get(productId);
       if (!live) {
         return Response.json({ error: 'One of the items in your cart is no longer available.' }, { status: 400 });
       }
@@ -73,32 +103,86 @@ export async function POST(req) {
       }
     }
 
-    // Group items by vendor
-    const vendorClusters = clusterItemsByVendor(cartItems);
+    for (const [variationId, qty] of requestedQtyByVariationId) {
+      const variation = liveVariationById.get(variationId);
+      if (!variation) {
+        return Response.json({ error: 'One of the selected options is no longer available.' }, { status: 400 });
+      }
+      const product = liveProductById.get(variation.product_id);
+      if (product?.sale_start_date && new Date(product.sale_start_date) > new Date()) {
+        return Response.json({
+          error: `"${product.name}" isn't available for purchase yet — remove it from your cart or add it to your watchlist instead.`
+        }, { status: 400 });
+      }
+      if (variation.stock_quantity < qty) {
+        return Response.json({ error: `Insufficient stock for "${product?.name || 'selected option'}".` }, { status: 400 });
+      }
+    }
+
+    // All validation passed — decrement stock once per unique product/variation.
+    for (const [productId, qty] of requestedQtyByProductId) {
+      const live = liveProductById.get(productId);
+      const { error: stockError } = await supabaseAdmin
+        .from('products')
+        .update({ stock: live.stock - qty })
+        .eq('id', productId);
+      if (stockError) throw stockError;
+    }
+    for (const [variationId, qty] of requestedQtyByVariationId) {
+      const variation = liveVariationById.get(variationId);
+      const { error: stockError } = await supabaseAdmin
+        .from('product_variations')
+        .update({ stock_quantity: variation.stock_quantity - qty })
+        .eq('id', variationId);
+      if (stockError) throw stockError;
+    }
+
+    // Build line items from live/authoritative data (price, vendor, name,
+    // image) rather than trusting the client-supplied cart snapshot.
+    const enrichedItems = items.map(item => {
+      const productId = item.id || item.product_id;
+      const product = liveProductById.get(productId);
+      const variation = item.variation_id ? liveVariationById.get(item.variation_id) : null;
+      const unitPrice = variation?.sale_price || variation?.price || product.sale_price || product.price;
+
+      return {
+        product_id: productId,
+        variation_id: item.variation_id || null,
+        name: product.name,
+        quantity: item.quantity || 1,
+        price: unitPrice,
+        vendor_id: product.user_id || null,
+        image: product.featured_image || null,
+        attributes: variation?.attributes || item.attributes || null,
+      };
+    });
+
+    // Group items by vendor — each vendor's items become their own order row.
+    const vendorClusters = clusterItemsByVendor(enrichedItems);
     const createdOrders = [];
     const mailjet = new Mailjet({
       apiKey: process.env.MAILJET_API_KEY,
       apiSecret: process.env.MAILJET_SECRET_KEY
     });
 
-    const userEmail = user.email || shipping_address?.email || billing_address?.email;
-    const userName = shipping_address?.firstName || user?.user_metadata?.first_name || 'Customer';
+    const userEmail = user.email;
+    const userName = [address.firstName, address.lastName].filter(Boolean).join(' ') || 'Customer';
 
     let allItemsListHtml = '';
     let grandTotal = 0;
 
     for (const cluster of vendorClusters) {
-      const formattedItems = formatLineItems(cluster.items);
-      const totalAmount = calculateOrderTotal(formattedItems, 0);
+      const totalAmount = calculateOrderTotal(cluster.items, 0);
       const trackingNumber = generateTrackingNumber('TT');
 
       const orderData = {
         user_id: user.id,
+        vendor_id: cluster.vendor_id,
         status: 'pending',
-        items: formattedItems,
+        items: cluster.items,
         total_amount: totalAmount,
-        shipping_address: shipping_address || {},
-        billing_address: billing_address || {},
+        shipping_address: address,
+        billing_address: address,
         payment_method: payment_method || 'cash_on_delivery',
         payment_status: 'unpaid',
         shipping_cost: 0,
@@ -115,8 +199,7 @@ export async function POST(req) {
       if (insertError) throw insertError;
       createdOrders.push(order);
 
-      // Build HTML for this cluster for the customer email
-      const clusterHtml = formattedItems.map(item => `<li>${item.name} x ${item.quantity} - UGX ${item.price.toLocaleString()}</li>`).join('');
+      const clusterHtml = cluster.items.map(item => `<li>${item.name} x ${item.quantity} - UGX ${item.price.toLocaleString()}</li>`).join('');
       allItemsListHtml += `<h4>Order ${trackingNumber}</h4><ul>${clusterHtml}</ul><p>Subtotal: UGX ${totalAmount.toLocaleString()}</p>`;
       grandTotal += totalAmount;
 

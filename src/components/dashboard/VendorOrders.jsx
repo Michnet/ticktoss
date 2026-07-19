@@ -1,15 +1,13 @@
 'use client';
 
 import { useEffect, useState } from 'react';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import useAppStore from '@/store/useAppStore';
 import { formatUGX } from '@/lib/currency';
-import Image from 'next/image';
 import OrderResolutionModal from './OrderResolutionModal';
+import { resizedImage } from '@/helpers/universal';
 
 export default function VendorOrders() {
   const { user, addToast } = useAppStore();
-  const supabase = getSupabaseBrowserClient();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [updatingId, setUpdatingId] = useState(null);
@@ -20,26 +18,22 @@ export default function VendorOrders() {
     fetchOrders();
   }, [user]);
 
+  // Goes through the server (service role) rather than a direct client
+  // query — the buyer profile join (phone/display_name) is blocked by
+  // RLS for anyone but the buyer themselves when queried from the browser.
   async function fetchOrders() {
     setIsLoading(true);
-    // Fetch orders with nested product and buyer profile info
-    const { data, error } = await supabase
-      .from('product_orders')
-      .select(`
-        *,
-        product:products (name, featured_image),
-        buyer:profiles!product_orders_user_id_fkey (display_name, phone, avatar)
-      `)
-      .eq('vendor_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (error) {
-      console.error(error);
+    try {
+      const res = await fetch('/api/vendors?intent=vendor_orders');
+      const result = await res.json();
+      if (!res.ok) throw new Error(result.error || 'Failed to load bookings');
+      setOrders(result.orders || []);
+    } catch (err) {
+      console.error(err);
       addToast({ type: 'error', message: 'Failed to load bookings' });
-    } else {
-      setOrders(data || []);
+    } finally {
+      setIsLoading(false);
     }
-    setIsLoading(false);
   }
 
   // Handles the two simple whole-order transitions: accepting a pending
@@ -109,30 +103,43 @@ export default function VendorOrders() {
         <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
           {orders.map((order) => {
             const date = new Date(order.created_at).toLocaleString('en-US', { month: 'short', day: 'numeric', year: 'numeric', hour: 'numeric', minute: '2-digit' });
-            const imageUrl = order.product?.featured_image?.url || order.product?.featured_image?.src;
-            const buyerName = order.buyer?.display_name || 'Anonymous Buyer';
-            const buyerPhone = order.buyer?.phone || 'No phone provided';
-            const address = order.shipping_address?.raw || order.shipping_address?.street || 'No address provided';
+            const items = Array.isArray(order.items) && order.items.length ? order.items : [];
+            const contact = order.shipping_address || order.billing_address || {};
+            const buyerName = [contact.firstName, contact.lastName].filter(Boolean).join(' ') || 'Anonymous Buyer';
+            const buyerPhone = contact.phone || 'No phone provided';
+            const address = contact.address
+              ? [contact.address, contact.city, contact.zipCode].filter(Boolean).join(', ')
+              : 'No address provided';
 
             return (
               <div key={order.id} className="tt-card tt-glass" style={{ padding: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', borderLeft: `4px solid ${getStatusColor(order.status)}` }}>
-                
-                {/* Product Snapshot */}
-                <div style={{ display: 'flex', gap: '1rem', flex: '1 1 300px' }}>
-                  <div style={{ width: 80, height: 80, borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface-2)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
-                    {imageUrl ? (
-                      <Image src={imageUrl} alt="Product" fill style={{ objectFit: 'cover' }} />
-                    ) : (
-                      <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '2rem' }}>📦</div>
-                    )}
-                  </div>
-                  <div style={{ display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-                    <p style={{ fontSize: '0.75rem', color: 'var(--tt-muted)', marginBottom: '0.2rem' }}>{date}</p>
-                    <h3 style={{ fontSize: '1rem', fontWeight: 600, color: 'var(--tt-text)' }}>{order.product?.name || 'Unknown Product'}</h3>
-                    <p style={{ color: 'var(--tt-gold)', fontWeight: 700, marginTop: '0.25rem' }}>
-                      {order.quantity} × {formatUGX(order.unit_price)} <span style={{ color: 'var(--tt-muted)', fontSize: '0.8rem', fontWeight: 400 }}>({formatUGX(order.total_amount)} total)</span>
-                    </p>
-                  </div>
+
+                {/* Product Snapshot — one row per item in the order */}
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem', flex: '1 1 300px' }}>
+                  <p style={{ fontSize: '0.75rem', color: 'var(--tt-muted)' }}>{date}</p>
+                  {items.map((item, idx) => {
+                    const itemImg = resizedImage(item.image, 'thumbnail');
+                    return (
+                      <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
+                        <div style={{ width: 60, height: 60, borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface-2)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
+                          {itemImg ? (
+                            <img src={itemImg} alt={item.name || 'Product'} fill style={{ objectFit: 'cover' }} />
+                          ) : (
+                            <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>📦</div>
+                          )}
+                        </div>
+                        <div>
+                          <h3 style={{ fontSize: '0.95rem', fontWeight: 600, color: 'var(--tt-text)' }}>{item.name || 'Unknown Product'}</h3>
+                          <p className='opacity-50' style={{fontWeight: 700, fontSize: '0.85rem' }}>
+                            {item.quantity} × {formatUGX(item.price)}
+                          </p>
+                        </div>
+                      </div>
+                    );
+                  })}
+                  <p style={{ fontSize: '0.9rem', fontWeight: 800, marginTop: '0.25rem' }}>
+                    Total: {formatUGX(order.total_amount)}
+                  </p>
                 </div>
 
                 {/* Buyer Info */}
@@ -140,7 +147,16 @@ export default function VendorOrders() {
                   <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Buyer Details</p>
                   <p style={{ fontWeight: 600, color: 'var(--tt-text)', marginBottom: '0.2rem' }}>{buyerName}</p>
                   <p style={{ fontSize: '0.9rem', color: 'var(--tt-text)', marginBottom: '0.5rem' }}>📞 {buyerPhone}</p>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)', lineHeight: 1.4 }}>📍 {address}</p>
+                  <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)', lineHeight: 1.4, marginBottom: contact.phone ? '0.75rem' : 0 }}>📍 {address}</p>
+                  {contact.phone && (
+                    <a
+                      href={`tel:${contact.phone}`}
+                      className="tt-btn tt-btn-gold"
+                      style={{ display: 'inline-block', padding: '0.4rem 0.75rem', fontSize: '0.8rem', textDecoration: 'none' }}
+                    >
+                      📞 Call Customer
+                    </a>
+                  )}
                 </div>
 
                 {/* Actions */}
@@ -159,7 +175,7 @@ export default function VendorOrders() {
                       className="tt-btn tt-btn-gold tt-shimmer"
                       style={{ padding: '0.5rem', fontSize: '0.85rem' }}
                     >
-                      Accept Booking
+                      Start Processing
                     </button>
                   )}
                   

@@ -83,7 +83,7 @@ export default function HomePage() {
       <CategoryGrid />
 
       {/* ── 5. Featured deals ────────────────────────── */}
-      <FeaturedProducts cardWidth='200px' />
+      <FeaturedProducts />
 
       {/* ── 6. Mid-page split CTA ────────────────────── */}
       <MidPageCTA />

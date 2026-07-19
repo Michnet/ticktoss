@@ -35,8 +35,13 @@ const PRODUCT_SELECT = `
   urgency_score,
   featured_image,
   is_featured,
+  short_description,
   created_at,
   user_id,
+  gallery,
+  likes,
+  watchers,
+  views,
   tt_location,
   vendor:user_id("tt_stores"),
   product_categories(name)

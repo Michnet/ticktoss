@@ -2,30 +2,26 @@
 
 import { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { useCreateBooking } from '@/lib/hooks/useBookings';
+import { useCheckout } from '@/hooks/useCheckout';
 import { formatUGX } from '@/lib/currency';
 import useAppStore from '@/store/useAppStore';
+import AddressForm from '@/components/checkout/AddressForm';
 import Image from 'next/image';
 
 export default function BookingModal({ product, selectedVariation, onClose }) {
-  const { profile, addToast } = useAppStore();
-  const { mutate: createBooking, isPending } = useCreateBooking();
+  const { addToast } = useAppStore();
+  const { submitOrder, isLoading: isPending } = useCheckout();
 
   const [quantity, setQuantity] = useState(1);
-  const [address, setAddress] = useState('');
-
-  // For MVP, if they don't have addresses saved, we just take a raw string input
-  const savedAddresses = profile?.shopping_addresses ?? [];
-  const hasSavedAddresses = savedAddresses.length > 0;
-
-  const [selectedAddressIndex, setSelectedAddressIndex] = useState(hasSavedAddresses ? 0 : -1);
+  const [address, setAddress] = useState({});
+  const isAddressComplete = ['firstName', 'lastName', 'phone', 'address', 'city'].every((field) => address[field]?.trim());
 
   const isFutureSale = product?.sale_start_date && new Date(product.sale_start_date) > new Date();
   const unitPrice = selectedVariation?.sale_price || selectedVariation?.price || product.sale_price;
   const maxQuantity = selectedVariation?.stock_quantity ?? product.stock;
   const total = unitPrice * quantity;
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
 
     if (isFutureSale) {
@@ -33,31 +29,18 @@ export default function BookingModal({ product, selectedVariation, onClose }) {
       return;
     }
 
-    let finalAddress = null;
-    if (selectedAddressIndex >= 0 && hasSavedAddresses) {
-      finalAddress = savedAddresses[selectedAddressIndex];
-    } else {
-      // Wrap raw string in JSON structure expected by backend
-      finalAddress = {
-        street: address,
-        city: '',
-        state: '',
-        country: 'Uganda',
-        raw: address
-      };
-    }
-
-    createBooking({
-      product_id: product.id,
+    const result = await submitOrder([{
+      id: product.id,
       variation_id: selectedVariation?.id ?? null,
       quantity,
-      shipping_address: finalAddress,
-    }, {
-      onSuccess: () => {
-        onClose();
-        // The toast is handled in the hook!
-      }
-    });
+    }], address, 'cash_on_delivery', '');
+
+    if (result.success) {
+      addToast({ type: 'success', message: 'Booking confirmed! The vendor will contact you shortly.' });
+      onClose();
+    } else {
+      addToast({ type: 'error', message: result.error || 'Booking failed' });
+    }
   };
 
   const imageUrl = selectedVariation?.featured_image?.url ?? product.featured_image?.url ?? product.featured_image?.src ?? null;
@@ -175,40 +158,7 @@ export default function BookingModal({ product, selectedVariation, onClose }) {
             <div>
               <label className="tt-label">Delivery or Pickup Address</label>
               
-              {hasSavedAddresses ? (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.75rem' }}>
-                  {savedAddresses.map((addr, idx) => (
-                    <label key={idx} style={{ display: 'flex', gap: '0.75rem', padding: '1rem', background: 'var(--tt-surface-2)', borderRadius: 'var(--tt-radius-sm)', border: selectedAddressIndex === idx ? '1px solid var(--tt-flame)' : '1px solid var(--tt-border)', cursor: 'pointer' }}>
-                      <input 
-                        type="radio" 
-                        name="address" 
-                        checked={selectedAddressIndex === idx} 
-                        onChange={() => setSelectedAddressIndex(idx)}
-                        style={{ accentColor: 'var(--tt-flame)' }}
-                      />
-                      <div>
-                        <p style={{ fontSize: '0.9rem', color: 'var(--tt-text)' }}>{addr.street || addr.raw}</p>
-                        <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)' }}>{addr.city}{addr.state ? `, ${addr.state}` : ''}</p>
-                      </div>
-                    </label>
-                  ))}
-                  <button type="button" onClick={() => setSelectedAddressIndex(-1)} style={{ background: 'none', border: 'none', color: 'var(--tt-flame)', textAlign: 'left', cursor: 'pointer', fontSize: '0.85rem', marginTop: '0.5rem' }}>
-                    + Use a different address
-                  </button>
-                </div>
-              ) : null}
-
-              {(!hasSavedAddresses || selectedAddressIndex === -1) && (
-                <textarea
-                  className="tt-input"
-                  rows={3}
-                  required
-                  placeholder="e.g. Plot 45, Kampala Road, opposite Central Bank. Call 0772... when you arrive."
-                  value={address}
-                  onChange={(e) => setAddress(e.target.value)}
-                  style={{ resize: 'vertical' }}
-                />
-              )}
+              <AddressForm value={address} onChange={setAddress} />
             </div>
 
             {/* Payment Warning */}
@@ -227,11 +177,11 @@ export default function BookingModal({ product, selectedVariation, onClose }) {
                 </span>
               </div>
               
-              <button 
-                type="submit" 
-                disabled={isPending}
-                className="tt-btn tt-btn-primary tt-shimmer" 
-                style={{ width: '100%', padding: '1.125rem', fontSize: '1.1rem', opacity: isPending ? 0.7 : 1 }}
+              <button
+                type="submit"
+                disabled={isPending || !isAddressComplete}
+                className="tt-btn tt-btn-primary tt-shimmer"
+                style={{ width: '100%', padding: '1.125rem', fontSize: '1.1rem', opacity: (isPending || !isAddressComplete) ? 0.7 : 1 }}
               >
                 {isPending ? 'Processing...' : 'Confirm Booking'}
               </button>

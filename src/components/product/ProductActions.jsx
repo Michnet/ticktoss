@@ -1,6 +1,7 @@
 'use client';
 
-import { MessageSquare, Share2, Heart, ShoppingCart, Bell, BellOff } from 'lucide-react';
+import { useState, useEffect } from 'react';
+import { MessageSquare, Share2, Heart, ShoppingCart, Bell, BellOff, Plus } from 'lucide-react';
 import useAppStore from '@/store/useAppStore';
 import { useWatchlist } from '@/hooks/useWatchlist';
 import { useProductLike } from '@/lib/hooks/useProducts';
@@ -38,7 +39,7 @@ function WatchlistButton({ product, iconSize = 16 }) {
   );
 }
 
-export default function ProductActions({ product, iconSize = 16, leftExtraClass = 'bg-[var(--tt-surface)]', exClass= '' }) {
+export default function ProductActions({ product, iconSize = 16, leftExtraClass = 'bg-[var(--tt-surface)]', exClass= '', actionButtonClass='bg-[var(--tt-flame-light)] text-[var(--tt-flame)]', height='35' }) {
   const addToCart = useAppStore(state => state.addToCart);
   const addToast  = useAppStore(state => state.addToast);
   const user = useAppStore(state => state.user);
@@ -51,7 +52,14 @@ export default function ProductActions({ product, iconSize = 16, leftExtraClass 
   const isFutureSale =
     product?.sale_start_date && new Date(product.sale_start_date) > new Date();
 
-  const isLiked = profile?.product_likes?.includes(product?.id) ?? false;
+  const profileIsLiked = profile?.product_likes?.includes(product?.id) ?? false;
+  const [isLiked, setIsLiked] = useState(profileIsLiked);
+
+  // Keep in sync once the profile-derived value actually loads/changes —
+  // local state otherwise only moves in response to a click.
+  useEffect(() => {
+    setIsLiked(profileIsLiked);
+  }, [profileIsLiked]);
 
   const handleLike = (e) => {
     e.preventDefault();
@@ -59,7 +67,10 @@ export default function ProductActions({ product, iconSize = 16, leftExtraClass 
       setAuthModalOpen(true);
       return;
     }
-    toggleLike({ userId: user.id });
+    setIsLiked((prev) => !prev);
+    toggleLike(undefined, {
+      onError: () => setIsLiked((prev) => !prev),
+    });
   };
 
   const handleContact = (e) => {
@@ -94,7 +105,7 @@ export default function ProductActions({ product, iconSize = 16, leftExtraClass 
 
   return (
     <div className={`flex justify-between ${exClass}`}>
-      <div className={`flex flex-row justify-end shrink-1 overflow-x-auto no-scrollbar ${leftExtraClass}`}>
+      <div className={`flex flex-row justify-end shrink-1 overflow-x-auto no-scrollbar ${leftExtraClass} h-[${height}px]`}>
         <button
           onClick={handleContact}
           className="flex items-center justify-center text-[var(--tt-text)] px-[0.6rem] hover:bg-[var(--tt-surface)] transition-colors"
@@ -130,10 +141,10 @@ export default function ProductActions({ product, iconSize = 16, leftExtraClass 
             addToCart(product, 1);
             addToast({ title: 'Added to Cart', message: `${product.name} has been added to your cart.` });
           }}
-          className="shadow aspect-square w-[35px] bg-[var(--tt-flame-light)] shrink-0 text-[var(--tt-flame)] tt-shimmer py-2 flex items-center justify-center"
+          className={`shadow aspect-square h-[${height}px] shrink-0 tt-shimmer py-2 flex items-center justify-center ${actionButtonClass}`}
           title="Book Now"
         >
-          <ShoppingCart size={iconSize} strokeWidth={2} />
+          <Plus size={iconSize} strokeWidth={2} />
         </button>
       )}
     </div>

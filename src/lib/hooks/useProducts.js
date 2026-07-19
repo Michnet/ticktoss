@@ -23,11 +23,11 @@ async function fetchProducts({ search, categorySlug, category_id, locationId, ta
     .select(`
       id, name, slug, short_description,
       price, sale_price, sale_end_date, sale_start_date,
-      featured_image, stock, stock_alert_level,
+      featured_image, gallery, stock, stock_alert_level,
       is_featured, is_flash_sale, status,
       discount_pct, urgency_score,
       location, pickup_lat, pickup_lng, pickup_address,
-      user_id,
+      user_id,views,watchers,likes,
       category:product_categories!inner(id, name, slug, color)
     `)
     .eq('status', 'published')
@@ -183,7 +183,6 @@ async function fetchProductBySlug(slug) {
 // ── Hooks ──
 
 export function useProducts(filters = {}) {
-  console.log({filters})
   return useQuery({
     queryKey: productKeys.lists(filters),
     queryFn: () => fetchProducts(filters),
@@ -220,24 +219,15 @@ export function useVendorProducts(vendorId) {
 export function useProductLike(productId) {
   const qc = useQueryClient();
   return useMutation({
-    mutationFn: async ({ userId }) => {
-      const { data: profile } = await supabase
-        .from('profiles')
-        .select('product_likes')
-        .eq('user_id', userId)
-        .single();
-
-      const likes = profile?.product_likes ?? [];
-      const isLiked = likes.includes(productId);
-      const newLikes = isLiked ? likes.filter((id) => id !== productId) : [...likes, productId];
-
-      const { error } = await supabase
-        .from('profiles')
-        .update({ product_likes: newLikes })
-        .eq('user_id', userId);
-
-      if (error) throw error;
-      return { liked: !isLiked };
+    mutationFn: async () => {
+      const res = await fetch('/api/products?intent=toggle_like', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ product_id: productId }),
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || 'Failed to toggle like');
+      return data;
     },
     onSuccess: () => qc.invalidateQueries({ queryKey: ['profile'] }),
   });

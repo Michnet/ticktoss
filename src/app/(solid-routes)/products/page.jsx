@@ -127,7 +127,9 @@ function ProductsContent() {
                   <p style={{ color: 'var(--tt-muted)' }}>Try adjusting your filters to find what you're looking for.</p>
                 </div>
             ) : (
+              <>
               <ProductGrid products={products} />
+              </>
             )}
           </div>
         </div>

@@ -8,12 +8,15 @@ import Link from 'next/link';
 import { useCheckout } from '@/hooks/useCheckout';
 import { resizedImage } from '@/helpers/universal';
 import AuthForm from '@/components/auth/AuthForm';
+import AddressForm from '@/components/checkout/AddressForm';
 
 export default function MyCart() {
   const { user, cartItems, removeFromCart, updateQuantity, clearCart } = useAppStore();
   const { submitOrder, isLoading, error } = useCheckout();
   const [success, setSuccess] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
+  const [address, setAddress] = useState({});
+  const isAddressComplete = ['firstName', 'lastName', 'phone', 'address', 'city'].every((field) => address[field]?.trim());
 
   const calculateSubtotal = () => {
     return cartItems.reduce((sum, item) => sum + ((item.price || item.sale_price || 0) * (item.quantity || 1)), 0);
@@ -28,11 +31,7 @@ export default function MyCart() {
   };
 
   const processCheckout = async () => {
-    const addresses = {
-      shipping: {}, // In a real app, collect from a form
-      billing: {}
-    };
-    const result = await submitOrder(cartItems, addresses, 'cash_on_delivery', 'Order from MyCart');
+    const result = await submitOrder(cartItems, address, 'cash_on_delivery', 'Order from MyCart');
     if (result.success) {
       setSuccess(true);
       clearCart();
@@ -174,9 +173,15 @@ export default function MyCart() {
             <span>Total</span>
             <span className="text-[var(--tt-flame)]">UGX {calculateSubtotal().toLocaleString()}</span>
           </div>
-          <button 
+
+          <h4 className="text-sm font-bold mb-3 text-[var(--tt-text)]">Delivery Details</h4>
+          <div className="mb-4">
+            <AddressForm value={address} onChange={setAddress} />
+          </div>
+
+          <button
             onClick={handleCheckoutClick}
-            disabled={isLoading}
+            disabled={isLoading || !isAddressComplete}
             className="tt-btn tt-btn-primary tt-shimmer w-full flex items-center justify-center gap-2 py-3"
           >
             {isLoading ? 'Processing...' : 'Secure Checkout'}

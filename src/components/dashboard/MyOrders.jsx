@@ -153,7 +153,7 @@ export default function MyOrders() {
 
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {orderItems.map((item, idx) => {
-                    const productImg = item.image ? (item.image.startsWith('http') ? item.image : resizedImage(item.image, 'thumbnail')) : null;
+                    const productImg = item.image ? (item.image?.url?.startsWith('http') ? item.image : resizedImage(item.image.url, 'thumbnail')) : null;
 
                     return (
                       <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>

@@ -32,34 +32,6 @@ export function useBookings(userId, role = 'buyer') {
   });
 }
 
-export function useCreateBooking() {
-  const qc = useQueryClient();
-  const { addToast } = useAppStore();
-
-  return useMutation({
-    mutationFn: async (bookingData) => {
-      const res = await fetch('/api/bookings/create', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(bookingData),
-      });
-      if (!res.ok) {
-        const err = await res.json();
-        throw new Error(err.message || 'Booking failed');
-      }
-      return res.json();
-    },
-    onSuccess: () => {
-      qc.invalidateQueries({ queryKey: ['bookings'] });
-      qc.invalidateQueries({ queryKey: ['products'] });
-      addToast({ type: 'success', message: 'Booking confirmed! The vendor will contact you shortly.' });
-    },
-    onError: (err) => {
-      addToast({ type: 'error', message: err.message });
-    },
-  });
-}
-
 export function useCancelBooking() {
   const qc = useQueryClient();
   const { addToast } = useAppStore();

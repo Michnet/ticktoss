@@ -17,6 +17,8 @@ export function translateSize(size){
       return 200;
     case 'medium':
       return 300;
+    case '400':
+      return 400;
     case '500x500':
       return 500;
     case 'big_thumb':

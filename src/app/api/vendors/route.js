@@ -37,6 +37,37 @@ export async function GET(request) {
       return NextResponse.json({ applications: data });
     }
 
+    if (intent === 'vendor_orders') {
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
+      }
+
+      // Service role — the buyer profile join (phone/display_name) would
+      // otherwise be blocked by RLS for anyone who isn't that buyer.
+      const supabaseAdmin = createClient(
+        process.env.NEXT_PUBLIC_SUPABASE_URL,
+        process.env.SUPABASE_SERVICE_ROLE_KEY
+      );
+
+      const { data, error } = await supabaseAdmin
+        .from('product_orders')
+        .select(`
+          *,
+          product:products (name, featured_image),
+          buyer:profiles!product_orders_user_id_fkey (display_name, phone, avatar)
+        `)
+        .eq('vendor_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) {
+        console.error('Error fetching vendor orders:', error);
+        return NextResponse.json({ error: 'Failed to load orders' }, { status: 500 });
+      }
+
+      return NextResponse.json({ orders: data || [] });
+    }
+
     if (intent === 'admin_vendor_directory') {
       const { data: { user }, error: authError } = await supabase.auth.getUser();
       if (authError || !user || !isAdmin(user)) {

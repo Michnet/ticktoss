@@ -1,31 +1,17 @@
 // src/lib/orderUtils.js
 
 /**
- * Maps frontend cart items to the database-compatible items JSON array.
- * Ensures only necessary fields are sent.
+ * Clusters an array of order line items (each already carrying a
+ * resolved `vendor_id`) by vendor. Returns an array of objects:
+ * { vendor_id, items } — one entry per vendor, each becoming its own
+ * product_orders row.
  */
-export const formatLineItems = (cartItems) => {
-  return cartItems.map(item => ({
-    product_id: item.id || item.product_id,
-    name: item.name,
-    attributes: item.attributes || {},
-    quantity: item.quantity || 1,
-    price: item.price || item.sale_price || 0,
-    vendor_id: item.user_id || null,
-    image: item.featured_image || item.image || null,
-  }));
-};
-
-/**
- * Clusters an array of cart items by their vendor_id.
- * Returns an array of objects: { vendor_id, items }
- */
-export const clusterItemsByVendor = (cartItems) => {
+export const clusterItemsByVendor = (items) => {
   const clusters = {};
 
-  cartItems.forEach(item => {
+  items.forEach(item => {
     // If no vendor_id is present, group them under 'system'
-    const vendorId = item.user_id || 'system';
+    const vendorId = item.vendor_id || 'system';
     if (!clusters[vendorId]) {
       clusters[vendorId] = [];
     }
