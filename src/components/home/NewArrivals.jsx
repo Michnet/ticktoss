@@ -14,7 +14,7 @@ export default function NewArrivals() {
     <section className="pb-5">
       <div className="tt-container tt-container-padding">
         <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
-          <DualColorHeading size={35} title="Just" subTitle="Listed" emoji="🆕" description="Fresh deals — be the first to book"/>
+          <DualColorHeading size={28} title="Just" subTitle="Listed" emoji="🆕" description="Fresh deals — be the first to book"/>
           <Link
             href="/products?sort=new"
             className="tt-btn tt-btn-ghost text-[0.82rem] px-4 py-[0.45rem]"

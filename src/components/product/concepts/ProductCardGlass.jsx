@@ -59,7 +59,7 @@ export default function ProductCardGlass({ product, index = 0 }) {
         {/* Spotlight thumbnail */}
         <div className="relative mx-auto shadow-md rounded-xl overflow-hidden">
           <img
-            className='h-full w-full object-cover'
+            className='h-full max-h-[300px] w-full object-cover'
             src={imageUrl}
             alt={name}
           />
@@ -76,16 +76,19 @@ export default function ProductCardGlass({ product, index = 0 }) {
         </div>
 
         {/* Frosted glass info panel */}
-        <div className="relative mt-auto overflow-hidden rounded-2xl border border-white/20 bg-white/10 p-3 shadow-lg backdrop-blur-xl">
+        <div className="relative mt-auto overflow-hidden rounded-2xl border border-white/20  p-3 shadow-lg backdrop-blur-xl">
           <div
             className="absolute inset-0"
             style={{ background: `linear-gradient(180deg, rgba(${glow}, 0.25) 0%, rgba(8,8,14,0.55) 55%, rgba(8,8,14,0.88) 100%)` }}
             aria-hidden="true"
           />
           <div
-            className="absolute inset-0 scale-125 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.35]"
+            className="absolute  inset-0 scale-125 bg-cover bg-center transition-transform duration-700 group-hover:scale-[1.35]"
             style={{ backgroundImage: backdrop ? `url(${backdrop})` : undefined, backgroundColor: `rgb(${glow})` }}
             aria-hidden="true"
+          />
+          <div
+            className="absolute w-full h-full left-0 top-0 bg-white/10 dark:bg-black/30"
           />
           <div className='relative p-2'>
           <span className="pointer-events-none absolute inset-x-3 top-0 h-px bg-gradient-to-r from-transparent via-white/50 to-transparent" />

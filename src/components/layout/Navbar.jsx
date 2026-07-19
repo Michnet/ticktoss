@@ -127,7 +127,7 @@ export default function Navbar({ variant = 'solid' }) {
   return (
   <>
       <header
-        className={`w-full md:shadow h-[var(--tt-nav-height)] ${isTransparent ? `transparent ${scrolled ? '' : 'relative'}` : 'bg-[var(--tt-theme)]'} ${scrolled ? 'heady bg-[var(--tt-theme)]' : ''}`}
+        className={`w-full md:shadow h-[var(--tt-nav-height)] ${isTransparent ? `transparent ${scrolled ? '' : 'absolute md:relative'}` : 'bg-[var(--tt-theme)]'} ${scrolled ? 'heady bg-[var(--tt-theme)]' : ''}`}
         style={{
           zIndex: 1000,
         }}
