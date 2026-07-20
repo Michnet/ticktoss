@@ -7,14 +7,12 @@ import { Plus, UploadCloud, Edit, Trash2, Package } from 'lucide-react';
 import Link from 'next/link';
 import { formatUGX } from '@/lib/currency';
 import { resizedImage } from '@/helpers/universal';
-import VendorAddSingle from './VendorAddSingle';
 
 export default function VendorProducts() {
   const { user, addToast } = useAppStore();
   const supabase = getSupabaseBrowserClient();
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
-  const [editingProduct, setEditingProduct] = useState(null);
 
   useEffect(() => {
     if (!user) return;
@@ -62,27 +60,6 @@ export default function VendorProducts() {
     }
   };
 
-  const handleEdit = (product) => {
-    setEditingProduct(product);
-  };
-
-  const handleEditSuccess = () => {
-    setEditingProduct(null);
-    // Re-fetch products to get updated data
-    setIsLoading(true);
-    supabase
-      .from('products')
-      .select(`
-        id, name, slug, price, sale_price, stock, status, featured_image, short_description, sale_end_date, tt_location
-      `)
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .then(({ data }) => {
-        if (data) setProducts(data);
-        setIsLoading(false);
-      });
-  };
-
   if (isLoading) {
     return (
       <div className="tt-card" style={{ padding: '2rem', display: 'flex', justifyContent: 'center' }}>
@@ -93,23 +70,6 @@ export default function VendorProducts() {
 
   return (
     <div>
-      {editingProduct && (
-        <div className='p-2 md:p-4' style={{
-          position: 'fixed', inset: 0, background: 'rgba(0,0,0,0.8)', zIndex: 1000, 
-          overflowY: 'auto', display: 'flex', justifyContent: 'center', alignItems: 'flex-start'
-        }}>
-          <div className='max-h-[calc(100vh-2rem)] overflow-y-auto no-scrollbar' style={{ position: 'relative', background: 'var(--tt-surface)', borderRadius: 'var(--tt-radius-lg)', padding: '1rem', width: '100%', maxWidth: '900px' }}>
-            <button 
-              onClick={() => setEditingProduct(null)} 
-              style={{ position: 'absolute', top: '1rem', right: '1rem', zIndex: 10, background: 'var(--tt-surface-2)', border: 'none', color: 'var(--tt-text)', width: '32px', height: '32px', borderRadius: '50%', cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center' }}
-            >
-              ✕
-            </button>
-            <VendorAddSingle initialData={editingProduct} onSuccess={handleEditSuccess} />
-          </div>
-        </div>
-      )}
-
       <div className='p-3 pb-0' style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '1rem', marginBottom: '1rem' }}>
         <div>
           <h2 className="tt-section-title" style={{ color: 'var(--tt-flame)', marginBottom: '0.5rem' }}>Products</h2>
@@ -189,9 +149,9 @@ export default function VendorProducts() {
                     </td>
                     <td style={{ padding: '1rem 0.5rem', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                        <button onClick={() => handleEdit(product)} className="tt-btn tt-btn-ghost" style={{ padding: '0.5rem', color: 'var(--tt-muted)' }} title="Quick Edit">
+                        <Link href={`/dashboard?view=edit_single&id=${product.id}`} className="tt-btn tt-btn-ghost" style={{ padding: '0.5rem', color: 'var(--tt-muted)' }} title="Edit">
                           <Edit size={16} />
-                        </button>
+                        </Link>
                         <button onClick={() => handleDelete(product.id)} className="tt-btn tt-btn-ghost" style={{ padding: '0.5rem', color: 'var(--tt-danger)' }} title="Delete">
                           <Trash2 size={16} />
                         </button>

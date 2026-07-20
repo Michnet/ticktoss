@@ -136,6 +136,20 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   const [newOptionInputs, setNewOptionInputs] = useState({}); // { attributeId: "new option name" }
   const [addingOption, setAddingOption] = useState(false);
   const [variations, setVariations] = useState([]);
+  const [countries, setCountries] = useState([]);
+
+  useEffect(() => {
+    async function fetchCountries() {
+      try {
+        const res = await fetch('/api/vendors/products/countries');
+        const result = await res.json();
+        if (res.ok) setCountries(result.data || []);
+      } catch (error) {
+        console.error('Failed to fetch countries:', error);
+      }
+    }
+    fetchCountries();
+  }, []);
 
   useEffect(() => {
     async function fetchAttributes() {
@@ -407,13 +421,15 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   // For a new product, adopt the selected store's location as the product's
   // location, unless the vendor has deliberately edited the location picker.
   useEffect(() => {
-    if (isEditMode || locationTouched) return;
+    if (locationTouched) return;
     const store = stores[parseInt(watchStoreIndex)];
     if (!store) return;
     if (store.loc_ids?.length) {
       setSelectedLocIds(store.loc_ids);
     } else if (store.location) {
       setSelectedLocIds([store.location]);
+    } else {
+      console.warn('[VendorAddSingle] Selected store has no location/loc_ids to auto-fill from:', store);
     }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [watchStoreIndex]);
@@ -491,6 +507,27 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
         [slug]: {
           ...currentAttr,
           values: newValues
+        }
+      };
+    });
+  };
+
+  const handleCountrySelect = (attr, countryId) => {
+    const slug = attr.slug;
+    setAttributeSelections(prev => {
+      const country = countries.find(c => String(c.id) === countryId);
+      if (!country) {
+        const newState = { ...prev };
+        delete newState[slug];
+        return newState;
+      }
+      return {
+        ...prev,
+        [slug]: {
+          name: attr.name,
+          slug: attr.slug,
+          values: [{ name: country.name, slug: country.slug }],
+          is_variation: prev[slug]?.is_variation || false
         }
       };
     });
@@ -617,8 +654,22 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
       return;
     }
 
-    const pickup_lat = selectedStore.pickup_lat || selectedStore.lat || selectedStore.latitude || null;
-    const pickup_lng = selectedStore.pickup_lng || selectedStore.lng || selectedStore.longitude || null;
+    // Only fall back to the selected store's own values when the product
+    // doesn't already have its own (e.g. a manual override on an existing
+    // product should never be silently clobbered by the store default).
+    const storePickupLat = selectedStore.pickup_lat || selectedStore.lat || selectedStore.latitude || null;
+    const storePickupLng = selectedStore.pickup_lng || selectedStore.lng || selectedStore.longitude || null;
+    const storePickupAddress = selectedStore.address || selectedStore.name || '';
+
+    const pickup_lat = fullProductData?.pickup_lat ?? storePickupLat;
+    const pickup_lng = fullProductData?.pickup_lng ?? storePickupLng;
+    const pickup_address = fullProductData?.pickup_address || storePickupAddress;
+
+    const chosenLocationId = selectedLocIds.length > 0 ? selectedLocIds[selectedLocIds.length - 1] : null;
+    const location = chosenLocationId ?? selectedStore.location ?? null;
+    const loc_ids = selectedLocIds.length > 0
+      ? selectedLocIds
+      : (selectedStore.loc_ids?.length ? selectedStore.loc_ids : (selectedStore.location ? [selectedStore.location] : []));
 
     setIsSubmitting(true);
     try {
@@ -634,15 +685,15 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
         unit_cost: data.unit_cost || null,
         category: selectedCatIds.length > 0 ? selectedCatIds[selectedCatIds.length - 1] : null,
         cat_ids: selectedCatIds,
-        location: selectedLocIds.length > 0 ? selectedLocIds[selectedLocIds.length - 1] : null,
-        loc_ids: selectedLocIds,
+        location: location,
+        loc_ids: loc_ids,
         tag_ids: selectedTags.map(t => t.id),
         discount_pct: discountPct,
         sale_start_date: new Date(data.sale_start_date).toISOString(),
         sale_end_date: new Date(data.sale_end_date).toISOString(),
         user_id: user.id,
         urgency_score: estimatedScore,
-        pickup_address: selectedStore.address || selectedStore.name || '',
+        pickup_address: pickup_address,
         pickup_lat: pickup_lat,
         pickup_lng: pickup_lng,
         tt_location: selectedStore,
@@ -908,22 +959,22 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
                   {codeViews.short ? 'View Formatted' : 'Raw Mode'}
                 </button>
               </div>
-              {codeViews.short ? (
+              {/* {codeViews.short ? ( */}
                 <textarea
                   className="tt-input"
                   rows={4}
-                  style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
+                  //style={{ fontFamily: 'monospace', fontSize: '0.8rem' }}
                   value={watchShortDescription}
                   onChange={(e) => setValue('short_description', e.target.value, { shouldValidate: true })}
                 />
-              ) : (
+              {/* ) : (
                 <TiptapEditor
                   value={watchShortDescription}
                   onChange={(html) => setValue('short_description', html, { shouldValidate: true })}
                   placeholder="Brief details about the condition and items included."
                   style={{ height: '120px' }}
                 />
-              )}
+              )} */}
               {errors.short_description && <span style={{ color: 'var(--tt-danger)', fontSize: '0.8rem' }}>{errors.short_description.message}</span>}
             </div>
 
@@ -1292,7 +1343,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
                     <div key={attr.id}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '0.5rem' }}>
                         <label className="tt-label" style={{ marginBottom: 0 }}>{attr.name}</label>
-                        <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--tt-muted)', cursor: attributeSelections[attr.slug] ? 'pointer' : 'not-allowed' }}>
+                        {attr.slug !== 'country_of_origin' && <label style={{ display: 'flex', alignItems: 'center', gap: '0.4rem', fontSize: '0.8rem', color: 'var(--tt-muted)', cursor: attributeSelections[attr.slug] ? 'pointer' : 'not-allowed' }}>
                           <input
                             type="checkbox"
                             checked={attributeSelections[attr.slug]?.is_variation || false}
@@ -1300,54 +1351,67 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
                             disabled={!attributeSelections[attr.slug]}
                           />
                           Use for variations
-                        </label>
+                        </label>}
                       </div>
-                      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', padding: '0.5rem', border: '1px solid var(--tt-border)', borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface)' }}>
-                        {attr.options?.map(opt => {
-                          const isSelected = attributeSelections[attr.slug]?.values?.some(v => v.slug === opt.slug);
-                          return (
-                            <button
-                              key={opt.slug}
-                              type="button"
-                              onClick={() => toggleAttributeOption(attr, opt)}
-                              style={{
-                                padding: '0.3rem 0.6rem',
-                                fontSize: '0.8rem',
-                                borderRadius: '99px',
-                                border: '1px solid',
-                                borderColor: isSelected ? 'var(--tt-flame)' : 'var(--tt-border)',
-                                background: isSelected ? 'rgba(255, 77, 0, 0.1)' : 'transparent',
-                                color: isSelected ? 'var(--tt-flame)' : 'var(--tt-text)',
-                                cursor: 'pointer'
-                              }}
-                            >
-                              {opt.name}
-                            </button>
-                          );
-                        })}
-                        {attr.custom_options && (
-                          <div style={{ display: 'flex', gap: '0.4rem' }}>
-                            <input
-                              type="text"
-                              placeholder="Add custom..."
-                              className="tt-input"
-                              style={{ width: '150px', padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
-                              value={newOptionInputs[attr.id] || ''}
-                              onChange={(e) => setNewOptionInputs(prev => ({ ...prev, [attr.id]: e.target.value }))}
-                              onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomOption(attr))}
-                            />
-                            <button
-                              type="button"
-                              onClick={() => handleAddCustomOption(attr)}
-                              disabled={addingOption || !newOptionInputs[attr.id]?.trim()}
-                              className="tt-btn tt-btn-ghost"
-                              style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
-                            >
-                              {addingOption ? '...' : '+ Add'}
-                            </button>
-                          </div>
-                        )}
-                      </div>
+                      {attr.slug === 'country_of_origin' ? (
+                        <select
+                          className="tt-input"
+                          value={countries.find(c => c.slug === attributeSelections[attr.slug]?.values?.[0]?.slug)?.id ?? ''}
+                          onChange={(e) => handleCountrySelect(attr, e.target.value)}
+                        >
+                          <option value="">Select a country...</option>
+                          {countries.map(c => (
+                            <option key={c.id} value={c.id}>{c.name}</option>
+                          ))}
+                        </select>
+                      ) : (
+                        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '0.5rem', padding: '0.5rem', border: '1px solid var(--tt-border)', borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface)' }}>
+                          {attr.options?.map(opt => {
+                            const isSelected = attributeSelections[attr.slug]?.values?.some(v => v.slug === opt.slug);
+                            return (
+                              <button
+                                key={opt.slug}
+                                type="button"
+                                onClick={() => toggleAttributeOption(attr, opt)}
+                                style={{
+                                  padding: '0.3rem 0.6rem',
+                                  fontSize: '0.8rem',
+                                  borderRadius: '99px',
+                                  border: '1px solid',
+                                  borderColor: isSelected ? 'var(--tt-flame)' : 'var(--tt-border)',
+                                  background: isSelected ? 'rgba(255, 77, 0, 0.1)' : 'transparent',
+                                  color: isSelected ? 'var(--tt-flame)' : 'var(--tt-text)',
+                                  cursor: 'pointer'
+                                }}
+                              >
+                                {opt.name}
+                              </button>
+                            );
+                          })}
+                          {attr.custom_options && (
+                            <div style={{ display: 'flex', gap: '0.4rem' }}>
+                              <input
+                                type="text"
+                                placeholder="Add custom..."
+                                className="tt-input"
+                                style={{ width: '150px', padding: '0.3rem 0.6rem', fontSize: '0.8rem' }}
+                                value={newOptionInputs[attr.id] || ''}
+                                onChange={(e) => setNewOptionInputs(prev => ({ ...prev, [attr.id]: e.target.value }))}
+                                onKeyDown={(e) => e.key === 'Enter' && (e.preventDefault(), handleAddCustomOption(attr))}
+                              />
+                              <button
+                                type="button"
+                                onClick={() => handleAddCustomOption(attr)}
+                                disabled={addingOption || !newOptionInputs[attr.id]?.trim()}
+                                className="tt-btn tt-btn-ghost"
+                                style={{ padding: '0.3rem 0.8rem', fontSize: '0.8rem' }}
+                              >
+                                {addingOption ? '...' : '+ Add'}
+                              </button>
+                            </div>
+                          )}
+                        </div>
+                      )}
                     </div>
                   ))}
                 </div>

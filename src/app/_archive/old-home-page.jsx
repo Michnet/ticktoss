@@ -35,7 +35,7 @@ export const metadata = {
   },
 };
 
-export default function HomePage() {
+export default function OldHomePage() {
   return (
     <main className='page-content space-y-4 md:space-y-6'>
       {/* ── 1. Promo banners + quick-access tiles ────── */}

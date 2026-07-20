@@ -27,7 +27,7 @@ async function fetchProducts({ search, categorySlug, category_id, locationId, ta
       is_featured, is_flash_sale, status,
       discount_pct, urgency_score,
       location, pickup_lat, pickup_lng, pickup_address,
-      user_id,views,watchers,likes,
+      user_id,views,watchers,likes,tt_location,
       category:product_categories!inner(id, name, slug, color)
     `)
     .eq('status', 'published')

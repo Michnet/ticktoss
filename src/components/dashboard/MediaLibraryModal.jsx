@@ -7,6 +7,7 @@ import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import useAppStore from '@/store/useAppStore';
 import { resizedImage, getStoragePath } from '@/helpers/universal';
 import { generateBlurhash } from '@/helpers/blurhash';
+import { extractVibrantPalette } from '@/helpers/vibrantPalette';
 
 const PAGE_SIZE = 30;
 
@@ -24,6 +25,7 @@ export default function MediaLibraryModal({ userId, multiple = false, linkedImag
   const loadingRef = useRef(false);
   const pageRef = useRef(0);
   const blurhashCacheRef = useRef(new Map());
+  const paletteCacheRef = useRef(new Map());
   // Callback ref (not a plain ref) so the observer effect re-runs once the
   // sentinel actually mounts — it doesn't exist yet on the first render,
   // when the library is still showing its "Loading..." state.
@@ -46,10 +48,13 @@ export default function MediaLibraryModal({ userId, multiple = false, linkedImag
     const name = path.includes('/') ? path.slice(path.lastIndexOf('/') + 1) : path;
     if (!linkedItemsMap.has(path)) {
       linkedItemsMap.set(path, { id: `linked-${path}`, name });
-      // Reuse the blurhash already stored on the product, if any, instead of
-      // recomputing it if this same image gets picked again.
+      // Reuse the blurhash/palette already stored on the product, if any,
+      // instead of recomputing them if this same image gets picked again.
       if (raw?.blurhash && !blurhashCacheRef.current.has(name)) {
         blurhashCacheRef.current.set(name, raw.blurhash);
+      }
+      if (raw?.palette && !paletteCacheRef.current.has(name)) {
+        paletteCacheRef.current.set(name, raw.palette);
       }
     }
   });
@@ -132,6 +137,17 @@ export default function MediaLibraryModal({ userId, multiple = false, linkedImag
     return blurhash;
   }, [userId]);
 
+  // Same lazy-compute/cache-per-file-name treatment as the blurhash, so the
+  // vibrant swatch palette (see useVibrantImageColor) is only ever extracted
+  // once per image, on first selection.
+  const getPaletteFor = useCallback(async (item) => {
+    const cache = paletteCacheRef.current;
+    if (cache.has(item.name)) return cache.get(item.name);
+    const palette = await extractVibrantPalette(resizedImage(`${userId}/${item.name}`, 'thumbnail'));
+    cache.set(item.name, palette);
+    return palette;
+  }, [userId]);
+
   const toggleSelect = async (item) => {
     const url = buildUrl(item);
 
@@ -141,9 +157,9 @@ export default function MediaLibraryModal({ userId, multiple = false, linkedImag
     }
 
     setComputingName(item.name);
-    const blurhash = await getBlurhashFor(item);
+    const [blurhash, palette] = await Promise.all([getBlurhashFor(item), getPaletteFor(item)]);
     setComputingName(null);
-    const img = { url, blurhash };
+    const img = { url, blurhash, palette };
 
     if (!multiple) {
       onSelect(img);
@@ -171,6 +187,7 @@ export default function MediaLibraryModal({ userId, multiple = false, linkedImag
 
     const removedUrl = buildUrl(item);
     blurhashCacheRef.current.delete(item.name);
+    paletteCacheRef.current.delete(item.name);
     setImages(prev => prev.filter(i => i.name !== item.name));
     setSelected(prev => prev.filter(i => i.url !== removedUrl));
     setDeletingName(null);

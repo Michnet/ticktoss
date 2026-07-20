@@ -18,7 +18,7 @@ import BookingModal from '@/components/booking/BookingModal';
 import { resizedImage } from '@/helpers/universal';
 
 import { ProductProvider, useProductContext } from '@/components/product/ProductProvider';
-import ProductCard from '@/components/product/ProductCard';
+//import ProductCard from '@/components/product/ProductCard';
 import ProductActions from '@/components/product/ProductActions';
 import { ProductLabelRow } from '@/components/ui/ProductLabel';
 import ProductsView from '@/components/home/ProductsView';
@@ -27,6 +27,10 @@ import ProductsView from '@/components/home/ProductsView';
 // flat/dense to match dense mobile-commerce list UIs rather than the app's
 // more rounded marketing surfaces.
 const SECTION_CLASS = 'bg-[var(--tt-theme)] border border-[var(--tt-border)]/40';
+
+// Rotating accent colors for CollapsibleSection left borders — purely for visual
+// variety between stacked collapsible cards, not tied to any semantic meaning.
+const COLLAPSIBLE_ACCENTS = ['#14b8a6', '#ec4899', '#8b5cf6'];
 
 function shareProduct(product, addToast) {
   if (navigator.share) {
@@ -75,13 +79,15 @@ export default function ProductClientPage({ product: ssgProduct }) {
 
 function SingleProductView() {
   const { product, variationAttributes, metaAttributes, selectedOptions, selectedVariation, updateOption, } = useProductContext();
-  const {tag_ids, loc_ids,cat_ids,tt_location,id} = product  ?? {};
+  const {tag_ids, loc_ids,cat_ids,tt_location,id, user_id} = product  ?? {};
 
   const { user, profile, addToast } = useAppStore();
   const { mutate: toggleLike, isPending: isLiking } = useProductLike(product.id);
   const [isBookingModalOpen, setIsBookingModalOpen] = useState(false);
 
   const isFutureSale = !!(product.sale_start_date && new Date(product.sale_start_date) > new Date());
+  const isPastSale = !!(product.sale_end_date && new Date(product.sale_end_date) < new Date());
+
   const saleDateStr = product.sale_start_date
     ? new Date(product.sale_start_date).toISOString().split('T')[0]
     : null;
@@ -90,6 +96,10 @@ function SingleProductView() {
     saleDateStr,
     product.watchers ?? 0
   );
+  const isOwner = useMemo(() => {
+    return user_id === user?.id;
+  }, [user_id, user?.id]);
+
   const profileIsLiked = profile?.product_likes?.includes(product.id) ?? false;
   const [isLiked, setIsLiked] = useState(profileIsLiked);
 
@@ -116,16 +126,17 @@ function SingleProductView() {
   const needsVariationSelection = variationAttributes.length > 0 && !selectedVariation;
   const canBook = !expired && !isOutOfStock;
   const isPrimaryDisabled = isFutureSale ? watchLoading : (!canBook || needsVariationSelection);
+  const router = useRouter()
 
   const primaryActionLabel = isFutureSale
-    ? (isWatching ? '🔔 Watching — Notify Me' : '🔔 Notify Me When Live')
+    ? (isWatching ? '🔔 Watching' : '🔔 Notify Me')
     : isOutOfStock
       ? 'Sold Out'
       : expired
         ? 'Deal Expired'
         : needsVariationSelection
           ? 'Select Options'
-          : 'Book Now (Pay on Delivery)';
+          : 'Book Now';
 
   const handlePrimaryAction = () => {
     if (isFutureSale) {
@@ -160,14 +171,22 @@ function SingleProductView() {
   return (
     <div className="py-2 md:pb-4">
       {/* Breadcrumbs — desktop only; mobile uses the floating back button over the gallery */}
-      <div className="tt-container tt-container-padding grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 md:pt-2 relative">
+      <div className="tt-container grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 md:pt-2 relative">
 
         {/* Gallery */}
         <div className='md:sticky h-fit md:top-[70px] flex flex-col gap-2.5'>
         <ProductGallery gallery={gallery} product={product} selectedVariation={selectedVariation} />
+        {/* Add edit button if owner*/}
+        {isOwner && (
+          <div className={`${SECTION_CLASS} p-3 px-4`}>
+          <button onClick={() => router.push(`/dashboard?view=edit_single&id=${product.id}`)} className='btn btn-primary shadow p-2 px-3 rounded-2xl text-sm border border-[var(--tt-surface-2)]'>
+            Edit Product
+          </button>
+          </div>
+        )}
         {/* Overview */}
           {product.short_description && (
-            <CollapsibleSection title="Overview" defaultOpen>
+            <CollapsibleSection title="Overview" defaultOpen accentColor={COLLAPSIBLE_ACCENTS[0]}>
               <div dangerouslySetInnerHTML={{ __html: product.short_description }} />
             </CollapsibleSection>
           )}
@@ -226,9 +245,9 @@ function SingleProductView() {
                   {formatUGX(oldPrice)}
                 </span>
               )}
-              {!isFutureSale && product.discount_pct > 0 && (
+              {/* {!isFutureSale && product.discount_pct > 0 && (
                 <DiscountBadge discountPct={product.discount_pct} saleEndDate={product.sale_end_date} size="md" />
-              )}
+              )} */}
             </div>
           </div>
 
@@ -301,7 +320,7 @@ function SingleProductView() {
 
           {/* Urgency / CTA Panel */}
           <div
-            className="p-4 sm:p-6 border border-[var(--tt-border)]"
+            className="p-4 sm:p-6 bg-[var(--tt-theme)]"
             /* style={{
               background: isFutureSale ? 'var(--tt-surface-2)' : 'var(--tt-flame-light)',
               borderColor: isFutureSale ? 'rgba(0,0,0,0.06)' : 'rgba(255, 77, 0, 0.15)',
@@ -328,6 +347,17 @@ function SingleProductView() {
               </div>
             ) : (
               <>
+              {isPastSale ? (
+                <div className="text-center mb-4">
+                  <div className="inline-flex items-center gap-2 mb-3">
+                    <span style={{ fontSize: '1.15rem' }}>⚡</span>
+                    <p className="m-0 text-[0.82rem] font-bold uppercase" style={{ color: 'var(--tt-flame)', letterSpacing: '0.05em' }}>
+                      Flash Deal Ended
+                    </p>
+                  </div>
+                </div>
+              ) : (
+                <>
                 <div className="text-center mb-4">
                   <div className="inline-flex items-center gap-2 mb-3">
                     <span style={{ fontSize: '1.15rem' }}>⚡</span>
@@ -343,12 +373,13 @@ function SingleProductView() {
 
                 <div className="flex justify-center mb-4 pb-4 border-b border-dashed" style={{ borderColor: 'rgba(255, 77, 0, 0.25)' }}>
                   <div className="text-center">
-                    <p className="mb-0.5 text-[0.78rem] font-semibold" style={{ color: 'var(--tt-flame)', opacity: 0.9 }}>Availability</p>
+                    <p className="mb-0.5 text-[0.78rem] font-semibold" style={{ opacity: 0.9 }}>Availability</p>
                     <p className="m-0 font-extrabold text-[1.05rem]" style={{ color: isOutOfStock ? 'var(--tt-danger)' : 'var(--tt-flame)' }}>
                       {isOutOfStock ? 'Sold Out' : `${currentStock} items left`}
                     </p>
                   </div>
-                </div>
+            </div>
+            </>)}
               </>
             )}
 
@@ -397,14 +428,14 @@ function SingleProductView() {
 
           {/* Item Details */}
           {product.long_description && product.long_description?.length > 10 && (
-            <CollapsibleSection title="Item Details">
+            <CollapsibleSection title="Item Details" accentColor={COLLAPSIBLE_ACCENTS[1]}>
               <div dangerouslySetInnerHTML={{ __html: product.long_description }} />
             </CollapsibleSection>
           )}
 
           {/* Found In */}
           {(product.all_categories?.length || product.category || product.tags?.length) && (
-            <CollapsibleSection title="Found In">
+            <CollapsibleSection title="Found In" accentColor={COLLAPSIBLE_ACCENTS[2]}>
               <div className="flex flex-wrap gap-2">
                 {product.all_categories?.length
                   ? product.all_categories.map((cat) => (
@@ -822,11 +853,11 @@ function Lightbox({ images, initialIndex, productName, onClose }) {
 /**
  * Collapsible on mobile (tap to expand), always expanded on desktop.
  */
-function CollapsibleSection({ title, defaultOpen = true, children }) {
+function CollapsibleSection({ title, defaultOpen = true, accentColor, children }) {
   const [open, setOpen] = useState(defaultOpen);
 
   return (
-    <div className={SECTION_CLASS}>
+    <div className={SECTION_CLASS} style={{ borderLeftWidth: '3px', borderLeftColor: accentColor }}>
       <button
         onClick={() => setOpen((o) => !o)}
         className="w-full flex items-center justify-between p-4 sm:p-6 text-left md:pointer-events-none"

@@ -3,10 +3,10 @@ import { Inter, Roboto } from 'next/font/google';
 import QueryProvider from '@/components/providers/QueryProvider';
 import ThemeProvider from '@/components/providers/ThemeProvider';
 import AuthProvider from '@/components/providers/AuthProvider';
-import Footer from '@/components/layout/Footer';
 import ToastProvider from '@/components/notifications/ToastProvider';
 import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
 import InstallPrompt from '@/components/pwa/InstallPrompt';
+import RouteProgressBar from '@/components/layout/RouteProgressBar';
 
 const inter = Inter({
   subsets: ['latin'],
@@ -51,13 +51,13 @@ export default function RootLayout({ children }) {
   return (
     <html lang="en" suppressHydrationWarning>
       <body className={`${inter.variable} ${roboto.variable} bg-[var(--tt-surface)]`}>
+        <RouteProgressBar />
         <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
           <QueryProvider>
             <AuthProvider>
               <main style={{ minHeight: 'calc(100vh - var(--tt-nav-height))' }}>
                 {children}
               </main>
-              <Footer />
               <ToastProvider />
               <ServiceWorkerRegistrar />
               <InstallPrompt />

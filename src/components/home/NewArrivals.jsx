@@ -6,6 +6,7 @@ import { useNewArrivals } from '@/hooks/useHomeData';
 import ProductCard from '@/components/product/ProductCard';
 import ProductCardGlass from '../product/concepts/ProductCardGlass';
 import DualColorHeading from '../ui/DualColorHeading';
+import Masonry, { ResponsiveMasonry } from 'custom_modules/react-responsive-masonry';
 
 export default function NewArrivals() {
   const { data: products, isLoading } = useNewArrivals();
@@ -24,7 +25,7 @@ export default function NewArrivals() {
         </div>
 
         {/* Horizontal scroll strip */}
-        <div className="grid sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] grid-cols-1 sm:gap-[0.875rem] gap-2">
+        {/* <div className="grid sm:grid-cols-[repeat(auto-fill,minmax(180px,1fr))] grid-cols-1 sm:gap-[0.875rem] gap-2">
           {isLoading ? (
              Array.from({ length: 6 }).map((_, i) => (
                <div key={i} className="tt-shimmer h-[260px] rounded-[var(--tt-radius-lg)] bg-[var(--tt-surface)]" />
@@ -34,8 +35,22 @@ export default function NewArrivals() {
               <ProductCardGlass key={p.id} product={p} index={i} />
             ))
           )}
+        </div> */}
+        <ResponsiveMasonry columnsCountBreakPoints={{350: 1, 640: 2, 768: 3, 1024:4}}
+                gutterBreakPoints={{350: "12px", 750: "16px", 900: "24px"}}>
+                  <Masonry>
+          {isLoading ? (
+             Array.from({ length: 6 }).map((_, i) => (
+               <div key={i} className="tt-shimmer h-[260px] rounded-[var(--tt-radius-lg)] bg-[var(--tt-surface)]" />
+             ))
+          ) : (
+            products?.map((p, i) => (
+              <ProductCardGlass exClass='flex-grow' key={p.id} product={p} index={i} />
+            ))
+          )}
+          </Masonry>
+      </ResponsiveMasonry>
         </div>
-      </div>
     </section>
   );
 }else{

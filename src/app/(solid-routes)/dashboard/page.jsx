@@ -2,7 +2,7 @@
 
 import { useSearchParams } from 'next/navigation';
 import dynamic from 'next/dynamic';
-import { Suspense } from 'react';
+import { Suspense, useMemo } from 'react';
 
 // Dynamically import all possible dashboard views
 // This ensures that the client only downloads the JS for the view they are currently looking at.
@@ -37,6 +37,11 @@ const VendorAddBulk = dynamic(() => import('@/components/dashboard/VendorAddBulk
   loading: () => <ViewLoader />,
 });
 
+function EditSingleView({ productId }) {
+  const initialData = useMemo(() => ({ id: productId }), [productId]);
+  return <VendorAddSingle initialData={initialData} />;
+}
+
 function ViewLoader() {
   return (
     <div className="flex items-center justify-center p-12 text-muted-2" style={{ minHeight: '300px' }}>
@@ -64,6 +69,10 @@ function DashboardPageContent() {
       case 'vendor_products': return <VendorProducts />;
       case 'vendor_orders': return <VendorOrders />;
       case 'add_single': return <VendorAddSingle />;
+      case 'edit_single': {
+        const productId = searchParams.get('id');
+        return productId ? <EditSingleView productId={productId} /> : <VendorProducts />;
+      }
       case 'add_bulk': return <VendorAddBulk />;
       
       // Fallback

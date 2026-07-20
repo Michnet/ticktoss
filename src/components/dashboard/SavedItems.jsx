@@ -56,10 +56,10 @@ export default function SavedItems() {
   }
 
   return (
-    <div className="tt-card tt-glass" style={{ padding: '2rem' }}>
+    <div>
       <h2 className="tt-section-title" style={{ marginBottom: '0.5rem' }}>Saved Items</h2>
       <p style={{ color: 'var(--tt-muted)', marginBottom: '2rem' }}>
-        Items you have favorited or saved for later.
+        Your saved items.
       </p>
 
       {products.length === 0 ? (

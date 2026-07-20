@@ -13,6 +13,8 @@ export function getStoragePath(url) {
 
 export function translateSize(size){
   switch (size) {
+    case 'mini':
+      return 100;
     case 'thumbnail':
       return 200;
     case 'medium':

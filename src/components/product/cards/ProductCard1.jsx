@@ -76,11 +76,11 @@ export default function ProductCard1({ product, index, cardWidth = '300px' }) {
             )}
 
           {/* Low stock ribbon */}
-          {isLowStock && (
+          {/* {isLowStock && (
             <div className="absolute bottom-2 right-2 bg-[var(--tt-danger)] text-white font-bold text-[0.62rem] px-2 py-[2px] rounded-full">
               Only {product.stock} left!
             </div>
-          )}
+          )} */}
         </div>
 
         {/* Body */}

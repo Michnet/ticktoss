@@ -85,6 +85,8 @@ export default function VendorAddBulk() {
       pickup_address: p.pickup_address || store.address || store.name || '',
       pickup_lat: p.pickup_lat || store.pickup_lat || store.lat || store.latitude || null,
       pickup_lng: p.pickup_lng || store.pickup_lng || store.lng || store.longitude || null,
+      location: p.location || store.location || null,
+      loc_ids: p.loc_ids?.length ? p.loc_ids : (store.loc_ids?.length ? store.loc_ids : (store.location ? [store.location] : [])),
     };
   };
 
@@ -263,12 +265,15 @@ export default function VendorAddBulk() {
     if (!store) return;
     const pickup_lat = store.pickup_lat || store.lat || store.latitude || null;
     const pickup_lng = store.pickup_lng || store.lng || store.longitude || null;
+    const loc_ids = store.loc_ids?.length ? store.loc_ids : (store.location ? [store.location] : []);
     const updates = draftProducts.map(p => ({
       ...p,
       tt_location: store,
       pickup_address: store.address || store.name || '',
       pickup_lat,
       pickup_lng,
+      location: store.location ?? p.location ?? null,
+      loc_ids,
     }));
     db.draftProducts.bulkPut(updates);
     addToast({ type: 'success', message: 'Store applied to all drafts.' });
@@ -283,7 +288,7 @@ export default function VendorAddBulk() {
 
   const applyGlobalLocation = () => {
     if (!draftProducts?.length || !globalLocationId) return;
-    const updates = draftProducts.map(p => ({ ...p, location: Number(globalLocationId) }));
+    const updates = draftProducts.map(p => ({ ...p, location: Number(globalLocationId), loc_ids: [Number(globalLocationId)] }));
     db.draftProducts.bulkPut(updates);
     addToast({ type: 'success', message: 'Location applied to all drafts.' });
   };
@@ -399,7 +404,7 @@ export default function VendorAddBulk() {
           category: p.category,
           cat_ids: [p.category],
           location: p.location,
-          loc_ids: [p.location],
+          loc_ids: p.loc_ids?.length ? p.loc_ids : [p.location],
           sale_start_date: saleStartDate.toISOString(),
           sale_end_date: saleEndDate.toISOString(),
           pickup_address: p.pickup_address || '',
@@ -726,7 +731,7 @@ export default function VendorAddBulk() {
                         </select>
                       </td>
                       <td style={{ padding: '0.5rem' }}>
-                        <select className="tt-input" style={{ minWidth: 130, ...(!p.location ? invalidStyle : {}) }} value={p.location || ''} onChange={e => updateDraft(p.id, { location: e.target.value ? Number(e.target.value) : null })}>
+                        <select className="tt-input" style={{ minWidth: 130, ...(!p.location ? invalidStyle : {}) }} value={p.location || ''} onChange={e => updateDraft(p.id, { location: e.target.value ? Number(e.target.value) : null, loc_ids: e.target.value ? [Number(e.target.value)] : [] })}>
                           <option value="">-- Location --</option>
                           {locations.map(l => <option key={l.id} value={l.id}>{l.name}</option>)}
                         </select>
@@ -744,6 +749,8 @@ export default function VendorAddBulk() {
                               pickup_address: store.address || store.name || '',
                               pickup_lat: store.pickup_lat || store.lat || store.latitude || null,
                               pickup_lng: store.pickup_lng || store.lng || store.longitude || null,
+                              location: store.location ?? p.location ?? null,
+                              loc_ids: store.loc_ids?.length ? store.loc_ids : (store.location ? [store.location] : (p.loc_ids || [])),
                             });
                           }}
                         >

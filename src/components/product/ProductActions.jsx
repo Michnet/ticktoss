@@ -9,7 +9,7 @@ import { useProductLike } from '@/lib/hooks/useProducts';
 /**
  * WatchlistButton — shown only when the product's sale_start_date is in the future.
  */
-function WatchlistButton({ product, iconSize = 16 }) {
+export function WatchlistButton({ product, addToCart=true, iconSize = 16 }) {
   const saleDate = product?.sale_start_date
     ? new Date(product.sale_start_date).toISOString().split('T')[0]
     : null;
@@ -134,7 +134,7 @@ export default function ProductActions({ product, iconSize = 16, leftExtraClass 
         {isFutureSale && <WatchlistButton product={product} iconSize={iconSize} />}
       </div>
 
-      {!isFutureSale && (
+      {(addToCart && !isFutureSale) && (
         <button
           onClick={(e) => {
             e.preventDefault();

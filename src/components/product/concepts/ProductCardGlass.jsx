@@ -29,7 +29,7 @@ function GlassUnit({ value, label, show = true }) {
  * "spotlight" thumbnail and a frosted-glass panel of glass-tile countdown
  * digits floating on top. Maximalist glassmorphism, one glow per product.
  */
-export default function ProductCardGlass({ product, index = 0 }) {
+export default function ProductCardGlass({exClass='', product, index = 0 }) {
   if (!product) return null;
   const {
     id, name, slug, price, sale_price, sale_end_date,
@@ -49,7 +49,7 @@ export default function ProductCardGlass({ product, index = 0 }) {
       initial={{ opacity: 0, y: 16 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: index * 0.05, duration: 0.3 }}
-      className="item_card group relative flex h-full flex-col transition-transform duration-300 hover:-translate-y-1"
+      className={`item_card group relative flex h-full flex-col transition-transform duration-300 hover:-translate-y-1 ${exClass}`}
     >
 
 

@@ -1,10 +1,64 @@
 'use client';
 
+import { useState } from 'react';
 import useAppStore from '@/store/useAppStore';
+import VendorStoreForm from '@/components/vendor/VendorStoreForm';
 
 export default function MyStores() {
-  const { profile } = useAppStore();
+  const { profile, setProfile, addToast } = useAppStore();
   const stores = profile?.tt_stores || [];
+  const [editingIndex, setEditingIndex] = useState(null);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const handleSave = async ({ store }) => {
+    setIsSaving(true);
+    try {
+      const res = await fetch('/api/vendors/store', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ index: editingIndex, store }),
+      });
+
+      const result = await res.json();
+
+      if (!res.ok) {
+        throw new Error(result.error || 'Failed to update store');
+      }
+
+      setProfile({ ...profile, tt_stores: result.tt_stores });
+      addToast({ type: 'success', message: 'Store updated successfully!' });
+      setEditingIndex(null);
+    } catch (err) {
+      addToast({ type: 'error', message: err.message });
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
+  if (editingIndex !== null) {
+    return (
+      <div style={{ maxWidth: '600px', margin: '0 auto' }}>
+        <div style={{ marginBottom: '2rem', display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end' }}>
+          <div>
+            <h1 className="tt-section-title" style={{ fontSize: '2rem', marginBottom: '0.5rem' }}>Edit <span>Store</span></h1>
+            <p style={{ color: 'var(--tt-muted)' }}>Update this store's details.</p>
+          </div>
+          <button onClick={() => setEditingIndex(null)} className="tt-btn tt-btn-ghost">
+            Cancel
+          </button>
+        </div>
+
+        <div className="tt-card tt-glass" style={{ padding: '2.5rem' }}>
+          <VendorStoreForm
+            initialData={stores[editingIndex]}
+            onSave={handleSave}
+            isSaving={isSaving}
+            submitLabel="Save Changes"
+          />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div style={{ maxWidth: '1000px', margin: '0 auto' }}>
@@ -68,11 +122,19 @@ export default function MyStores() {
                       <span style={{ color: 'var(--tt-text)' }}>{store.whatsapp.join(', ')}</span>
                     </div>
                   )}
-                  {(store.lat || store.pickup_lat) && (store.lng || store.pickup_lng) && (
+                  {(store.pickup_lat || store.lat || store.latitude) && (store.pickup_lng || store.lng || store.longitude) && (
                     <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem', fontSize: '0.8rem', marginTop: '0.5rem' }}>
                       <span style={{ background: 'rgba(255,45,85,0.1)', color: 'var(--tt-flame)', padding: '0.2rem 0.5rem', borderRadius: '4px' }}>GPS Configured</span>
                     </div>
                   )}
+                  <button
+                    type="button"
+                    onClick={() => setEditingIndex(idx)}
+                    className="tt-btn tt-btn-ghost"
+                    style={{ marginTop: '0.5rem', padding: '0.4rem 1rem', fontSize: '0.85rem' }}
+                  >
+                    Edit Store
+                  </button>
                 </div>
               </div>
             </div>

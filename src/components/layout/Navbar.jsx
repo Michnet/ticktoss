@@ -133,7 +133,7 @@ export default function Navbar({ variant = 'solid' }) {
         }}
       >
       <div
-        className="tt-container tt-container-padding h-full flex items-center gap-6"
+        className="tt-container-padding h-full flex items-center gap-6"
       >
         {/* Logo */}
         <Link
@@ -223,57 +223,8 @@ export default function Navbar({ variant = 'solid' }) {
           </div>
 
           <ThemeToggle />
-
-          {/* Mobile hamburger */}
-          <button
-            onClick={() => setMobileOpen((o) => !o)}
-            className="mobile-only"
-            aria-label="Toggle menu"
-            style={{
-              background: 'none',
-              border: '1px solid var(--tt-border)',
-              borderRadius: 'var(--tt-radius-sm)',
-              color: 'var(--tt-text)',
-              cursor: 'pointer',
-              padding: '0.35rem 0.5rem',
-              display: 'none',
-            }}
-          >
-            ☰
-          </button>
         </div>
       </div>
-
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {mobileOpen && (
-          <motion.div
-            initial={{ height: 0, opacity: 0 }}
-            animate={{ height: 'auto', opacity: 1 }}
-            exit={{ height: 0, opacity: 0 }}
-            style={{
-              overflow: 'hidden',
-              background: 'var(--tt-surface)',
-              borderBottom: '1px solid var(--tt-border)',
-            }}
-            className='shrink-0'
-          >
-            <nav style={{ display: 'flex', flexDirection: 'column', padding: '1rem', gap: '0.25rem' }}>
-              {NAV_LINKS.map((link) => (
-                <Link
-                  key={link.href}
-                  href={link.href}
-                  onClick={() => setMobileOpen(false)}
-                  style={{ color: 'var(--tt-text)', padding: '0.6rem 0.75rem', fontSize: '1rem', borderRadius: 'var(--tt-radius-sm)' }}
-                  className= 'whitespace-nowrap text-ellipsis overflow-hidden'
-                >
-                  {link.label}
-                </Link>
-              ))}
-            </nav>
-          </motion.div>
-        )}
-      </AnimatePresence>
 
      
     </header>

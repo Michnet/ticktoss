@@ -18,7 +18,7 @@ export default function NotificationsPage() {
   }, [user, router]);
 
   return (
-    <div className="tt-container tt-container-padding !py-4 max-w-2xl mx-auto">
+    <div className="tt-container !py-4 max-w-2xl mx-auto">
       {/* Header */}
       <div className="flex items-center justify-between mb-6">
         <div className="flex items-center gap-3">

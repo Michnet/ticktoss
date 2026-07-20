@@ -1,22 +1,15 @@
 'use client';
 
-import ProductCardAurora from '@/components/product/concepts/ProductCardAurora';
 import ProductCardTicket from '@/components/product/concepts/ProductCardTicket';
 import ProductCardStory from '@/components/product/concepts/ProductCardStory';
-import ProductCardPolaroid from '@/components/product/concepts/ProductCardPolaroid';
 import ProductCardFrostBloom from '@/components/product/concepts/ProductCardFrostBloom';
 import ProductCardGlass from '@/components/product/concepts/ProductCardGlass';
-//import ProductCardCarousel from '@/components/product/concepts/ProductCardCarousel';
 import ProductCardCollage from '@/components/product/concepts/ProductCardCollage';
+import ProductCardPoster from '@/components/product/concepts/ProductCardPoster';
+import ProductCardEventBlock from '@/components/product/concepts/ProductCardEventBlock';
 import { useProducts } from '@/lib/hooks/useProducts';
 
 const SECTIONS = [
-  /* {
-    key: 'aurora',
-    title: 'Aurora Glass',
-    blurb: 'Magazine-cover poster card — an ambient glow sampled from the blurhash sits behind frosted glass, with a single countdown/discount medallion instead of scattered badges.',
-    Card: ProductCardAurora,
-  }, */
   {
     key: 'ticket',
     title: 'Ticket Stub',
@@ -28,13 +21,7 @@ const SECTIONS = [
     title: 'Story Reel',
     blurb: 'Instagram-Stories-shaped: segmented dashes cycle through the gallery on hover, and the "posted Xh ago" timestamp slot is repurposed to count down instead of up.',
     Card: ProductCardStory,
-  },/* 
-  {
-    key: 'polaroid',
-    title: 'Polaroid Drop',
-    blurb: 'A snapped-and-shared polaroid — thick photo frame, a sale sticker slapped on the corner, handwritten-feel caption. Glam over clinical.',
-    Card: ProductCardPolaroid,
-  }, */
+  },
   {
     key: 'frost-bloom',
     title: 'Frost Bloom (glassmorphism)',
@@ -47,17 +34,23 @@ const SECTIONS = [
     blurb: 'Restrained and catalog-friendly: the photo stays sharp, and a single frosted price tag floats over its corner, tinted with the product\'s own blurhash color instead of generic gray glass.',
     Card: ProductCardGlass,
   },
-  /* {
-    key: 'carousel',
-    title: 'Carousel Deck',
-    blurb: 'The gallery as a tappable slide deck — chevrons and dot indicators let a shopper flip through every shot without leaving the grid, unlike Story\'s passive hover-cycle.',
-    Card: ProductCardCarousel,
-  }, */
   {
     key: 'collage',
     title: 'Photo Collage',
     blurb: 'The whole gallery on display at once: a large spotlight shot with up to three thumbnails beside it. Click a thumbnail to swap the spotlight — nothing hidden behind hover or swipe.',
     Card: ProductCardCollage,
+  },
+  {
+    key: 'poster',
+    title: 'Poster Bloom',
+    blurb: 'Full-bleed editorial poster inspired by story-app takeovers: a floating mini nav bar sits over the sharp photo, and a bottom scrim — tinted with the image\'s own dominant color instead of flat black — carries a bold display headline like a movie poster tagline.',
+    Card: ProductCardPoster,
+  },
+  {
+    key: 'event-block',
+    title: 'Event Block',
+    blurb: 'An event-invite layout: the photo bleeds straight into a solid info block dyed with the image\'s own dominant hue, one color per product, with a calendar-style badge repurposed to carry the discount instead of a date.',
+    Card: ProductCardEventBlock,
   },
 ];
 
@@ -69,7 +62,7 @@ export default function CardConceptsPage() {
       <div>
         <h1 className="tt-section-title text-2xl">Product Card <span>Concepts</span></h1>
         <p className="mt-1 text-sm text-[var(--tt-muted)]">
-          Eight directions for the individual product card, using the same set of real published products (varying urgency, stock and images) throughout so they're easy to compare.
+          Seven directions for the individual product card, using the same set of real published products (varying urgency, stock and images) throughout so they're easy to compare.
         </p>
       </div>
 
