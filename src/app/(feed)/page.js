@@ -24,7 +24,6 @@ export default function HomePage() {
   return (
     <>  
       <OldHomePage/>
-      <LiveTicker />
       <HomeFeedStream />
     </>
   );

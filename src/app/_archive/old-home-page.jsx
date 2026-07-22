@@ -37,10 +37,10 @@ export const metadata = {
 
 export default function OldHomePage() {
   return (
-    <main className='page-content space-y-4 md:space-y-6'>
+    <main className='page-content space-y-4 md:space-y-6 pt-3'>
       {/* ── 1. Promo banners + quick-access tiles ────── */}
       
-      <section className="md:py-4">
+      {/* <section className="md:py-4">
       <div className="tt-container md:px-5 grid grid-cols-1 md:grid-cols-[auto_300px] lg:grid-cols-[auto_400px] gap-3 md:gap-6">
         <BannerSlider
                 items={IMAGE_BANNERS}
@@ -52,7 +52,6 @@ export default function OldHomePage() {
                 showDots
               />
 
-        {/* Mini highlight cards */}
         <div className="hidden md:grid grid-cols-2 md:grid-cols-2 gap-2 sm:gap-4">
           {[
             { icon: '🏷️', title: 'Discount Deals', sub: 'Time-limited offers' },
@@ -67,6 +66,19 @@ export default function OldHomePage() {
             </div>
           ))}
         </div>
+      </div>
+    </section> */}
+      <section className="md:py-4">
+      <div className="tt-container">
+        <BannerSlider
+                items={IMAGE_BANNERS}
+                variant="image"
+                slideHeight="clamp(240px, 40vw, 380px)"
+                interval={5000}
+                autoPlay
+                showArrows
+                showDots
+              />
       </div>
     </section>
      {/*  <PromoBanners2 /> */}
@@ -94,75 +106,9 @@ export default function OldHomePage() {
           .urgency-grid { grid-template-columns: 1fr !important; }
         }
       `}</style>
-      <div className="urgency-grid grid lg:grid-cols-[minmax(0,1fr)_360px] mb-4 lg:mb-6 gap-6 max-w-[1280px] mx-auto px-3">
-        {/* Live urgency list (left) */}
-        <div className="min-w-0">
+      {/* <div className="urgency-grid grid lg:grid-cols-[minmax(0,1fr)_360px] mb-4 lg:mb-6 gap-6 max-w-[1280px] mx-auto px-3">
           <LiveUrgencyList />
-        </div>
-
-        {/* Right sidebar: Tag cloud + mini vendor CTAs */}
-        <aside className="flex flex-col gap-6">
-          {/* Quick stats panel */}
-          <div className="bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-[var(--tt-radius-lg)] p-5">
-            <h3 className="font-['Syne',sans-serif] font-extrabold text-[0.95rem] mb-4">
-              📊 Market Snapshot
-            </h3>
-            <div className="flex flex-col gap-[0.6rem]">
-              {[
-                { label: 'Active Deals', value: '12,421', icon: '🏷️' },
-                { label: 'Ending This Hour', value: '38', icon: '⏰' },
-                { label: 'Vendors Online', value: '284', icon: '🟢' },
-                { label: 'Bookings Today', value: '812', icon: '📦' },
-                { label: 'Avg. Discount', value: '37%', icon: '💰' },
-              ].map(({ label, value, icon }) => (
-                <div
-                  key={label}
-                  className="flex justify-between items-center py-[0.4rem] border-b border-[var(--tt-border)]"
-                >
-                  <span className="text-[0.78rem] text-[var(--tt-muted)] flex items-center gap-[0.4rem]">
-                    <span>{icon}</span> {label}
-                  </span>
-                  <span className="font-['Syne',sans-serif] font-bold text-[0.88rem] text-[var(--tt-text)]">
-                    {value}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
-
-          {/* Urgency legend */}
-          <div className="bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-[var(--tt-radius-lg)] p-5">
-            <h3 className="font-['Syne',sans-serif] font-extrabold text-[0.95rem] mb-[0.875rem]">
-              🎯 Urgency Score
-            </h3>
-            <p className="text-[0.75rem] text-[var(--tt-muted)] leading-[1.55] mb-3">
-              Products are ranked by a live formula combining discount, time left, and stock scarcity.
-            </p>
-            {[
-              { label: '80–100+', desc: 'Critical — ending very soon', color: 'var(--tt-danger)' },
-              { label: '50–79', desc: 'High urgency — act fast', color: 'var(--tt-flame)' },
-              { label: '20–49', desc: 'Medium — still a good deal', color: 'var(--tt-gold)' },
-              { label: '< 20', desc: 'Low — plenty of time', color: 'var(--tt-success)' },
-            ].map(({ label, desc, color }) => (
-              <div
-                key={label}
-                className="flex gap-2 items-start mb-[0.45rem]"
-              >
-                <span
-                  className="inline-block w-[3px] self-stretch rounded-full shrink-0 min-h-[30px]"
-                  style={{ background: color }}
-                />
-                <div>
-                  <div className="font-['Syne',sans-serif] font-bold text-[0.78rem]" style={{ color }}>
-                    Score {label}
-                  </div>
-                  <div className="text-[0.7rem] text-[var(--tt-muted)]">{desc}</div>
-                </div>
-              </div>
-            ))}
-          </div>
-        </aside>
-      </div>
+        </div> */}
       <section className="tt-container tt-container-padding mb-6">
         <ProductsView cardWidth='150px' itemExClass='flex flex-col' />
       </section>

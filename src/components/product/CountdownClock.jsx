@@ -29,9 +29,9 @@ function Digit({ value, pad = 2 }) {
 
 /**
  * CountdownClock — flip-digit style countdown timer.
- * @param {{ saleEndDate: string|Date, size?: 'sm'|'md'|'lg' }} props
+ * @param {{ saleEndDate: string|Date, size?: 'sm'|'md'|'lg', showAllUnits?: boolean }} props
  */
-export default function CountdownClock({counterLabel=null, includeMilliSeconds = false, saleEndDate, size = 'md',  startDate = false, saleStartDate }) {
+export default function CountdownClock({counterLabel=null, includeMilliSeconds = false, saleEndDate, showAllUnits = false, size = 'md',  startDate = false, saleStartDate }) {
   const containerRef = useRef(null);
   const [isActive, setIsActive] = useState(false);
 
@@ -65,6 +65,22 @@ export default function CountdownClock({counterLabel=null, includeMilliSeconds =
   const { fontSize, gap } = sizes[size] ?? sizes.md;
   const color = LEVEL_COLORS[level] ?? LEVEL_COLORS.low;
 
+  // Largest-first pool of units this clock can render.
+  const unitPool = includeMilliSeconds
+    ? ['days', 'hours', 'minutes', 'seconds', 'cs']
+    : ['days', 'hours', 'minutes', 'seconds'];
+
+  let visibleUnits;
+  if (showAllUnits) {
+    visibleUnits = unitPool;
+  } else {
+    // Cap at 3 units, starting from the largest non-zero unit and cascading down.
+    const startIndex = days > 0 ? 0 : hours > 0 ? 1 : 2;
+    visibleUnits = unitPool.slice(startIndex, startIndex + 3);
+  }
+
+  const unitValues = { days, hours, minutes, seconds, cs };
+
   if (expired) {
     return (
       <span
@@ -92,23 +108,24 @@ export default function CountdownClock({counterLabel=null, includeMilliSeconds =
       }}
     >
       {counterLabel && <span className='leading-tight text-[var(--tt-text)]'>{counterLabel}</span>}
-      {days > 0 && (
-        <>
-          <Digit value={days} />
-          <span style={{ color: `${color}88`, fontSize: '0.75em' }}>d</span>
-        </>
-      )}
-      <Digit value={hours} />
-      <span style={{ color: `${color}88`, fontSize: '0.85em', marginBottom: '2px' }}>:</span>
-      <Digit value={minutes} />
-      <span style={{ color: `${color}88`, fontSize: '0.85em', marginBottom: '2px' }}>:</span>
-      <Digit value={seconds} />
-      {includeMilliSeconds && (
-        <>
-          <span style={{ color: `${color}88`, fontSize: '0.85em', marginBottom: '2px' }}>.</span>
-          <Digit value={cs} pad={2} />
-        </>
-      )}
+      {visibleUnits.map((unit, i) => {
+        const prevUnit = visibleUnits[i - 1];
+        const needsSeparator = i > 0 && prevUnit !== 'days';
+
+        return (
+          <span key={unit} style={{ display: 'inline-flex', alignItems: 'center', gap }}>
+            {needsSeparator && (
+              <span style={{ color: `${color}88`, fontSize: '0.85em', marginBottom: '2px' }}>
+                {unit === 'cs' ? '.' : ':'}
+              </span>
+            )}
+            <Digit value={unitValues[unit]} />
+            {unit === 'days' && (
+              <span style={{ color: `${color}88`, fontSize: '0.75em' }}>d</span>
+            )}
+          </span>
+        );
+      })}
     </div>
   );
 }

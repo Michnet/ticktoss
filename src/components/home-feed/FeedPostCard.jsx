@@ -7,7 +7,7 @@ import { motion } from 'framer-motion';
  * stream a consistent Facebook-post rhythm (avatar/title/meta header, body,
  * optional footer) no matter what kind of content it wraps.
  */
-export default function FeedPostCard({ avatar, title, meta, tag, tagVariant = 'flame', children, footer, noPadding = false }) {
+export default function FeedPostCard({className='bg-[var(--tt-theme)] border border-[var(--tt-border)] rounded-[var(--tt-radius-lg)]', avatar, title, meta, tag, tagVariant = 'flame', children, footer, noPadding = false }) {
   const tagClass =
     tagVariant === 'gold' ? 'tt-badge tt-badge-gold' :
     tagVariant === 'success' ? 'tt-badge tt-badge-success' :
@@ -20,7 +20,7 @@ export default function FeedPostCard({ avatar, title, meta, tag, tagVariant = 'f
       whileInView={{ opacity: 1, y: 0 }}
       viewport={{ once: true, amount: 0.15 }}
       transition={{ duration: 0.35 }}
-      className="bg-[var(--tt-theme)] border border-[var(--tt-border)] rounded-[var(--tt-radius-lg)] overflow-hidden"
+      className={`overflow-hidden ${className}`}
     >
       {(title || tag) && (
         <div className="flex items-center gap-3 px-4 pt-3.5 pb-3">

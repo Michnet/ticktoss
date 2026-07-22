@@ -21,7 +21,7 @@ export default async function LiveTicker() {
   }
 
   return (
-    <div className="shadow-lg py-[1.55rem] overflow-hidden mb-10 relative">
+    <div className="py-[1.55rem] overflow-hidden relative">
       {/* Left fade */}
       <div className="absolute left-0 top-0 bottom-0 w-[60px] bg-[linear-gradient(90deg,var(--tt-surface),transparent)] z-[2] pointer-events-none" />
       {/* Right fade */}

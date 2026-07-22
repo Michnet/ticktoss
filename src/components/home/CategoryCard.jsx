@@ -64,7 +64,7 @@ const CATEGORY_STYLES = {
   }
 };
 
-export default function CategoryCard({ cat, CardStyle = 'default' }) {
+export default function CategoryCard({ cat, CardStyle = 'default', exClass='', style:styling={} }) {
   const style = CATEGORY_STYLES[cat.slug] || CATEGORY_STYLES.default;
   const accentColor = getCategoryColor(cat.name, cat.color);
   const glowColor = getGlowColor(accentColor, 0.25);
@@ -75,9 +75,10 @@ export default function CategoryCard({ cat, CardStyle = 'default' }) {
     return (
       <Link
         href={linkHref}
-        className="rounded-full px-4 py-2 flex items-center gap-2 text-sm font-semibold transition-all duration-200 bg-[var(--tt-theme)] shadow border hover:bg-[var(--tt-surface-2)]"
+        className={`rounded-full px-4 py-2 flex items-center gap-2 text-sm font-semibold transition-all duration-200 bg-[var(--tt-theme)] shadow border hover:bg-[var(--tt-surface-2)] ${exClass}`}
         style={{
           borderColor: 'var(--tt-border)',
+          ...styling
         }}
         onMouseEnter={(e) => {
           e.currentTarget.style.borderColor = accentColor;
@@ -147,8 +148,8 @@ export default function CategoryCard({ cat, CardStyle = 'default' }) {
   return (
     <Link
       href={linkHref}
-      className="rounded-[var(--tt-radius-lg)] bg-[var(--tt-theme)] shadow-md p-1 no-underline flex flex-col items-center gap-2 text-center transition-all duration-200 relative overflow-hidden"
-      
+      className={`rounded-[var(--tt-radius-lg)] bg-[var(--tt-theme)] shadow-md p-1 no-underline flex flex-col items-center gap-2 text-center transition-all duration-200 relative overflow-hidden ${exClass}`}
+      style={styling}
       onMouseEnter={(e) => {
         e.currentTarget.style.transform = 'translateY(-3px) scale(1.02)';
         e.currentTarget.style.boxShadow = `0 12px 32px ${glowColor}`;

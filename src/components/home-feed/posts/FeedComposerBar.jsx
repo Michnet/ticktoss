@@ -22,7 +22,7 @@ export default function FeedComposerBar() {
   };
 
   return (
-    <div className="bg-[var(--tt-theme)] border border-[var(--tt-border)] rounded-[var(--tt-radius-lg)] p-3.5">
+    <div className="bg-[var(--tt-theme)] shadow rounded-[var(--tt-radius-lg)] p-3.5">
       <form onSubmit={submit} className="flex items-center gap-2">
         <span className="w-9 h-9 rounded-full flex items-center justify-center text-[1.1rem] shrink-0" style={{ background: 'var(--tt-gradient-flame)' }}>
           🔥

@@ -87,7 +87,7 @@ export default function BannerSlider({
     >
       {/* Slide stack */}
       <div
-        className="banner-slider-track md:rounded-[20px]"
+        className="banner-slider-track rounded-[20px] shadow-lg"
         style={{ height: slideHeight }}
       >
         {items.map((item, i) => {

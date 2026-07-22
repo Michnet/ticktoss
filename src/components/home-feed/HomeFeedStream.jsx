@@ -8,6 +8,8 @@ import FeedEndingSoonPost from './posts/FeedEndingSoonPost';
 import FeedProductGridPost from './posts/FeedProductGridPost';
 import FeedVendorSpotlightPost from './posts/FeedVendorSpotlightPost';
 import FeedVendorCTAPost from './posts/FeedVendorCTAPost';
+import BannerSlider from '../ui/BannerSlider';
+import { IMAGE_BANNERS } from '../home/BannerSlider';
 
 /**
  * Interleaves product data into a Facebook-style feed rhythm — deliberately
@@ -17,11 +19,15 @@ import FeedVendorCTAPost from './posts/FeedVendorCTAPost';
 export default function HomeFeedStream() {
   return (
     <>
+      {/* <FeedBannerPost /> */}
+      <BannerSlider items={IMAGE_BANNERS} variant="image" slideHeight="clamp(200px, 32vw, 280px)" interval={5500} autoPlay showArrows showDots />
       <FeedComposerBar />
-      <FeedBannerPost />
       <FeedCategoryStripPost />
-      <FeedDealSpotlightPost index={0} />
-      <FeedEndingSoonPost />
+      
+      <section className='flex flex-col lg:flex-row gap-3'>
+        <FeedEndingSoonPost />
+      <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+        
       <FeedProductGridPost
         source="new"
         avatar="🆕"
@@ -31,7 +37,6 @@ export default function HomeFeedStream() {
         tagVariant="flame"
         ctaHref="/products?sort=new"
       />
-      <FeedVendorSpotlightPost />
       <FeedProductGridPost
         source="custom"
         filters={['below-10k']}
@@ -42,7 +47,9 @@ export default function HomeFeedStream() {
         tagVariant="success"
         ctaHref="/products?clusters=below-10k"
       />
-      <FeedDealSpotlightPost index={1} />
+      </div>
+      </section>
+      <FeedVendorSpotlightPost />
       <FeedProductGridPost
         source="upcoming"
         avatar="🔜"
