@@ -4,7 +4,7 @@ import Link from 'next/link';
 import { useTopCategories } from '@/hooks/useHomeData';
 import CategoryCard from './CategoryCard';
 
-export default function CategoryGrid({ CardStyle = 'default' }) {
+export default function CategoryGrid({ CardStyle = 'default', carousel = false, rows = 1 }) {
   const { data: categories, isLoading, error } = useTopCategories();
 
   // Show a simple skeleton loader if loading
@@ -13,13 +13,23 @@ export default function CategoryGrid({ CardStyle = 'default' }) {
       <section className="pb-5">
         <div className="tt-container tt-container-padding">
           <div className="tt-shimmer h-[30px] w-[200px] bg-[var(--tt-surface)] rounded-[4px] mb-5" />
-          <div className={
-            CardStyle === 'pills' 
-              ? "flex flex-wrap gap-3" 
-              : CardStyle === 'detailed'
-                ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
-                : "grid grid-cols-[repeat(auto-fill,minmax(145px,1fr))] gap-3"
-          }>
+          <div 
+            className={
+              carousel
+                ? "grid grid-flow-col gap-3 overflow-x-auto pb-4 no-scrollbar [grid-template-rows:repeat(var(--carousel-rows,1),minmax(0,1fr))] md:[grid-template-rows:repeat(1,minmax(0,1fr))]"
+                : CardStyle === 'pills' 
+                ? "flex flex-wrap gap-3" 
+                : CardStyle === 'detailed'
+                  ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
+                  : "grid grid-cols-[repeat(auto-fill,minmax(145px,1fr))] gap-3"
+            }
+            style={
+              carousel ? {
+                '--carousel-rows': rows,
+                gridAutoColumns: CardStyle === 'pills' ? '120px' : CardStyle === 'detailed' ? '280px' : '145px'
+              } : undefined
+            }
+          >
             {Array.from({ length: 8 }).map((_, i) => (
               <div key={i} className={`tt-shimmer bg-[var(--tt-surface)] ${CardStyle === 'pills' ? 'h-[40px] w-[120px] rounded-full' : CardStyle === 'detailed' ? 'h-[140px] rounded-[var(--tt-radius-lg)]' : 'h-[140px] rounded-[var(--tt-radius-lg)]'}`} />
             ))}
@@ -56,13 +66,23 @@ export default function CategoryGrid({ CardStyle = 'default' }) {
         </div>
 
         {/* Grid */}
-        <div className={
-          CardStyle === 'pills' 
-            ? "flex flex-wrap gap-3" 
-            : CardStyle === 'detailed'
-              ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
-              : "grid grid-cols-[repeat(auto-fill,minmax(95px,1fr))] gap-3"
-        }>
+        <div 
+          className={
+            carousel
+              ? "grid grid-flow-col gap-3 overflow-x-auto pb-4 no-scrollbar [grid-template-rows:repeat(var(--carousel-rows,1),minmax(0,1fr))] md:[grid-template-rows:repeat(1,minmax(0,1fr))]"
+              : CardStyle === 'pills' 
+              ? "flex flex-wrap gap-3" 
+              : CardStyle === 'detailed'
+                ? "grid grid-cols-[repeat(auto-fill,minmax(280px,1fr))] gap-4"
+                : "grid grid-cols-[repeat(auto-fill,minmax(95px,1fr))] gap-3"
+          }
+          style={
+            carousel ? {
+              '--carousel-rows': rows,
+              gridAutoColumns: CardStyle === 'pills' ? 'max-content' : CardStyle === 'detailed' ? '280px' : '110px'
+            } : undefined
+          }
+        >
           {categories.map((cat) => (
             <CategoryCard key={cat.id} cat={cat} CardStyle={CardStyle} />
           ))}

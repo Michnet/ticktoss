@@ -45,3 +45,22 @@ export const generateTrackingNumber = (prefix = 'TT') => {
   const timestamp = Date.now().toString().slice(-4);
   return `${prefix}-${randomChars}${timestamp}`;
 };
+
+/**
+ * Resolves who to contact about a single order item — the store snapshot
+ * saved on the item at order time (item.tt_location), falling back to the
+ * vendor's first listed store for orders placed before that snapshot
+ * existed. Contact is resolved per item (not per order) since a vendor can
+ * run multiple stores and a buyer's items may not all come from one.
+ */
+export const getItemContact = (item, vendorProfile) => {
+  const loc = item?.tt_location || vendorProfile?.tt_stores?.[0] || null;
+  if (!loc) return null;
+
+  return {
+    storeName: loc.name || vendorProfile?.display_name || 'Vendor',
+    phone: loc.calls?.[0] || null,
+    whatsapp: loc.whatsapp?.[0] || null,
+    address: loc.address || loc.location || null,
+  };
+};

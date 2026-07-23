@@ -180,7 +180,7 @@ export default function ProductCard({ product, counterLabel=null, startDate=fals
             )} */}
             <ProductLabelRow random={true} className='flex-nowrap mb-1' max={4} itemStyle={{borderRadius:'5px'}} noIcon noBg product={product} size="md" />
             {/* Name */}
-            <Link href={`/products/${slug}`}>
+            <Link className='mb-1 block' href={`/products/${slug}`}>
             <h3 className="font-light leading-[1.35] line-clamp-1 text-sm text-[var(--tt-text)]">
               {name}
             </h3>
@@ -188,8 +188,8 @@ export default function ProductCard({ product, counterLabel=null, startDate=fals
             
             
             {/* Prices */}
-            <div className="flex items-baseline flex-col mb-1">
-              <span className="font-['Syne',sans-serif] font-bold text-[1rem]" style={{ color: level === 'critical' ? 'var(--tt-danger)' : 'var(--tt-text)' }}>
+            <div className="flex items-baseline flex-col">
+              <span className="font-['Syne',sans-serif] font-bold text-[1rem] leading-[1.15]" style={{ color: level === 'critical' ? 'var(--tt-danger)' : 'var(--tt-text)' }}>
                 {formatUGX(sale_price)}
               </span>
               {/* {price && price > sale_price && (

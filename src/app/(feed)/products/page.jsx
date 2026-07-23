@@ -23,26 +23,17 @@ function ProductsContent() {
     }, 500);
   };
 
-  const minPrice = searchParams.get('minPrice');
-  const maxPrice = searchParams.get('maxPrice');
-  const categorySlug = searchParams.get('categorySlug');
-  const categoryId = searchParams.get('category_id');
-  const tagIds = searchParams.get('tag_ids');
-  const isFeatured = searchParams.get('isFeatured') === 'true';
+  // Pass every URL search param straight through to fetchProducts — its
+  // parameter names are kept in sync with the query param names, so no
+  // per-filter wiring is needed here. Only params needing type coercion
+  // (search, isFeatured, clusters) are overridden after the spread.
   const clustersParam = searchParams.get('clusters');
-  const clusters = clustersParam ? clustersParam.split(',') : [];
-  const orderBy = searchParams.get('orderBy');
 
-  const { data: products, isLoading, error } = useProducts({ 
+  const { data: products, isLoading, error } = useProducts({
+    ...Object.fromEntries(searchParams.entries()),
     search: debouncedSearch,
-    minPrice,
-    maxPrice,
-    categorySlug,
-    categoryId,
-    isFeatured,
-    tagIds,
-    clusters: clusters.length > 0 ? clusters : undefined,
-    orderBy
+    isFeatured: searchParams.get('isFeatured') === 'true',
+    clusters: clustersParam ? clustersParam.split(',').filter(Boolean) : undefined,
   });
 
   return (

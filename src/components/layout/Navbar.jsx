@@ -3,7 +3,7 @@
 import Link from 'next/link';
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Bell } from 'lucide-react';
+import { Bell, PanelLeftClose, PanelLeftOpen } from 'lucide-react';
 import useAppStore from '@/store/useAppStore';
 import ThemeToggle from '@/components/ui/ThemeToggle';
 import AuthForm from '@/components/auth/AuthForm';
@@ -16,9 +16,13 @@ const NAV_LINKS = [
   { href: '/categories', label: 'Categories' },
 ];
 
-export default function Navbar({ variant = 'solid' }) {
+export default function Navbar({ variant = 'solid', showSidebarToggle = false }) {
   const isTransparent = variant === 'transparent';
-  const { user, profile, isVendor, clearAuth, authModalOpen: storeAuthModalOpen, setAuthModalOpen: setStoreAuthModalOpen } = useAppStore();
+  const {
+    user, profile, isVendor, clearAuth,
+    authModalOpen: storeAuthModalOpen, setAuthModalOpen: setStoreAuthModalOpen,
+    leftSidebarCollapsed, toggleLeftSidebarCollapsed,
+  } = useAppStore();
   const [mobileOpen, setMobileOpen]       = useState(false);
   const [userMenuOpen, setUserMenuOpen]   = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
@@ -48,6 +52,7 @@ export default function Navbar({ variant = 'solid' }) {
   const handleLogout = async () => {
     try {
       await fetch('/api/auth?intent=sign_out', { method: 'POST' });
+      localStorage.setItem('oneTapLogoutTime', Date.now().toString());
       clearAuth();
       setUserMenuOpen(false);
       window.location.href = '/';
@@ -135,6 +140,18 @@ export default function Navbar({ variant = 'solid' }) {
       <div
         className="tt-container-padding h-full flex items-center gap-6"
       >
+        {/* Sidebar collapse toggle — desktop only, feed shell routes only */}
+        {showSidebarToggle && (
+          <button
+            onClick={toggleLeftSidebarCollapsed}
+            className="hidden lg:flex tt-btn-ghost p-2 shrink-0"
+            aria-label={leftSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+            title={leftSidebarCollapsed ? 'Expand sidebar' : 'Collapse sidebar'}
+          >
+            {leftSidebarCollapsed ? <PanelLeftOpen size={20} /> : <PanelLeftClose size={20} />}
+          </button>
+        )}
+
         {/* Logo */}
         <Link
           href="/"

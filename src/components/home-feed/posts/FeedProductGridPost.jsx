@@ -34,7 +34,8 @@ export default function FeedProductGridPost({
   if (!isLoading && !items?.length) return null;
 
   return (
-    <FeedPostCard avatar={avatar} title={title} meta={meta} tag={tag} tagVariant={tagVariant}>
+    <FeedPostCard contentExClass='flex-1 flex' className='flex flex-col bg-[var(--tt-theme)] border border-[var(--tt-surface-2)] rounded-[var(--tt-radius-lg)]' avatar={avatar} title={title} meta={meta} tag={tag} tagVariant={tagVariant}>
+      <div className='flex flex-col gap-2 justify-between'>
       <div className="grid grid-cols-2 gap-2.5">
         {isLoading
           ? Array.from({ length: limit }).map((_, i) => (
@@ -47,6 +48,7 @@ export default function FeedProductGridPost({
       <Link href={ctaHref} className="block text-center text-[0.78rem] font-semibold text-[var(--tt-flame-2)] mt-3">
         See more →
       </Link>
+      </div>
     </FeedPostCard>
   );
 }

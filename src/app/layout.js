@@ -3,6 +3,7 @@ import { Inter, Roboto } from 'next/font/google';
 import QueryProvider from '@/components/providers/QueryProvider';
 import ThemeProvider from '@/components/providers/ThemeProvider';
 import AuthProvider from '@/components/providers/AuthProvider';
+import GoogleOneTap from '@/components/auth/GoogleOneTap';
 import ToastProvider from '@/components/notifications/ToastProvider';
 import ServiceWorkerRegistrar from '@/components/pwa/ServiceWorkerRegistrar';
 import InstallPrompt from '@/components/pwa/InstallPrompt';
@@ -58,6 +59,7 @@ export default function RootLayout({ children }) {
               <main style={{ minHeight: 'calc(100vh - var(--tt-nav-height))' }}>
                 {children}
               </main>
+              <GoogleOneTap />
               <ToastProvider />
               <ServiceWorkerRegistrar />
               <InstallPrompt />

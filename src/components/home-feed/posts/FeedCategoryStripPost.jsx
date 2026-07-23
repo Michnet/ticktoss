@@ -17,8 +17,8 @@ export default function FeedCategoryStripPost() {
               <div key={i} className="tt-shimmer w-[86px] h-[92px] rounded-[var(--tt-radius-md)] bg-[var(--tt-surface-2)] shrink-0" />
             ))
           : categories.map((cat) => (
-              <div className='shrink-0 w-[100px]'>
-                <CategoryCard exClass='h-full'  key={cat.id} cat={cat} CardStyle={'default'} />
+              <div className='shrink-0 w-[100px]' key={cat.id}>
+                <CategoryCard exClass='h-full'  cat={cat} CardStyle={'default'} />
               </div>
             ))}
       </div>

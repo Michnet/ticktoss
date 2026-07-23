@@ -5,9 +5,11 @@ import { useSearchParams } from 'next/navigation';
 import { useState, Suspense } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import useAppStore from '@/store/useAppStore';
+import AuthForm from '@/components/auth/AuthForm';
 
 export default function DashboardLayout({ children }) {
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
+  const { user, isAuthLoading } = useAppStore();
 
   const buyerLinks = [
     { view: 'profile', label: 'My Profile', icon: '👤' },
@@ -90,10 +92,26 @@ export default function DashboardLayout({ children }) {
     );
   };
 
+  if (isAuthLoading) {
+    return (
+      <div className="tt-container tt-container-padding" style={{ padding: '4rem', textAlign: 'center' }}>
+        <div className="tt-skeleton" style={{ height: '200px', maxWidth: '400px', margin: '0 auto' }} />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return (
+      <div style={{ padding: '3rem 1rem' }}>
+        <AuthForm redirectTo="/dashboard" />
+      </div>
+    );
+  }
+
   return (
     <>
       <div className='min-h-[inherit]' style={{display: 'flex', gap: '1rem'}}>
-        
+
         {/* Desktop Sidebar Navigation */}
         <aside style={{ width: '250px', flexShrink: 0 }} className="hidden-mobile bg-[var(--tt-surface-2)] px-4">
           <div style={{ position: 'sticky', top: 'calc(var(--tt-nav-height) + 2rem)' }}>

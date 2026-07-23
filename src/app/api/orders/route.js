@@ -54,7 +54,7 @@ export async function POST(req) {
     const productIds = [...new Set(items.map(item => item.id || item.product_id).filter(Boolean))];
     const { data: liveProducts, error: liveProductsError } = await supabaseAdmin
       .from('products')
-      .select('id, name, stock, price, sale_price, user_id, sale_start_date, featured_image')
+      .select('id, name, stock, price, sale_price, user_id, sale_start_date, featured_image, tt_location')
       .in('id', productIds);
 
     if (liveProductsError) throw liveProductsError;
@@ -154,6 +154,10 @@ export async function POST(req) {
         vendor_id: product.user_id || null,
         image: product.featured_image || null,
         attributes: variation?.attributes || item.attributes || null,
+        // Snapshot of which store sold this item — lets contact info be
+        // resolved per item rather than per order, since a vendor can run
+        // multiple stores and a buyer's items may not all come from one.
+        tt_location: product.tt_location || null,
       };
     });
 
@@ -326,6 +330,28 @@ export async function GET(req) {
           profiles:user_id(display_name, email, phone)
         `)
         .eq('vendor_id', user.id)
+        .order('created_at', { ascending: false });
+
+      if (error) throw error;
+
+      return Response.json({ orders: data || [] });
+    }
+
+    if (intent === 'buyer_orders') {
+      // Opportunistic sweep so a stale pending order shows as `expired`
+      // here even if the pg_cron backstop hasn't ticked yet.
+      await supabaseAdmin.rpc('tt_expire_stale_orders');
+
+      // `vendor` carries tt_stores purely as a fallback contact source for
+      // items placed before per-item tt_location snapshots existed.
+      const { data, error } = await supabaseAdmin
+        .from('product_orders')
+        .select(`
+          *,
+          products:product_id(name, featured_image, slug),
+          vendor:profiles!product_orders_vendor_id_fkey(display_name, tt_stores)
+        `)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
 
       if (error) throw error;

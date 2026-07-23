@@ -103,6 +103,16 @@ export default function VendorCard({ vendor: v }) {
             <div className="text-[0.62rem] text-[var(--tt-muted)]">active deals</div>
           </div>
         </div>
+
+        {v.orderStats?.orders_qty > 0 && (
+          <div className="flex gap-3 mt-3 pt-3 border-t border-white/10 text-[0.65rem] text-white/70">
+            <span>
+              <strong className="text-[var(--tt-success)]">{Math.round((v.orderStats.completion_rate ?? 0) * 100)}%</strong> completion
+            </span>
+            <span>·</span>
+            <span>{v.orderStats.orders_qty} orders</span>
+          </div>
+        )}
       </div>
       </div>
     </Link>

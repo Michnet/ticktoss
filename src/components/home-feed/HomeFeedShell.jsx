@@ -6,6 +6,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { X } from 'lucide-react';
 import MobileTabBar from './MobileTabBar';
 import { pageHasOwnMobileBar } from '@/lib/feedRoutes';
+import useAppStore from '@/store/useAppStore';
 
 /**
  * Facebook-style 3-column shell: fixed left rail (nav/shortcuts), a centered
@@ -16,6 +17,7 @@ export default function HomeFeedShell({ leftNav, rightRail, children }) {
   const [leftOpen, setLeftOpen] = useState(false);
   const [rightOpen, setRightOpen] = useState(false);
   const pathname = usePathname();
+  const leftCollapsed = useAppStore((s) => s.leftSidebarCollapsed);
 
   // Routes like /products/[slug] render their own fixed mobile CTA bar —
   // no floating tab bar there, so no extra bottom clearance either.
@@ -30,11 +32,14 @@ export default function HomeFeedShell({ leftNav, rightRail, children }) {
 
   return (
     <div className="relative">
-      <div className={`tt-container-padding grid grid-cols-1 lg:grid-cols-[240px_minmax(0,1fr)] xl:grid-cols-[240px_minmax(0,1fr)_300px] gap-5 py-4 lg:pb-4 items-start ${showMobileTabBar ? 'pb-28' : 'pb-4'}`}>
+      <div
+        className={`grid grid-cols-1 lg:grid-cols-[var(--tt-left-col)_minmax(0,1fr)] xl:grid-cols-[var(--tt-left-col)_minmax(0,1fr)_300px] gap-5 py-4 lg:pb-4 items-start ${showMobileTabBar ? 'pb-28' : 'pb-4'}`}
+        style={{ '--tt-left-col': leftCollapsed ? '64px' : '240px' }}
+      >
         {/* Left rail — desktop only */}
         <aside
-          className="hidden lg:block sticky bg-[var(--tt-theme)] self-start overflow-y-auto no-scrollbar"
-          style={{ top: 'calc(var(--tt-nav-height) + 1rem)', maxHeight: 'calc(100vh - var(--tt-nav-height) - 2rem)' }}
+          className="hidden lg:flex lg:flex-col sticky bg-[var(--tt-theme)] self-start overflow-y-auto no-scrollbar transition-[width] duration-200"
+          style={{ top: 'calc(var(--tt-nav-height) + 1rem)', height: 'calc(100vh - var(--tt-nav-height) - 2rem)' }}
         >
           {leftNav}
         </aside>
@@ -46,7 +51,7 @@ export default function HomeFeedShell({ leftNav, rightRail, children }) {
 
         {/* Right rail — xl only */}
         <aside
-          className="hidden xl:block sticky bg-[var(--tt-theme)] self-start overflow-y-auto no-scrollbar"
+          className="hidden xl:block sticky self-start overflow-y-auto no-scrollbar"
           style={{ top: 'calc(var(--tt-nav-height) + 1rem)', maxHeight: 'calc(100vh - var(--tt-nav-height) - 2rem)' }}
         >
           {rightRail}

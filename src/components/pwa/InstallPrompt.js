@@ -15,17 +15,19 @@ export default function InstallPrompt() {
     // Check if already installed (standalone mode)
     const isStandaloneMode = window.matchMedia('(display-mode: standalone)').matches || window.navigator.standalone === true;
     setIsStandalone(isStandaloneMode);
-    
+
     if (isStandaloneMode) return;
 
-    // Check if dismissed recently
-    const dismissedAt = localStorage.getItem('tt_pwa_dismissed');
-    if (dismissedAt) {
+    // Re-checked at show-time (not just once here) so a dismissal during this
+    // session also blocks late/repeat 'beforeinstallprompt' fires and the iOS timer.
+    const isDismissed = () => {
+      const dismissedAt = localStorage.getItem('tt_pwa_dismissed');
+      if (!dismissedAt) return false;
       const thirtyDays = 30 * 24 * 60 * 60 * 1000;
-      if (Date.now() - parseInt(dismissedAt, 10) < thirtyDays) {
-        return; // Don't show if dismissed in the last 30 days
-      }
-    }
+      return Date.now() - parseInt(dismissedAt, 10) < thirtyDays;
+    };
+
+    if (isDismissed()) return;
 
     // Detect iOS
     const userAgent = window.navigator.userAgent.toLowerCase();
@@ -35,6 +37,7 @@ export default function InstallPrompt() {
     // Chrome/Android beforeinstallprompt
     const handleBeforeInstallPrompt = (e) => {
       e.preventDefault(); // Prevent default mini-infobar
+      if (isDismissed()) return;
       setDeferredPrompt(e);
       setShowPrompt(true);
     };
@@ -42,17 +45,15 @@ export default function InstallPrompt() {
     window.addEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
 
     // If iOS, show prompt after a short delay (since there's no event)
+    let timer;
     if (isIOSDevice) {
-      const timer = setTimeout(() => {
-        setShowPrompt(true);
+      timer = setTimeout(() => {
+        if (!isDismissed()) setShowPrompt(true);
       }, 3000); // Wait 3 seconds before showing iOS prompt
-      return () => {
-        clearTimeout(timer);
-        window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
-      };
     }
 
     return () => {
+      if (timer) clearTimeout(timer);
       window.removeEventListener('beforeinstallprompt', handleBeforeInstallPrompt);
     };
   }, []);

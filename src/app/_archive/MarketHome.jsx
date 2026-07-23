@@ -3,8 +3,8 @@ import LiveTicker from '@/components/home/LiveTicker';
 //import PromoBanners from '@/components/home/PromoBanners';
 import CategoryGrid from '@/components/home/CategoryGrid';
 import FeaturedProducts from '@/components/home/FeaturedProducts';
-import LiveUrgencyList from '@/components/home/LiveUrgencyList';
-import NewArrivals from '@/components/home/NewArrivals';
+//import LiveUrgencyList from '@/components/home/LiveUrgencyList';
+//import NewArrivals from '@/components/home/NewArrivals';
 import FeaturedVendors from '@/components/home/FeaturedVendors';
 import MidPageCTA from '@/components/home/MidPageCTA';
 import TagCloud from '@/components/home/TagCloud';
@@ -14,11 +14,15 @@ import { IMAGE_BANNERS } from '@/components/home/BannerSlider';
 import ProductsView from '@/components/home/ProductsView';
 import BannerSlider from '@/components/ui/BannerSlider';
 import ClustersView from '@/components/home/ClustersView';
+import FeedEndingSoonPost from '@/components/home-feed/posts/FeedEndingSoonPost';
+import FeedProductGridPost from '@/components/home-feed/posts/FeedProductGridPost';
+import FeedComposerBar from '@/components/home-feed/posts/FeedComposerBar';
+import FeedVendorSpotlightPost from '@/components/home-feed/posts/FeedVendorSpotlightPost';
 //import PromoBanners3 from '@/components/home/PromoBanners3';
 //import PromoBanners4 from '@/components/home/PromoBanners4';
 
 // Statically generate the home page; revalidate via ISR every hour.
-export const revalidate = 3600;
+//export const revalidate = 3600;
 
 export const metadata = {
   title: 'TickToss — Uganda\'s Urgency Marketplace | Deals on a Clock',
@@ -37,7 +41,7 @@ export const metadata = {
 
 export default function OldHomePage() {
   return (
-    <main className='page-content space-y-4 md:space-y-6 pt-3'>
+    <main className='page-content space-y-2 md:space-y-6'>
       {/* ── 1. Promo banners + quick-access tiles ────── */}
       
       {/* <section className="md:py-4">
@@ -68,8 +72,7 @@ export default function OldHomePage() {
         </div>
       </div>
     </section> */}
-      <section className="md:py-4">
-      <div className="tt-container">
+      <section className="tt-container tt-container-padding">
         <BannerSlider
                 items={IMAGE_BANNERS}
                 variant="image"
@@ -79,12 +82,16 @@ export default function OldHomePage() {
                 showArrows
                 showDots
               />
-      </div>
     </section>
      {/*  <PromoBanners2 /> */}
 
       {/* ── . Hero ─────────────────────────────────── */}
       {/* <HeroSection /> */}
+      <div className='tt-container-padding'>
+        
+      <FeedComposerBar />
+
+      </div>
 
       {/* ── 2. Live news ticker ──────────────────────── */}
       <div className="tt-container">
@@ -92,13 +99,41 @@ export default function OldHomePage() {
       </div>
 
       {/* ── 4. Category grid ─────────────────────────── */}
-      <CategoryGrid />
+      <CategoryGrid carousel rows={2}/>
 
       {/* ── 5. Featured deals ────────────────────────── */}
       <FeaturedProducts />
 
       {/* ── 6. Mid-page split CTA ────────────────────── */}
       <MidPageCTA />
+
+      <section className='flex flex-col lg:flex-row gap-3 tt-container-padding'>
+              <FeedEndingSoonPost />
+            <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
+              
+            <FeedProductGridPost
+              source="new"
+              avatar="🆕"
+              title="New Arrivals"
+              meta="Just listed by vendors"
+              tag="New"
+              tagVariant="flame"
+              limit={2}
+              ctaHref="/products?sort=new"
+            />
+            <FeedProductGridPost
+              source="custom"
+              filters={['below-10k']}
+              avatar="💸"
+              title="Budget Finds"
+              meta="Great deals under UGX 10,000"
+              tag="Under 10k"
+              tagVariant="success"
+              limit={2}
+              ctaHref="/products?clusters=below-10k"
+            />
+            </div>
+            </section>
 
       {/* ── 7. Live urgency leaderboard list ─────────── */}
       <style>{`
@@ -112,13 +147,13 @@ export default function OldHomePage() {
       <section className="tt-container tt-container-padding mb-6">
         <ProductsView cardWidth='150px' itemExClass='flex flex-col' />
       </section>
-      <section  className="tt-container tt-container-padding mb-6">
+      {/* <section  className="tt-container tt-container-padding mb-6">
         <ProductsView cardWidth='320px' cardType={1} title="Ending" subTitle='Soon' description= 'Make the last minute save now'
           source="custom"
           filters={['ending-soon']} itemExClass='flex flex-col' />
-      </section>
+      </section> */}
       {/* ── 8. New arrivals ───────────────────────────── */}
-      <NewArrivals />
+      {/* <NewArrivals /> */}
 
       <ClustersView groups={['ending', 'below-10k']} />
 
@@ -127,6 +162,13 @@ export default function OldHomePage() {
 
       {/* ── 10. Featured vendors ──────────────────────── */}
       <FeaturedVendors />
+      <FeedVendorSpotlightPost />
+
+      <div className="text-center py-6">
+        <a href="/products" className="tt-btn tt-btn-ghost text-[0.85rem]">
+          Let's go shopping →
+        </a>
+      </div>
 
       {/* ── 11. How it works ──────────────────────────── */}
       <HowItWorks />

@@ -16,7 +16,7 @@ import FeedRightRail from '@/components/home-feed/FeedRightRail';
 export default function FeedRoutesLayout({ children }) {
   return (
     <>
-      <Navbar variant="solid" />
+      <Navbar variant="solid" showSidebarToggle />
       <HomeFeedShell leftNav={<FeedLeftNav />} rightRail={<FeedRightRail />}>
         {children}
       </HomeFeedShell>

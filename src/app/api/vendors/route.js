@@ -50,6 +50,10 @@ export async function GET(request) {
         process.env.SUPABASE_SERVICE_ROLE_KEY
       );
 
+      // Opportunistic sweep so any order past its 24h response deadline
+      // shows as `expired` here even if the pg_cron backstop hasn't ticked.
+      await supabaseAdmin.rpc('tt_expire_stale_orders');
+
       const { data, error } = await supabaseAdmin
         .from('product_orders')
         .select(`
@@ -162,6 +166,101 @@ export async function GET(request) {
         .filter(Boolean)
         .sort((a, b) => b.activeDeals - a.activeDeals)
         .slice(0, limit);
+
+      return NextResponse.json({ vendors }, { headers: cacheHeaders });
+    }
+
+    if (intent === 'directory') {
+      const search = searchParams.get('search')?.trim().toLowerCase() || '';
+      const sort = searchParams.get('sort') || 'orders';
+
+      const { data: profiles, error: profilesError } = await supabase
+        .from('profiles')
+        .select('user_id, display_name, avatar, tt_stores, order_stats')
+        .overlaps('roles', ['tt_vendor'])
+        .not('tt_stores', 'is', null);
+
+      if (profilesError) {
+        console.error('Error fetching vendor profiles:', profilesError);
+        return NextResponse.json({ error: 'Failed to load vendors' }, { status: 500 });
+      }
+
+      const cacheHeaders = { 'Cache-Control': 'public, s-maxage=120, stale-while-revalidate=300' };
+
+      if (!profiles?.length) {
+        return NextResponse.json({ vendors: [] }, { headers: cacheHeaders });
+      }
+
+      const vendorIds = profiles.map((p) => p.user_id);
+
+      const { data: products, error: productsError } = await supabase
+        .from('products')
+        .select('user_id, rating, reviews, is_flash_sale')
+        .eq('status', 'published')
+        .in('user_id', vendorIds);
+
+      if (productsError) {
+        console.error('Error fetching vendor product stats:', productsError);
+        return NextResponse.json({ error: 'Failed to load vendors' }, { status: 500 });
+      }
+
+      // Aggregate per-vendor stats client-side — no vendor-level stats view/RPC exists yet
+      const stats = new Map();
+      for (const p of products ?? []) {
+        const s = stats.get(p.user_id) ?? { activeDeals: 0, ratingSum: 0, ratingCount: 0, reviews: 0, hasFlashSale: false };
+        s.activeDeals += 1;
+        if (p.rating) {
+          s.ratingSum += p.rating;
+          s.ratingCount += 1;
+        }
+        s.reviews += p.reviews ?? 0;
+        if (p.is_flash_sale) s.hasFlashSale = true;
+        stats.set(p.user_id, s);
+      }
+
+      let vendors = profiles
+        .map((profile) => {
+          const store = profile.tt_stores?.[0];
+          if (!store) return null;
+          const s = stats.get(profile.user_id) ?? { activeDeals: 0, ratingSum: 0, ratingCount: 0, reviews: 0, hasFlashSale: false };
+          const name = store.name || profile.display_name || 'Vendor';
+          return {
+            id: profile.user_id,
+            slug: profile.user_id,
+            image: store.cover_image,
+            name,
+            color: getCategoryColor(name),
+            city: store.address || null,
+            avatar: profile.avatar || null,
+            rating: s.ratingCount ? Number((s.ratingSum / s.ratingCount).toFixed(1)) : null,
+            reviews: s.reviews,
+            activeDeals: s.activeDeals,
+            hasFlashSale: s.hasFlashSale,
+            verified: true, // tt_vendor role is only granted after admin approval
+            orderStats: profile.order_stats || null,
+          };
+        })
+        .filter(Boolean);
+
+      if (search) {
+        vendors = vendors.filter((v) => v.name.toLowerCase().includes(search));
+      }
+
+      switch (sort) {
+        case 'completion':
+          vendors.sort((a, b) => (b.orderStats?.completion_rate ?? 0) - (a.orderStats?.completion_rate ?? 0));
+          break;
+        case 'rating':
+          vendors.sort((a, b) => (b.rating ?? 0) - (a.rating ?? 0));
+          break;
+        case 'name':
+          vendors.sort((a, b) => a.name.localeCompare(b.name));
+          break;
+        case 'orders':
+        default:
+          vendors.sort((a, b) => (b.orderStats?.orders_qty ?? 0) - (a.orderStats?.orders_qty ?? 0));
+          break;
+      }
 
       return NextResponse.json({ vendors }, { headers: cacheHeaders });
     }

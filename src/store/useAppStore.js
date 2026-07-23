@@ -50,6 +50,11 @@ const useAppStore = create(
       setSidebarOpen: (open) => set({ sidebarOpen: open }),
       toggleSidebar: () => set((s) => ({ sidebarOpen: !s.sidebarOpen })),
 
+      // Desktop-only: collapses the home-feed left rail to an icons-only rail
+      leftSidebarCollapsed: false,
+      setLeftSidebarCollapsed: (collapsed) => set({ leftSidebarCollapsed: collapsed }),
+      toggleLeftSidebarCollapsed: () => set((s) => ({ leftSidebarCollapsed: !s.leftSidebarCollapsed })),
+
       // Auth modal — opened from guest watchlist/like actions
       authModalOpen: false,
       setAuthModalOpen: (open) => set({ authModalOpen: open }),
@@ -102,6 +107,7 @@ const useAppStore = create(
         pendingInterests:   state.pendingInterests,
         cartItems:          state.cartItems,
         firstVisitTime:     state.firstVisitTime,
+        leftSidebarCollapsed: state.leftSidebarCollapsed,
       }),
     }
   )

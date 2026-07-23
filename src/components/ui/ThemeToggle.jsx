@@ -29,7 +29,7 @@ export default function ThemeToggle() {
   };
 
   const getIcon = () => {
-    if (theme === 'system') return '💻';
+    if (theme === 'system') return '⚙';
     if (theme === 'light') return '☀️';
     return '🌙';
   };

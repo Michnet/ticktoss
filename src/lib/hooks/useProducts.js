@@ -17,7 +17,7 @@ export const productKeys = {
 /**
  * Fetch products with optional filters.
  */
-async function fetchProducts({ search, categorySlug, category_id, locationId, tag_ids,loc_ids,catIds,excludeId, minPrice, maxPrice, isFeatured, clusters, orderBy, limit = 40, offset = 0 } = {}) {
+async function fetchProducts({ search, categorySlug, category_id, location_id, tag_ids,loc_ids,catIds,excludeId, minPrice, maxPrice, isFeatured, vendor_id, clusters, orderBy, limit = 40, offset = 0 } = {}) {
   let query = supabase
     .from('products')
     .select(`
@@ -48,8 +48,11 @@ async function fetchProducts({ search, categorySlug, category_id, locationId, ta
   if (categorySlug) {
     query = query.eq('product_categories.slug', categorySlug);
   }
-  if (locationId) {
-    query = query.eq('location', locationId);
+  if (location_id) {
+    query = query.eq('location', location_id);
+  }
+  if (vendor_id) {
+    query = query.eq('user_id', vendor_id);
   }
   if (search) {
     query = query.ilike('name', `%${search}%`);

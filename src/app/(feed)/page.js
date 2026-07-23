@@ -1,6 +1,6 @@
-import LiveTicker from '@/components/home/LiveTicker';
-import HomeFeedStream from '@/components/home-feed/HomeFeedStream';
-import OldHomePage from '../_archive/old-home-page';
+//import LiveTicker from '@/components/home/LiveTicker';
+//import HomeFeedStream from '@/components/home-feed/HomeFeedStream';
+import OldHomePage from '../_archive/MarketHome';
 
 // Statically generate the home feed; revalidate via ISR every hour.
 export const revalidate = 3600;
@@ -24,7 +24,7 @@ export default function HomePage() {
   return (
     <>  
       <OldHomePage/>
-      <HomeFeedStream />
+      {/* <HomeFeedStream /> */}
     </>
   );
 }

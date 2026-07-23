@@ -1,15 +1,20 @@
 'use client';
 
 import { useState, useEffect } from 'react';
-import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import useAppStore from '@/store/useAppStore';
-import { Package, Clock, CheckCircle, XCircle } from 'lucide-react';
+import { Package, Clock, CheckCircle, XCircle, Hourglass } from 'lucide-react';
 import { formatUGX } from '@/lib/currency';
 import { resizedImage } from '@/helpers/universal';
+import { getItemContact } from '@/lib/orderUtils';
+import CountdownClock from '@/components/product/CountdownClock';
+
+const RESPONSE_WINDOW_MS = 24 * 60 * 60 * 1000;
+// Vendor contact (phone/WhatsApp) only unlocks once the vendor has
+// accepted the order — pending/expired/cancelled orders never reveal it.
+const CONTACT_UNLOCKED_STATUSES = ['processing', 'completed'];
 
 export default function MyOrders() {
   const { user, addToast } = useAppStore();
-  const supabase = getSupabaseBrowserClient();
   const [orders, setOrders] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [cancellingId, setCancellingId] = useState(null);
@@ -19,17 +24,10 @@ export default function MyOrders() {
 
     const fetchOrders = async () => {
       try {
-        const { data, error } = await supabase
-          .from('product_orders')
-          .select(`
-            *,
-            products:product_id(name, featured_image, slug)
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setOrders(data || []);
+        const res = await fetch('/api/orders?intent=buyer_orders');
+        const result = await res.json();
+        if (!res.ok) throw new Error(result.error || 'Failed to load orders');
+        setOrders(result.orders || []);
       } catch (error) {
         console.error('Error fetching orders:', error);
       } finally {
@@ -38,7 +36,7 @@ export default function MyOrders() {
     };
 
     fetchOrders();
-  }, [user, supabase]);
+  }, [user]);
 
   // Buyers can only cancel an order before the vendor has accepted it —
   // once it's `processing`, cancellation goes through the vendor's
@@ -71,7 +69,8 @@ export default function MyOrders() {
       pending: { color: 'var(--tt-warning)', icon: <Clock size={14} />, label: 'Pending' },
       processing: { color: '#3b82f6', icon: <Package size={14} />, label: 'Processing' },
       completed: { color: 'var(--tt-success)', icon: <CheckCircle size={14} />, label: 'Completed' },
-      cancelled: { color: 'var(--tt-danger)', icon: <XCircle size={14} />, label: 'Cancelled' }
+      cancelled: { color: 'var(--tt-danger)', icon: <XCircle size={14} />, label: 'Cancelled' },
+      expired: { color: 'var(--tt-muted)', icon: <Hourglass size={14} />, label: 'Expired' }
     };
     const s = statusMap[status] || statusMap.pending;
     return (
@@ -129,6 +128,9 @@ export default function MyOrders() {
                 }];
             }
 
+            const contactUnlocked = CONTACT_UNLOCKED_STATUSES.includes(order.status);
+            const responseDeadline = new Date(new Date(order.created_at).getTime() + RESPONSE_WINDOW_MS);
+
             return (
               <div key={order.id} style={{ 
                 border: '1px solid var(--tt-border)', 
@@ -144,8 +146,13 @@ export default function MyOrders() {
                     <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)', marginBottom: '0.2rem' }}>Order #{order.id.split('-')[0].toUpperCase()}</p>
                     <p style={{ fontSize: '0.9rem', fontWeight: 600 }}>{new Date(order.created_at).toLocaleDateString()}</p>
                   </div>
-                  <div>
+                  <div style={{ textAlign: 'right' }}>
                     {getStatusBadge(order.status)}
+                    {order.status === 'pending' && (
+                      <div style={{ marginTop: '0.4rem' }}>
+                        <CountdownClock counterLabel="Vendor responds within:" saleEndDate={responseDeadline} size="sm" />
+                      </div>
+                    )}
                   </div>
                 </div>
 
@@ -154,6 +161,7 @@ export default function MyOrders() {
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
                   {orderItems.map((item, idx) => {
                     const productImg = item.image ? (item.image?.url?.startsWith('http') ? item.image : resizedImage(item.image.url, 'thumbnail')) : null;
+                    const contact = contactUnlocked ? getItemContact(item, order.vendor) : null;
 
                     return (
                       <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
@@ -171,6 +179,30 @@ export default function MyOrders() {
                           <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)' }}>
                             Qty: {item.quantity} {item.price ? `× ${formatUGX(item.price)}` : ''}
                           </p>
+                          {contact && (contact.phone || contact.whatsapp) && (
+                            <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.4rem' }}>
+                              {contact.phone && (
+                                <a
+                                  href={`tel:${contact.phone}`}
+                                  className="tt-btn tt-btn-ghost"
+                                  style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', textDecoration: 'none' }}
+                                >
+                                  📞 Call {contact.storeName}
+                                </a>
+                              )}
+                              {contact.whatsapp && (
+                                <a
+                                  href={`https://wa.me/${contact.whatsapp.replace(/[^\d]/g, '')}`}
+                                  target="_blank"
+                                  rel="noopener noreferrer"
+                                  className="tt-btn tt-btn-ghost"
+                                  style={{ padding: '0.25rem 0.6rem', fontSize: '0.75rem', textDecoration: 'none' }}
+                                >
+                                  💬 WhatsApp
+                                </a>
+                              )}
+                            </div>
+                          )}
                         </div>
                       </div>
                     );
@@ -187,8 +219,8 @@ export default function MyOrders() {
                   </div>
                 )}
 
-                {order.status === 'cancelled' && !order.resolution && order.cancel_reason && (
-                  <p style={{ fontSize: '0.8rem', color: 'var(--tt-danger)', margin: 0 }}>Reason: {order.cancel_reason}</p>
+                {(order.status === 'cancelled' || order.status === 'expired') && !order.resolution && order.cancel_reason && (
+                  <p style={{ fontSize: '0.8rem', color: order.status === 'expired' ? 'var(--tt-muted)' : 'var(--tt-danger)', margin: 0 }}>Reason: {order.cancel_reason}</p>
                 )}
 
                 <div style={{ height: '1px', background: 'var(--tt-border)', marginTop: '0.5rem' }} />

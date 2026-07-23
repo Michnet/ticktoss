@@ -1,6 +1,7 @@
 import { NextResponse } from 'next/server';
 import { cookies } from 'next/headers';
 import { createServerClient } from '@supabase/ssr';
+import { createClient } from '@supabase/supabase-js';
 
 // Restores `qty` units of stock for one order item — to the variation's
 // stock if the item was booked with a variation, otherwise the parent
@@ -61,6 +62,16 @@ export async function POST(request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
+    const supabaseAdmin = createClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL,
+      process.env.SUPABASE_SERVICE_ROLE_KEY
+    );
+
+    // Opportunistic sweep — catches this order if it's `pending` and past
+    // its 24h deadline, so the check below sees `expired` even if the
+    // pg_cron backstop hasn't ticked yet.
+    await supabaseAdmin.rpc('tt_expire_stale_orders');
+
     // Fetch the order to verify ownership
     const { data: order, error: fetchError } = await supabase
       .from('product_orders')
@@ -77,6 +88,10 @@ export async function POST(request) {
 
     if (!isVendor && !isBuyer) {
       return NextResponse.json({ error: 'Unauthorized to modify this order' }, { status: 403 });
+    }
+
+    if (order.status === 'expired') {
+      return NextResponse.json({ error: "This order expired — the vendor didn't respond within 24 hours." }, { status: 400 });
     }
 
     const orderItems = Array.isArray(order.items) && order.items.length

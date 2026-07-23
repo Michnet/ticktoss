@@ -18,7 +18,7 @@ import { IMAGE_BANNERS } from '../home/BannerSlider';
  */
 export default function HomeFeedStream() {
   return (
-    <>
+    <main className='tt-container-padding space-y-3'>
       {/* <FeedBannerPost /> */}
       <BannerSlider items={IMAGE_BANNERS} variant="image" slideHeight="clamp(200px, 32vw, 280px)" interval={5500} autoPlay showArrows showDots />
       <FeedComposerBar />
@@ -35,6 +35,7 @@ export default function HomeFeedStream() {
         meta="Just listed by vendors"
         tag="New"
         tagVariant="flame"
+        limit={2}
         ctaHref="/products?sort=new"
       />
       <FeedProductGridPost
@@ -45,6 +46,7 @@ export default function HomeFeedStream() {
         meta="Great deals under UGX 10,000"
         tag="Under 10k"
         tagVariant="success"
+        limit={2}
         ctaHref="/products?clusters=below-10k"
       />
       </div>
@@ -61,14 +63,12 @@ export default function HomeFeedStream() {
         counterLabel="Starts: "
         startDate
       />
-      <FeedVendorCTAPost />
 
       <div className="text-center py-6">
-        <p className="text-[0.8rem] text-[var(--tt-muted)] mb-3">You&apos;re all caught up 🎉</p>
         <a href="/products" className="tt-btn tt-btn-ghost text-[0.85rem]">
-          Browse the full catalog →
+          Let's go shopping →
         </a>
       </div>
-    </>
+    </main>
   );
 }

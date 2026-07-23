@@ -5,6 +5,12 @@ import useAppStore from '@/store/useAppStore';
 import { formatUGX } from '@/lib/currency';
 import OrderResolutionModal from './OrderResolutionModal';
 import { resizedImage } from '@/helpers/universal';
+import CountdownClock from '@/components/product/CountdownClock';
+
+const RESPONSE_WINDOW_MS = 24 * 60 * 60 * 1000;
+// Contact info (phone + call button) only unlocks once the vendor has
+// accepted the order — pending/expired/cancelled orders never reveal it.
+const CONTACT_UNLOCKED_STATUSES = ['processing', 'completed'];
 
 export default function VendorOrders() {
   const { user, addToast } = useAppStore();
@@ -78,6 +84,7 @@ export default function VendorOrders() {
       case 'completed': return 'var(--tt-success)';
       case 'processing': return 'var(--tt-gold)';
       case 'cancelled': return 'var(--tt-danger)';
+      case 'expired': return 'var(--tt-muted)';
       default: return 'var(--tt-flame)'; // pending
     }
   };
@@ -110,6 +117,8 @@ export default function VendorOrders() {
             const address = contact.address
               ? [contact.address, contact.city, contact.zipCode].filter(Boolean).join(', ')
               : 'No address provided';
+            const contactUnlocked = CONTACT_UNLOCKED_STATUSES.includes(order.status);
+            const responseDeadline = new Date(new Date(order.created_at).getTime() + RESPONSE_WINDOW_MS);
 
             return (
               <div key={order.id} className="tt-card tt-glass" style={{ padding: '1.5rem', display: 'flex', flexWrap: 'wrap', gap: '1.5rem', borderLeft: `4px solid ${getStatusColor(order.status)}` }}>
@@ -123,7 +132,7 @@ export default function VendorOrders() {
                       <div key={idx} style={{ display: 'flex', gap: '1rem', alignItems: 'center' }}>
                         <div style={{ width: 60, height: 60, borderRadius: 'var(--tt-radius-sm)', background: 'var(--tt-surface-2)', position: 'relative', overflow: 'hidden', flexShrink: 0 }}>
                           {itemImg ? (
-                            <img src={itemImg} alt={item.name || 'Product'} fill style={{ objectFit: 'cover' }} />
+                            <img src={itemImg} alt={item.name || 'Product'} style={{ objectFit: 'cover' }} />
                           ) : (
                             <div style={{ width: '100%', height: '100%', display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: '1.5rem' }}>📦</div>
                           )}
@@ -146,16 +155,24 @@ export default function VendorOrders() {
                 <div style={{ flex: '1 1 250px', background: 'var(--tt-surface-2)', padding: '1rem', borderRadius: 'var(--tt-radius-sm)' }}>
                   <p style={{ fontSize: '0.8rem', color: 'var(--tt-muted)', marginBottom: '0.5rem', textTransform: 'uppercase', letterSpacing: '0.05em', fontWeight: 600 }}>Buyer Details</p>
                   <p style={{ fontWeight: 600, color: 'var(--tt-text)', marginBottom: '0.2rem' }}>{buyerName}</p>
-                  <p style={{ fontSize: '0.9rem', color: 'var(--tt-text)', marginBottom: '0.5rem' }}>📞 {buyerPhone}</p>
-                  <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)', lineHeight: 1.4, marginBottom: contact.phone ? '0.75rem' : 0 }}>📍 {address}</p>
-                  {contact.phone && (
-                    <a
-                      href={`tel:${contact.phone}`}
-                      className="tt-btn tt-btn-gold"
-                      style={{ display: 'inline-block', padding: '0.4rem 0.75rem', fontSize: '0.8rem', textDecoration: 'none' }}
-                    >
-                      📞 Call Customer
-                    </a>
+                  {contactUnlocked ? (
+                    <>
+                      <p style={{ fontSize: '0.9rem', color: 'var(--tt-text)', marginBottom: '0.5rem' }}>📞 {buyerPhone}</p>
+                      <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)', lineHeight: 1.4, marginBottom: contact.phone ? '0.75rem' : 0 }}>📍 {address}</p>
+                      {contact.phone && (
+                        <a
+                          href={`tel:${contact.phone}`}
+                          className="tt-btn tt-btn-gold"
+                          style={{ display: 'inline-block', padding: '0.4rem 0.75rem', fontSize: '0.8rem', textDecoration: 'none' }}
+                        >
+                          📞 Call Customer
+                        </a>
+                      )}
+                    </>
+                  ) : (
+                    <p style={{ fontSize: '0.85rem', color: 'var(--tt-muted)', lineHeight: 1.4 }}>
+                      Contact details unlock once you start processing this order.
+                    </p>
                   )}
                 </div>
 
@@ -167,6 +184,12 @@ export default function VendorOrders() {
                       {order.status.toUpperCase()}
                     </span>
                   </div>
+
+                  {order.status === 'pending' && (
+                    <div style={{ textAlign: 'center', marginBottom: '0.25rem' }}>
+                      <CountdownClock counterLabel="Respond within:" saleEndDate={responseDeadline} size="sm" />
+                    </div>
+                  )}
 
                   {order.status === 'pending' && (
                     <button 
@@ -212,8 +235,8 @@ export default function VendorOrders() {
                     </button>
                   )}
 
-                  {order.status === 'cancelled' && !order.resolution && order.cancel_reason && (
-                    <p style={{ fontSize: '0.75rem', color: 'var(--tt-danger)', textAlign: 'center', lineHeight: 1.3 }}>
+                  {(order.status === 'cancelled' || order.status === 'expired') && !order.resolution && order.cancel_reason && (
+                    <p style={{ fontSize: '0.75rem', color: order.status === 'expired' ? 'var(--tt-muted)' : 'var(--tt-danger)', textAlign: 'center', lineHeight: 1.3 }}>
                       Reason: {order.cancel_reason}
                     </p>
                   )}

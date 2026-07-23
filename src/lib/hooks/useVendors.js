@@ -13,6 +13,7 @@ const VENDOR_STYLES = [
 export const vendorKeys = {
   all: ['vendors'],
   featured: (limit) => ['vendors', 'featured', limit],
+  directory: (filters) => ['vendors', 'directory', filters],
 };
 
 /**
@@ -42,6 +43,41 @@ export function useFeaturedVendors(limit = 4) {
     queryKey: vendorKeys.featured(limit),
     queryFn: () => fetchFeaturedVendors(limit),
     staleTime: 5 * 60 * 1000, // vendor roster/stats change slowly
+    gcTime: 30 * 60 * 1000,
+  });
+}
+
+/**
+ * Fetch the full vendor directory (search + sort), via /api/vendors.
+ * Includes each vendor's raw `orderStats` (profiles.order_stats) for display.
+ */
+async function fetchVendorDirectory({ search, sort } = {}) {
+  const params = new URLSearchParams({ intent: 'directory' });
+  if (search) params.set('search', search);
+  if (sort) params.set('sort', sort);
+
+  const res = await fetch(`/api/vendors?${params.toString()}`);
+  if (!res.ok) throw new Error('Failed to load vendors');
+
+  const { vendors } = await res.json();
+
+  return (vendors ?? []).map((v, i) => {
+    const style = VENDOR_STYLES[i % VENDOR_STYLES.length];
+    return {
+      ...v,
+      badge: v.hasFlashSale ? 'Flash Seller' : v.verified ? 'Trusted' : null,
+      badgeColor: style.accent,
+      accent: style.accent,
+      bg: style.bg,
+    };
+  });
+}
+
+export function useVendors(filters = {}) {
+  return useQuery({
+    queryKey: vendorKeys.directory(filters),
+    queryFn: () => fetchVendorDirectory(filters),
+    staleTime: 2 * 60 * 1000,
     gcTime: 30 * 60 * 1000,
   });
 }
