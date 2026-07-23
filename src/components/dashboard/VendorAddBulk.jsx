@@ -5,7 +5,7 @@ import { useLiveQuery } from 'dexie-react-hooks';
 import { db } from '@/lib/db/localDb';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import useAppStore from '@/store/useAppStore';
-import { computeUrgencyScore } from '@/lib/urgency';
+import { computeUrgencyScore, computeDiscountPct } from '@/lib/urgency';
 import { resizedImage } from '@/helpers/universal';
 import { generateBlurhash } from '@/helpers/blurhash';
 import { isAdmin } from '@/lib/roles';
@@ -383,7 +383,7 @@ export default function VendorAddBulk() {
     try {
       for (let i = 0; i < readyProducts.length; i++) {
         const p = readyProducts[i];
-        const discountPct = ((p.price - p.sale_price) / p.price) * 100;
+        const discountPct = computeDiscountPct({ price: p.price, salePrice: p.sale_price });
         const saleStartDate = new Date(p.sale_start_date);
         const saleEndDate = new Date(p.sale_end_date);
         const urgency_score = computeUrgencyScore({

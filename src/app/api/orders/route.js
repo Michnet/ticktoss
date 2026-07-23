@@ -3,6 +3,7 @@ import { createClient } from '@supabase/supabase-js';
 import { cookies } from 'next/headers';
 import Mailjet from 'node-mailjet';
 import { clusterItemsByVendor, calculateOrderTotal, generateTrackingNumber } from '@/lib/orderUtils';
+import { deriveProductUrgency } from '@/lib/urgency';
 
 const REQUIRED_ADDRESS_FIELDS = ['firstName', 'lastName', 'phone', 'address', 'city'];
 
@@ -54,7 +55,7 @@ export async function POST(req) {
     const productIds = [...new Set(items.map(item => item.id || item.product_id).filter(Boolean))];
     const { data: liveProducts, error: liveProductsError } = await supabaseAdmin
       .from('products')
-      .select('id, name, stock, price, sale_price, user_id, sale_start_date, featured_image, tt_location')
+      .select('id, name, stock, price, sale_price, user_id, sale_start_date, sale_end_date, featured_image, tt_location')
       .in('id', productIds);
 
     if (liveProductsError) throw liveProductsError;
@@ -120,11 +121,21 @@ export async function POST(req) {
     }
 
     // All validation passed — decrement stock once per unique product/variation.
+    // Stock is a direct input to urgency_score, so a purchase makes a product
+    // more urgent (fewer left) — recompute it in the same write rather than
+    // letting it go stale until the vendor happens to edit the product.
     for (const [productId, qty] of requestedQtyByProductId) {
       const live = liveProductById.get(productId);
+      const newStock = live.stock - qty;
+      const { urgency_score } = deriveProductUrgency({
+        price: live.price,
+        sale_price: live.sale_price,
+        stock: newStock,
+        sale_end_date: live.sale_end_date,
+      });
       const { error: stockError } = await supabaseAdmin
         .from('products')
-        .update({ stock: live.stock - qty })
+        .update({ stock: newStock, urgency_score })
         .eq('id', productId);
       if (stockError) throw stockError;
     }

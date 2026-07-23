@@ -6,7 +6,7 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import useAppStore from '@/store/useAppStore';
-import { computeUrgencyScore } from '@/lib/urgency';
+import { computeUrgencyScore, computeDiscountPct } from '@/lib/urgency';
 import { ChevronDown, ChevronUp } from 'lucide-react';
 import { resizedImage } from '@/helpers/universal';
 import { generateBlurhash } from '@/helpers/blurhash';
@@ -460,7 +460,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
   // Real-time calculation of discount and urgency score
   const originalPrice = Number(watchPrice) || 0;
   const salePrice = Number(watchSalePrice) || 0;
-  const discountPct = originalPrice > 0 ? ((originalPrice - salePrice) / originalPrice) * 100 : 0;
+  const discountPct = computeDiscountPct({ price: originalPrice, salePrice });
 
   const estimatedScore = computeUrgencyScore({
     saleEndDate: watchEndDate || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),

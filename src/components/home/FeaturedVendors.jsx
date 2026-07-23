@@ -4,6 +4,7 @@ import Link from 'next/link';
 
 import { useFeaturedVendors } from '@/lib/hooks/useVendors';
 import VendorCard from './VendorCard';
+import DualColorHeading from '../ui/DualColorHeading';
 
 export default function FeaturedVendors() {
   const { data: vendors, isLoading } = useFeaturedVendors(4);
@@ -15,21 +16,11 @@ export default function FeaturedVendors() {
   return (
     <section className="pb-5">
       <div className="tt-container tt-container-padding">
-        <div className="flex items-end justify-between mb-5 gap-4 flex-wrap">
-          <div>
-            <h2 className="font-['Syne',sans-serif] font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">
-              Top{' '}
-              <span className="bg-[image:var(--tt-gradient-flame)] bg-clip-text text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
-                Vendors
-              </span>
-            </h2>
-            <p className="text-[var(--tt-muted)] text-[0.875rem] mt-1">
-              Trusted sellers with live deals and fast bookings
-            </p>
-          </div>
+        <div className="flex items-end justify-between mb-5 gap-4 flex-nowrap">
+          <DualColorHeading title='Top' subTitle='Vendors' description='Trending sellers with live deals and fast bookings' />
           <Link
             href="/vendors"
-            className="tt-btn tt-btn-ghost text-[0.82rem] px-4 py-[0.45rem]"
+            className="tt-btn-ghost text-[0.75rem] py-[0.45rem] rounded-3xl leading-[1.2] px-3 shadow font-semibold"
           >
             All Vendors →
           </Link>

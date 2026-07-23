@@ -1,15 +1,10 @@
 'use client';
 
 import FeedComposerBar from './posts/FeedComposerBar';
-import FeedBannerPost from './posts/FeedBannerPost';
 import FeedCategoryStripPost from './posts/FeedCategoryStripPost';
-import FeedDealSpotlightPost from './posts/FeedDealSpotlightPost';
 import FeedEndingSoonPost from './posts/FeedEndingSoonPost';
 import FeedProductGridPost from './posts/FeedProductGridPost';
 import FeedVendorSpotlightPost from './posts/FeedVendorSpotlightPost';
-import FeedVendorCTAPost from './posts/FeedVendorCTAPost';
-import BannerSlider from '../ui/BannerSlider';
-import { IMAGE_BANNERS } from '../home/BannerSlider';
 
 /**
  * Interleaves product data into a Facebook-style feed rhythm — deliberately
@@ -20,7 +15,6 @@ export default function HomeFeedStream() {
   return (
     <main className='tt-container-padding space-y-3'>
       {/* <FeedBannerPost /> */}
-      <BannerSlider items={IMAGE_BANNERS} variant="image" slideHeight="clamp(200px, 32vw, 280px)" interval={5500} autoPlay showArrows showDots />
       <FeedComposerBar />
       <FeedCategoryStripPost />
       

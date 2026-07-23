@@ -4,6 +4,7 @@ import { createServerClient } from '@supabase/ssr';
 import { createClient } from '@supabase/supabase-js';
 import { isAdmin } from '@/lib/roles';
 import { generateSlug } from '@/lib/slug';
+import { deriveProductUrgency } from '@/lib/urgency';
 
 export async function DELETE(request) {
   try {
@@ -103,7 +104,7 @@ export async function PATCH(request) {
     // Verify ownership or admin status before updating
     const { data: product, error: fetchError } = await supabaseAdmin
       .from('products')
-      .select('user_id')
+      .select('user_id, price, sale_price, stock, sale_end_date')
       .eq('id', id)
       .single();
 
@@ -121,6 +122,20 @@ export async function PATCH(request) {
         return NextResponse.json({ error: 'Forbidden' }, { status: 403 });
       }
       updates.user_id = vendor_id;
+    }
+
+    // Recompute urgency whenever an edit touches one of its inputs, so it
+    // never goes stale after a vendor changes price, stock, or the sale window.
+    const urgencyInputs = ['price', 'sale_price', 'stock', 'sale_end_date'];
+    if (urgencyInputs.some((field) => field in updates)) {
+      const { discount_pct, urgency_score } = deriveProductUrgency({
+        price: updates.price ?? product.price,
+        sale_price: updates.sale_price ?? product.sale_price,
+        stock: updates.stock ?? product.stock,
+        sale_end_date: updates.sale_end_date ?? product.sale_end_date,
+      });
+      updates.discount_pct = discount_pct;
+      updates.urgency_score = urgency_score;
     }
 
     const { data: updatedProduct, error: updateError } = await supabaseAdmin
@@ -198,6 +213,17 @@ export async function POST(request) {
 
     payload.slug = slug;
     payload.user_id = targetUserId;
+
+    // Server is the single source of truth for urgency, computed the same
+    // way for both single and bulk creation since they both post here.
+    const { discount_pct, urgency_score } = deriveProductUrgency({
+      price: payload.price,
+      sale_price: payload.sale_price,
+      stock: payload.stock,
+      sale_end_date: payload.sale_end_date,
+    });
+    payload.discount_pct = discount_pct;
+    payload.urgency_score = urgency_score;
 
     const { data: insertedProduct, error: insertError } = await supabaseAdmin
       .from('products')

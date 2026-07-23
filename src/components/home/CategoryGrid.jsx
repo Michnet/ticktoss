@@ -3,6 +3,7 @@
 import Link from 'next/link';
 import { useTopCategories } from '@/hooks/useHomeData';
 import CategoryCard from './CategoryCard';
+import DualColorHeading from '../ui/DualColorHeading';
 
 export default function CategoryGrid({ CardStyle = 'default', carousel = false, rows = 1 }) {
   const { data: categories, isLoading, error } = useTopCategories();
@@ -16,7 +17,7 @@ export default function CategoryGrid({ CardStyle = 'default', carousel = false, 
           <div 
             className={
               carousel
-                ? "grid grid-flow-col gap-3 overflow-x-auto pb-4 no-scrollbar [grid-template-rows:repeat(var(--carousel-rows,1),minmax(0,1fr))] md:[grid-template-rows:repeat(1,minmax(0,1fr))]"
+                ? "grid grid-flow-col gap-2 overflow-x-auto pb-4 no-scrollbar [grid-template-rows:repeat(var(--carousel-rows,1),minmax(0,1fr))] md:[grid-template-rows:repeat(1,minmax(0,1fr))]"
                 : CardStyle === 'pills' 
                 ? "flex flex-wrap gap-3" 
                 : CardStyle === 'detailed'
@@ -46,20 +47,10 @@ export default function CategoryGrid({ CardStyle = 'default', carousel = false, 
       <div className="tt-container tt-container-padding">
         {/* Header */}
         <div className="flex md:items-end text-center md:text-left items-center md:justify-between justify-center mb-5 gap-4 flex-wrap">
-          <div>
-            <h2 className="font-['Syne',sans-serif] font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">
-              Browse by{' '}
-              <span className="bg-[image:var(--tt-gradient-flame)] bg-clip-text text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
-                Category
-              </span>
-            </h2>
-            <p className="text-[var(--tt-muted)] text-[0.875rem] mt-1">
-              Discover the latest discounts from stores all over Uganda. Shop by category
-            </p>
-          </div>
+          <DualColorHeading title="Browse by" subTitle="Category" description={'Discover the latest discounts from stores all over Uganda. Shop by category'} />
           <Link
             href="/products"
-            className="tt-btn tt-btn-ghost text-[0.82rem] px-4 py-[0.45rem]"
+            className="tt-btn-ghost text-[0.75rem] py-[0.45rem] rounded-3xl leading-[1.2] px-3 shadow font-semibold"
           >
             All Categories →
           </Link>
@@ -69,7 +60,7 @@ export default function CategoryGrid({ CardStyle = 'default', carousel = false, 
         <div 
           className={
             carousel
-              ? "grid grid-flow-col gap-3 overflow-x-auto pb-4 no-scrollbar [grid-template-rows:repeat(var(--carousel-rows,1),minmax(0,1fr))] md:[grid-template-rows:repeat(1,minmax(0,1fr))]"
+              ? "grid grid-flow-col gap-2 overflow-x-auto pb-4 no-scrollbar [grid-template-rows:repeat(var(--carousel-rows,1),minmax(0,1fr))] md:[grid-template-rows:repeat(1,minmax(0,1fr))]"
               : CardStyle === 'pills' 
               ? "flex flex-wrap gap-3" 
               : CardStyle === 'detailed'

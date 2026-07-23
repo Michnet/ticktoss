@@ -116,7 +116,7 @@ export default function BannerSlide({ item }) {
           />
 
           {/* CTAs */}
-          <div className="bs-cta-row">
+          <div className="hidden sm:flex flex-row gap-3">
             {cta && (
               <Link
                 href={cta.href}

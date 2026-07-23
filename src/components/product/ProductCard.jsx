@@ -147,13 +147,11 @@ export default function ProductCard({ product, counterLabel=null, startDate=fals
                   justifyContent: 'center',
                 }}
               >
-                <span className='bg-gray-500'
+                <span
                   style={{
                     color: '#fff',
                     fontWeight: 700,
-                    fontSize: '0.85rem',
-                    padding: '0.4rem 1rem',
-                    borderRadius: '99px',
+                    fontSize: '0.85rem'
                   }}
                 >
                   SOLD OUT

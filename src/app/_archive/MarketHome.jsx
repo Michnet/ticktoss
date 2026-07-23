@@ -17,7 +17,7 @@ import ClustersView from '@/components/home/ClustersView';
 import FeedEndingSoonPost from '@/components/home-feed/posts/FeedEndingSoonPost';
 import FeedProductGridPost from '@/components/home-feed/posts/FeedProductGridPost';
 import FeedComposerBar from '@/components/home-feed/posts/FeedComposerBar';
-import FeedVendorSpotlightPost from '@/components/home-feed/posts/FeedVendorSpotlightPost';
+//import FeedVendorSpotlightPost from '@/components/home-feed/posts/FeedVendorSpotlightPost';
 //import PromoBanners3 from '@/components/home/PromoBanners3';
 //import PromoBanners4 from '@/components/home/PromoBanners4';
 
@@ -98,6 +98,8 @@ export default function OldHomePage() {
         <LiveTicker />
       </div>
 
+     
+
       {/* ── 4. Category grid ─────────────────────────── */}
       <CategoryGrid carousel rows={2}/>
 
@@ -112,6 +114,7 @@ export default function OldHomePage() {
             <div className='grid grid-cols-1 md:grid-cols-2 gap-3'>
               
             <FeedProductGridPost
+              noPadding={true}
               source="new"
               avatar="🆕"
               title="New Arrivals"
@@ -122,6 +125,7 @@ export default function OldHomePage() {
               ctaHref="/products?sort=new"
             />
             <FeedProductGridPost
+              noPadding={true}
               source="custom"
               filters={['below-10k']}
               avatar="💸"
@@ -162,7 +166,7 @@ export default function OldHomePage() {
 
       {/* ── 10. Featured vendors ──────────────────────── */}
       <FeaturedVendors />
-      <FeedVendorSpotlightPost />
+      {/* <FeedVendorSpotlightPost /> */}
 
       <div className="text-center py-6">
         <a href="/products" className="tt-btn tt-btn-ghost text-[0.85rem]">
@@ -171,7 +175,7 @@ export default function OldHomePage() {
       </div>
 
       {/* ── 11. How it works ──────────────────────────── */}
-      <HowItWorks />
+      {/* <HowItWorks /> */}
 
       {/* ── 12. Bottom CTA ────────────────────────────── */}
       <section className="py-16 bg-[var(--tt-surface-2)] text-center">

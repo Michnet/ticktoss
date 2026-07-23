@@ -18,7 +18,7 @@ export default function NewArrivals() {
           <DualColorHeading size={28} title="Just" subTitle="Listed" emoji="🆕" description="Fresh deals — be the first to book"/>
           <Link
             href="/products?sort=new"
-            className="tt-btn tt-btn-ghost text-[0.82rem] px-4 py-[0.45rem]"
+            className="tt-btn-ghost text-[0.75rem] py-[0.45rem] rounded-3xl leading-[1.2] px-3 shadow font-semibold"
           >
             See All New →
           </Link>

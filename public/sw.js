@@ -1,4 +1,6 @@
-const CACHE_NAME = 'ticktoss-v1';
+// Bump this number to force all clients to purge old caches on next load.
+const CACHE_VERSION = 1;
+const CACHE_NAME = `ticktoss-v${CACHE_VERSION}`;
 const OFFLINE_URL = '/offline';
 
 const CACHE_ASSETS = [

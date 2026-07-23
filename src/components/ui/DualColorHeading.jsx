@@ -1,4 +1,4 @@
-export default function DualColorHeading({ title, subTitle, description, size=24 }) {
+export default function DualColorHeading({ title, subTitle, description, size=20 }) {
   let style = {}, descStyle = {};
   if (size){
     style.fontSize = `${size}px`;

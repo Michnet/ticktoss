@@ -22,6 +22,7 @@ export default function FeedProductGridPost({
   ctaHref = '/products',
   counterLabel,
   startDate = false,
+  noPadding = false
 }) {
   let hook;
   if (source === 'upcoming') hook = useUpcomingDeals;
@@ -34,7 +35,7 @@ export default function FeedProductGridPost({
   if (!isLoading && !items?.length) return null;
 
   return (
-    <FeedPostCard contentExClass='flex-1 flex' className='flex flex-col bg-[var(--tt-theme)] border border-[var(--tt-surface-2)] rounded-[var(--tt-radius-lg)]' avatar={avatar} title={title} meta={meta} tag={tag} tagVariant={tagVariant}>
+    <FeedPostCard noPadding={noPadding} contentExClass='flex-1 flex' className='flex flex-col' avatar={avatar} title={title} meta={meta} tag={tag} tagVariant={tagVariant}>
       <div className='flex flex-col gap-2 justify-between'>
       <div className="grid grid-cols-2 gap-2.5">
         {isLoading

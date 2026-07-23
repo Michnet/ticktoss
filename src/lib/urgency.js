@@ -26,6 +26,37 @@ export function computeUrgencyScore({ saleEndDate, discountPct = 0, stock = 1 })
 }
 
 /**
+ * Compute discount percentage from price and sale price.
+ * @param {{ price: number, salePrice: number }} params
+ * @returns {number}
+ */
+export function computeDiscountPct({ price, salePrice }) {
+  const orig = Number(price) || 0;
+  const sale = Number(salePrice) || 0;
+  if (orig <= 0) return 0;
+  return ((orig - sale) / orig) * 100;
+}
+
+/**
+ * Single source of truth for deriving a product's discount_pct and
+ * urgency_score from its current price/stock/sale window. Used for both
+ * single and bulk product creation, vendor edits, and stock-driven
+ * recomputation (e.g. after an order decrements stock) so the two columns
+ * never drift out of sync with the fields that feed them.
+ * @param {{ price: number, sale_price: number, stock: number, sale_end_date: string|Date|null }} params
+ * @returns {{ discount_pct: number, urgency_score: number }}
+ */
+export function deriveProductUrgency({ price, sale_price, stock, sale_end_date }) {
+  const discount_pct = computeDiscountPct({ price, salePrice: sale_price });
+  const urgency_score = computeUrgencyScore({
+    saleEndDate: sale_end_date || new Date(Date.now() + 24 * 60 * 60 * 1000).toISOString(),
+    discountPct: discount_pct,
+    stock,
+  });
+  return { discount_pct, urgency_score };
+}
+
+/**
  * Return urgency level label based on hours remaining.
  * @param {string|Date} saleEndDate
  * @returns {'low'|'medium'|'high'|'critical'|'expired'}

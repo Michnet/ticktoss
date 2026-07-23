@@ -12,7 +12,7 @@ import { useProducts } from '@/lib/hooks/useProducts';
 import ProductCard1 from '../product/cards/ProductCard1';
 
 
-export default function ProductsView({headingSize= 24, cardType = 0, itemExClass='', cardWidth = 'auto', source = 'upcoming',ui = 'carousel', title = 'Upcoming', customFilters = {}, subTitle = 'Deals',description = null, filters=[]}) {
+export default function ProductsView({headingSize= 20, cardType = 0, itemExClass='', cardWidth = 'auto', source = 'upcoming',ui = 'carousel', title = 'Upcoming', customFilters = {}, subTitle = 'Deals',description = null, filters=[]}) {
   
 
   let callerHook = null, ctaLink = null, Card = null;

@@ -1,11 +1,23 @@
 import { NextResponse } from 'next/server';
 import { createClient } from '@/lib/supabase/server';
+import { addToFluentCrm } from '@/lib/fluentCrm';
 
 export async function POST(request) {
   try {
     const url = new URL(request.url);
     const intent = url.searchParams.get('intent');
     const supabase = await createClient();
+
+    if (intent === 'post_signup') {
+      const { email, name, userId } = await request.json();
+
+      if (!email) {
+        return NextResponse.json({ error: 'Missing email' }, { status: 400 });
+      }
+
+      const result = await addToFluentCrm(email, name || 'User', '3', { lyve_user_id: userId });
+      return NextResponse.json({ success: result.success });
+    }
 
     if (intent === 'sign_in') {
       const { email, password } = await request.json();

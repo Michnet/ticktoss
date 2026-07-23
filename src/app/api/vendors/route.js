@@ -5,6 +5,7 @@ import { createClient } from '@supabase/supabase-js';
 import Mailjet from 'node-mailjet';
 import { isAdmin } from '@/lib/roles';
 import { getCategoryColor } from '@/lib/colors';
+import { addToFluentCrm } from '@/lib/fluentCrm';
 
 export async function GET(request) {
   try {
@@ -409,7 +410,22 @@ export async function POST(request) {
         }
       }
 
-      // 3. Send approval email via Mailjet
+      // 3. Move contact from FluentCRM users list to vendors list
+      if (profile.email) {
+        try {
+          await addToFluentCrm(
+            profile.email,
+            profile.display_name || 'TickToss Vendor',
+            '4',
+            { lyve_user_id: user_id },
+            '3'
+          );
+        } catch (e) {
+          console.error('Failed to update FluentCRM on vendor approval:', e);
+        }
+      }
+
+      // 4. Send approval email via Mailjet
       const applicantEmail = profile.email;
       if (applicantEmail) {
         try {

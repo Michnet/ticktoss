@@ -106,13 +106,13 @@ export default function ProductActions({ product, iconSize = 16, leftExtraClass 
   return (
     <div className={`flex justify-between ${exClass}`}>
       <div className={`flex flex-row justify-end shrink-1 overflow-x-auto no-scrollbar ${leftExtraClass} h-[${height}px]`}>
-        <button
+        {/* <button
           onClick={handleContact}
           className="flex items-center justify-center text-[var(--tt-text)] px-[0.6rem] hover:bg-[var(--tt-surface)] transition-colors"
           title="Contact Vendor"
         >
           <MessageSquare size={iconSize} strokeWidth={2} />
-        </button>
+        </button> */}
         <button
           onClick={handleShare}
           className="flex items-center justify-center text-[var(--tt-text)] px-[0.6rem] hover:bg-[var(--tt-surface)] transition-colors hover:text-blue-500 hover:border-blue-500/30"

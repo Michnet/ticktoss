@@ -29,7 +29,7 @@ export default function HomeSectionHeader({ title, highlight, subtitle, cta, acc
       {cta && (
         <Link
           href={cta.href}
-          className="tt-btn tt-btn-ghost text-[0.82rem] px-4 py-[0.45rem] shrink-0"
+          className="tt-btn-ghost text-[0.75rem] py-[0.45rem] rounded-3xl leading-[1.2] px-3 shadow font-semibold shrink-0"
         >
           {cta.label} →
         </Link>

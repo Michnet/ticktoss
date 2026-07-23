@@ -9,6 +9,7 @@ import CountdownClock from '@/components/product/CountdownClock';
 import UrgencyBar from '@/components/product/UrgencyBar';
 import Carousel from '../ui/Carousel';
 import ProductCardCollage from '../product/concepts/ProductCardCollage';
+import DualColorHeading from '../ui/DualColorHeading';
 
 const CATEGORY_STYLES = {
   'Electronics': { emoji: '📱', color: '#4C8BFF' },
@@ -124,20 +125,10 @@ export default function FeaturedProducts({cardWidth='300px'}) {
   return (
     <section className="tt-container">
         <div className="flex items-end justify-between px-5 mb-5 gap-4 flex-wrap">
-          <div>
-            <h2 className="font-extrabold text-[clamp(1.3rem,2.5vw,1.85rem)]">
-              ⭐ Featured{' '}
-              <span className="bg-[linear-gradient(135deg,#FFB800,#FF8C00)] bg-clip-text text-transparent [-webkit-background-clip:text] [-webkit-text-fill-color:transparent]">
-                Deals
-              </span>
-            </h2>
-            <p className="text-[var(--tt-muted)] text-[0.875rem] mt-1">
-              Hand-picked by our team — premium discounts, high trust vendors
-            </p>
-          </div>
+          <DualColorHeading title="Featured" subTitle="Deals" description={'Hand-picked by our team — premium discounts, high trust vendors'} />
           <Link
             href="/products?filter=featured"
-            className="tt-btn tt-btn-ghost text-[0.82rem] px-4 py-[0.45rem]"
+            className="tt-btn-ghost text-[0.75rem] py-[0.45rem] rounded-3xl leading-[1.2] px-3 shadow font-semibold"
           >
             All Featured →
           </Link>

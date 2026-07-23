@@ -187,7 +187,7 @@ export default function LiveUrgencyList() {
           </div>
           <Link
             href="/products"
-            className="tt-btn tt-btn-ghost text-[0.82rem] px-4 py-[0.45rem]"
+            className="tt-btn-ghost text-[0.75rem] py-[0.45rem] rounded-3xl leading-[1.2] px-3 shadow font-semibold"
           >
             View All →
           </Link>

@@ -113,6 +113,16 @@ export default function AuthForm({ defaultMode = 'login', onSuccess, redirectTo 
           throw new Error('This email is already registered. Please sign in instead.');
         }
 
+        // Add to FluentCRM users list (fire-and-forget, don't block registration)
+        fetch('/api/auth?intent=post_signup', {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({
+            email: data.email,
+            name: `${data.firstName} ${data.lastName}`,
+            userId: authData.user.id,
+          }),
+        }).catch((e) => console.error('FluentCRM signup sync failed:', e));
 
         setUser(authData.user);
         addToast({ type: 'success', message: 'Account created successfully!' });
