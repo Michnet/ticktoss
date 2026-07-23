@@ -69,7 +69,7 @@ export default function MobileTabBar({ onOpenLeft, onOpenRight }) {
         {/* Raised center FAB — spacer keeps the flex row balanced */}
         <div className="w-14 shrink-0" aria-hidden="true" />
 
-        <TabButton icon={LayoutGrid} label="Widgets" onClick={onOpenRight} />
+        <TabButton icon={LayoutGrid} label="More" onClick={onOpenRight} />
         <TabButton
           icon={LayoutDashboard}
           label="Dashboard"

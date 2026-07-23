@@ -94,7 +94,7 @@ export default function ProductCardCollage({cardWidth=null, product, index = 0 }
                 <button
                   key={originalIndex}
                   onClick={(e) => showThumb(e, originalIndex)}
-                  className="relative block aspect-square w-full flex-1 overflow-hidden rounded-3xl first:rounded-tr-2xl border border-[var(--tt-surface)] transition-opacity hover:opacity-80"
+                  className="relative block aspect-square w-full flex-1 overflow-hidden rounded-md first:rounded-tr-2xl border border-[var(--tt-surface)] transition-opacity hover:opacity-80"
                   aria-label={`Show gallery image ${originalIndex + 1}`}
                 >
                   <ProductMedia
