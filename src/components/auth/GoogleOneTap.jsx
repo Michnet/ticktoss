@@ -66,6 +66,31 @@ export default function GoogleOneTap() {
             .single();
           if (profileData) setProfile(profileData);
 
+          // Supabase sets last_sign_in_at to "now" on every sign-in, so for a
+          // brand-new account it lands within a few seconds of created_at —
+          // that gap is the only reliable "is this a first-time signup" signal
+          // available from a One Tap credential response.
+          const createdAt = new Date(signedInUser.created_at).getTime();
+          const lastSignInAt = new Date(signedInUser.last_sign_in_at).getTime();
+          const isNewUser = Math.abs(lastSignInAt - createdAt) < 10000;
+
+          if (isNewUser) {
+            const name =
+              signedInUser.user_metadata?.full_name ||
+              signedInUser.user_metadata?.name ||
+              'User';
+
+            fetch('/api/auth?intent=post_signup', {
+              method: 'POST',
+              headers: { 'Content-Type': 'application/json' },
+              body: JSON.stringify({
+                email: signedInUser.email,
+                name,
+                userId: signedInUser.id,
+              }),
+            }).catch((e) => console.error('FluentCRM signup sync failed:', e));
+          }
+
           localStorage.removeItem('oneTapLogoutTime');
           addToast({ type: 'success', message: 'Signed in with Google.' });
         }

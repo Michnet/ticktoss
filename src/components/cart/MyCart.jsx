@@ -11,12 +11,16 @@ import AuthForm from '@/components/auth/AuthForm';
 import AddressForm from '@/components/checkout/AddressForm';
 
 export default function MyCart() {
-  const { user, cartItems, removeFromCart, updateQuantity, clearCart } = useAppStore();
+  const { user, cartItems, removeFromCart, updateQuantity, clearCart, profile } = useAppStore();
   const { submitOrder, isLoading, error } = useCheckout();
   const [success, setSuccess] = useState(false);
   const [authModalOpen, setAuthModalOpen] = useState(false);
   const [address, setAddress] = useState({});
-  const isAddressComplete = ['firstName', 'lastName', 'phone', 'address', 'city'].every((field) => address[field]?.trim());
+  // Default to the first saved address until the user picks/edits one —
+  // derived at render instead of synced via effect since profile loads
+  // asynchronously after mount.
+  const effectiveAddress = address.firstName ? address : (profile?.shopping_addresses?.[0] || address);
+  const isAddressComplete = ['firstName', 'lastName', 'phone', 'address', 'city'].every((field) => effectiveAddress[field]?.trim());
 
   const calculateSubtotal = () => {
     return cartItems.reduce((sum, item) => sum + ((item.price || item.sale_price || 0) * (item.quantity || 1)), 0);
@@ -31,7 +35,7 @@ export default function MyCart() {
   };
 
   const processCheckout = async () => {
-    const result = await submitOrder(cartItems, address, 'cash_on_delivery', 'Order from MyCart');
+    const result = await submitOrder(cartItems, effectiveAddress, 'cash_on_delivery', 'Order from MyCart');
     if (result.success) {
       setSuccess(true);
       clearCart();
@@ -76,8 +80,8 @@ export default function MyCart() {
         </div>
       )}
 
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-4 sm:gap-8">
-        <div className="lg:col-span-2 flex flex-col gap-4">
+      <div className="grid grid-cols-1 lg:grid-cols-[auto_250px] gap-4 sm:gap-8">
+        <div className="flex flex-col gap-4">
           <AnimatePresence>
             {cartItems.map((item) => (
               <motion.div 
@@ -159,16 +163,16 @@ export default function MyCart() {
           </AnimatePresence>
         </div>
 
-        <div className="bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-[var(--tt-radius-lg)] p-6 h-fit sticky top-24 shadow-sm">
+        <div className="bg-[var(--tt-surface)] border border-[var(--tt-border)] rounded-[var(--tt-radius-lg)] p-6 h-fit sticky top-24 shadow-sm overflow-hidden">
           <h3 className="text-lg font-bold mb-4 pb-4 border-b border-[var(--tt-border)]">Order Summary</h3>
           <div className="flex justify-between mb-3 text-[var(--tt-muted)]">
             <span>Subtotal</span>
             <span>UGX {calculateSubtotal().toLocaleString()}</span>
           </div>
-          <div className="flex justify-between mb-4 text-[var(--tt-muted)]">
+          {/* <div className="flex justify-between mb-4 text-[var(--tt-muted)]">
             <span>Shipping</span>
             <span>Calculated at checkout</span>
-          </div>
+          </div> */}
           <div className="flex justify-between mb-6 pb-4 border-b border-[var(--tt-border)] font-bold text-lg text-[var(--tt-text)]">
             <span>Total</span>
             <span className="text-[var(--tt-flame)]">UGX {calculateSubtotal().toLocaleString()}</span>
@@ -176,7 +180,7 @@ export default function MyCart() {
 
           <h4 className="text-sm font-bold mb-3 text-[var(--tt-text)]">Delivery Details</h4>
           <div className="mb-4">
-            <AddressForm value={address} onChange={setAddress} />
+            <AddressForm value={effectiveAddress} onChange={setAddress} />
           </div>
 
           <button
@@ -184,7 +188,7 @@ export default function MyCart() {
             disabled={isLoading || !isAddressComplete}
             className="tt-btn tt-btn-primary tt-shimmer w-full flex items-center justify-center gap-2 py-3"
           >
-            {isLoading ? 'Processing...' : 'Secure Checkout'}
+            {isLoading ? 'Processing...' : 'Confirm List'}
           </button>
         </div>
       </div>

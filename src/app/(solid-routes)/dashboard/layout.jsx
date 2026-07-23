@@ -110,11 +110,11 @@ export default function DashboardLayout({ children }) {
 
   return (
     <>
-      <div className='min-h-[inherit]' style={{display: 'flex', gap: '1rem'}}>
+      <div className='min-h-[inherit] max-w-[1400px] mx-auto' style={{display: 'flex', gap: '1rem'}}>
 
         {/* Desktop Sidebar Navigation */}
-        <aside style={{ width: '250px', flexShrink: 0 }} className="hidden-mobile bg-[var(--tt-surface-2)] px-4">
-          <div style={{ position: 'sticky', top: 'calc(var(--tt-nav-height) + 2rem)' }}>
+        <aside style={{ width: '250px', top: 'calc(var(--tt-nav-height) + 2rem)', height: 'calc(100vh - var(--tt-nav-height) - 3rem)', flexShrink: 0 }} className="py-3 hidden md:block md:sticky bg-[var(--tt-surface-2)] px-4">
+          <div style={{ position: 'sticky' }}>
             <Suspense fallback={<div className="tt-skeleton h-[300px] w-full" />}>
               <SidebarContent />
             </Suspense>

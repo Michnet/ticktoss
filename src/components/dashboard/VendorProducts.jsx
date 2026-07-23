@@ -1,6 +1,7 @@
 'use client';
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import dynamic from 'next/dynamic';
 import { getSupabaseBrowserClient } from '@/lib/supabase/client';
 import useAppStore from '@/store/useAppStore';
 import { Plus, UploadCloud, Edit, Trash2, Package } from 'lucide-react';
@@ -8,36 +9,69 @@ import Link from 'next/link';
 import { formatUGX } from '@/lib/currency';
 import { resizedImage } from '@/helpers/universal';
 
+const VendorAddSingle = dynamic(() => import('./VendorAddSingle'), {
+  loading: () => (
+    <div style={{ padding: '2rem', textAlign: 'center', color: 'var(--tt-muted)' }}>Loading editor...</div>
+  ),
+});
+
+const SORT_STORAGE_KEY = 'tt_vendor_products_sort';
+
+const SORT_OPTIONS = [
+  { value: 'updated_at_desc', label: 'Recently Updated', column: 'updated_at', ascending: false },
+  { value: 'views_desc', label: 'Most Viewed', column: 'views', ascending: false },
+  { value: 'stock_asc', label: 'Lowest Stock', column: 'stock', ascending: true },
+  { value: 'sale_start_date_desc', label: 'Sale Start Date', column: 'sale_start_date', ascending: false },
+];
+
 export default function VendorProducts() {
   const { user, addToast } = useAppStore();
   const supabase = getSupabaseBrowserClient();
   const [products, setProducts] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [editingProductId, setEditingProductId] = useState(null);
+  const [sortBy, setSortBy] = useState(() => {
+    if (typeof window === 'undefined') return SORT_OPTIONS[0].value;
+    return window.localStorage.getItem(SORT_STORAGE_KEY) || SORT_OPTIONS[0].value;
+  });
+
+  const fetchProducts = useCallback(async () => {
+    if (!user) return;
+    try {
+      const sortOption = SORT_OPTIONS.find(o => o.value === sortBy) || SORT_OPTIONS[0];
+      const { data, error } = await supabase
+        .from('products')
+        .select(`
+          id, name, slug, price, sale_price, stock, status, featured_image, short_description, sale_end_date, sale_start_date, updated_at, views, tt_location
+        `)
+        .eq('user_id', user.id)
+        .order(sortOption.column, { ascending: sortOption.ascending, nullsFirst: false });
+
+      if (error) throw error;
+      setProducts(data || []);
+    } catch (error) {
+      console.error('Error fetching vendor products:', error);
+    } finally {
+      setIsLoading(false);
+    }
+  }, [user, supabase, sortBy]);
 
   useEffect(() => {
-    if (!user) return;
-
-    const fetchProducts = async () => {
-      try {
-        const { data, error } = await supabase
-          .from('products')
-          .select(`
-            id, name, slug, price, sale_price, stock, status, featured_image, short_description, sale_end_date, tt_location
-          `)
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setProducts(data || []);
-      } catch (error) {
-        console.error('Error fetching vendor products:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-
     fetchProducts();
-  }, [user, supabase]);
+  }, [fetchProducts]);
+
+  const handleSortChange = (e) => {
+    const value = e.target.value;
+    setSortBy(value);
+    if (typeof window !== 'undefined') {
+      window.localStorage.setItem(SORT_STORAGE_KEY, value);
+    }
+  };
+
+  const handleEditSuccess = () => {
+    setEditingProductId(null);
+    fetchProducts();
+  };
 
   const handleDelete = async (productId) => {
     if (!window.confirm('Are you sure you want to delete this product?')) return;
@@ -75,7 +109,18 @@ export default function VendorProducts() {
           <h2 className="tt-section-title" style={{ color: 'var(--tt-flame)', marginBottom: '0.5rem' }}>Products</h2>
           <p style={{ color: 'var(--tt-muted)' }}>Manage your listings and inventory.</p>
         </div>
-        <div style={{ display: 'flex', gap: '1rem' }}>
+        <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+          <select
+            value={sortBy}
+            onChange={handleSortChange}
+            className="tt-input"
+            style={{ width: 'auto' }}
+            aria-label="Sort products"
+          >
+            {SORT_OPTIONS.map(opt => (
+              <option key={opt.value} value={opt.value}>Sort: {opt.label}</option>
+            ))}
+          </select>
           <Link href="/dashboard?view=add_bulk" className="tt-btn tt-btn-outline" style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
             <UploadCloud size={18} />
             Bulk Add
@@ -149,9 +194,9 @@ export default function VendorProducts() {
                     </td>
                     <td style={{ padding: '1rem 0.5rem', textAlign: 'right' }}>
                       <div style={{ display: 'flex', gap: '0.5rem', justifyContent: 'flex-end' }}>
-                        <Link href={`/dashboard?view=edit_single&id=${product.id}`} className="tt-btn tt-btn-ghost" style={{ padding: '0.5rem', color: 'var(--tt-muted)' }} title="Edit">
+                        <button onClick={() => setEditingProductId(product.id)} className="tt-btn tt-btn-ghost" style={{ padding: '0.5rem', color: 'var(--tt-muted)' }} title="Edit">
                           <Edit size={16} />
-                        </Link>
+                        </button>
                         <button onClick={() => handleDelete(product.id)} className="tt-btn tt-btn-ghost" style={{ padding: '0.5rem', color: 'var(--tt-danger)' }} title="Delete">
                           <Trash2 size={16} />
                         </button>
@@ -162,6 +207,64 @@ export default function VendorProducts() {
               })}
             </tbody>
           </table>
+        </div>
+      )}
+
+      {editingProductId && (
+        <div
+          style={{
+            position: 'fixed',
+            inset: 0,
+            zIndex: 9999,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            padding: '1rem',
+          }}
+        >
+          <div
+            onClick={() => setEditingProductId(null)}
+            style={{
+              position: 'absolute',
+              inset: 0,
+              background: 'rgba(0,0,0,0.7)',
+              backdropFilter: 'blur(8px)',
+            }}
+          />
+
+          <div
+            className="tt-card tt-glass"
+            style={{
+              position: 'relative',
+              width: '100%',
+              maxWidth: '900px',
+              maxHeight: '90vh',
+              overflowY: 'auto',
+              padding: '2rem',
+              background: 'var(--tt-surface)',
+              borderTop: '4px solid var(--tt-flame)',
+            }}
+          >
+            <button
+              onClick={() => setEditingProductId(null)}
+              style={{
+                position: 'absolute',
+                top: '1.5rem',
+                right: '1.5rem',
+                background: 'none',
+                border: 'none',
+                color: 'var(--tt-muted)',
+                cursor: 'pointer',
+                fontSize: '1.5rem',
+                lineHeight: 1,
+                zIndex: 1,
+              }}
+            >
+              &times;
+            </button>
+
+            <VendorAddSingle initialData={{ id: editingProductId }} onSuccess={handleEditSuccess} />
+          </div>
         </div>
       )}
     </div>

@@ -901,7 +901,7 @@ export default function VendorAddSingle({ initialData = null, onSuccess = null }
         </p>
         <div style={{ display: 'flex', gap: '1rem', justifyContent: 'center' }}>
           <button onClick={() => window.location.href = '/dashboard?view=vendor_products'} className="tt-btn tt-btn-ghost">View My Deals</button>
-          <button onClick={() => window.location.reload()} className="tt-btn tt-btn-primary tt-shimmer">Post Another</button>
+          <button onClick={() => window.location.reload()} className="tt-btn tt-btn-primary tt-shimmer">Post</button>
         </div>
       </div>
     );

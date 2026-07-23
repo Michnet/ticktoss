@@ -163,7 +163,7 @@ export async function POST(req) {
         quantity: item.quantity || 1,
         price: unitPrice,
         vendor_id: product.user_id || null,
-        image: product.featured_image || null,
+        image: product?.featured_image?.url || null,
         attributes: variation?.attributes || item.attributes || null,
         // Snapshot of which store sold this item — lets contact info be
         // resolved per item rather than per order, since a vendor can run

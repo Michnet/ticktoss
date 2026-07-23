@@ -101,20 +101,20 @@ export default function Navbar({ variant = 'solid', showSidebarToggle = false })
             
           }else{
             userView = <>
-                <button 
+                 <button 
                   onClick={() => { setAuthModalMode('login'); setAuthModalOpen(true); }}
                   className="tt-btn tt-btn-ghost hidden-mobile" 
                   style={{ padding: '0.45rem 0.9rem', fontSize: '0.85rem' }}
                 >
                   Sign In
                 </button>
-                <button 
+                {/*<button 
                   onClick={() => { setAuthModalMode('register'); setAuthModalOpen(true); }}
-                  className="tt-btn tt-btn-primary tt-shimmer hidden-mobile" 
+                  className="tt-btn-primary tt-shimmer hidden md:block" 
                   style={{ padding: '0.45rem 0.9rem', fontSize: '0.85rem' }}
                 >
                   Get Started
-                </button>
+                </button> */}
                 <button 
                   onClick={() => { setAuthModalMode('login'); setAuthModalOpen(true); }}
                   className="mobile-only" 

@@ -31,7 +31,7 @@ function Digit({ value, pad = 2 }) {
  * CountdownClock — flip-digit style countdown timer.
  * @param {{ saleEndDate: string|Date, size?: 'sm'|'md'|'lg', showAllUnits?: boolean }} props
  */
-export default function CountdownClock({counterLabel=null, includeMilliSeconds = false, saleEndDate, showAllUnits = false, size = 'md',  startDate = false, saleStartDate }) {
+export default function CountdownClock({counterLabel=null, digitalClass='', includeMilliSeconds = false, saleEndDate, showAllUnits = false, labelClass='', size = 'md',  startDate = false, saleStartDate }) {
   const containerRef = useRef(null);
   const [isActive, setIsActive] = useState(false);
 
@@ -107,13 +107,13 @@ export default function CountdownClock({counterLabel=null, includeMilliSeconds =
         transition: 'color 0.5s',
       }}
     >
-      {counterLabel && <span className='leading-tight text-[var(--tt-text)]'>{counterLabel}</span>}
+      {counterLabel && <span className={`leading-tight text-[var(--tt-text)] ${labelClass}`}>{counterLabel}</span>}
       {visibleUnits.map((unit, i) => {
         const prevUnit = visibleUnits[i - 1];
         const needsSeparator = i > 0 && prevUnit !== 'days';
 
         return (
-          <span key={unit} style={{ display: 'inline-flex', alignItems: 'center', gap }}>
+          <span key={unit} className={digitalClass} style={{ display: 'inline-flex', alignItems: 'center', gap }}>
             {needsSeparator && (
               <span style={{ color: `${color}88`, fontSize: '0.85em', marginBottom: '2px' }}>
                 {unit === 'cs' ? '.' : ':'}

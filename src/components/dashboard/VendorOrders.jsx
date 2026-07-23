@@ -6,6 +6,7 @@ import { formatUGX } from '@/lib/currency';
 import OrderResolutionModal from './OrderResolutionModal';
 import { resizedImage } from '@/helpers/universal';
 import CountdownClock from '@/components/product/CountdownClock';
+import { TextHelp } from '../assistanceUIs';
 
 const RESPONSE_WINDOW_MS = 24 * 60 * 60 * 1000;
 // Contact info (phone + call button) only unlocks once the vendor has
@@ -94,7 +95,7 @@ export default function VendorOrders() {
   }
 
   return (
-    <div>
+    <div className='max-w-4xl'>
       <div style={{ marginBottom: '2rem' }}>
         <h1 className="tt-section-title" style={{ fontSize: '2rem' }}>Orders & <span>Bookings</span></h1>
         <p style={{ color: 'var(--tt-muted)' }}>Manage incoming deals and coordinate pickups/deliveries.</p>
@@ -187,7 +188,8 @@ export default function VendorOrders() {
 
                   {order.status === 'pending' && (
                     <div style={{ textAlign: 'center', marginBottom: '0.25rem' }}>
-                      <CountdownClock counterLabel="Respond within:" saleEndDate={responseDeadline} size="sm" />
+                      <CountdownClock labelClass='block' digitalClass='text-2xl' counterLabel="Expires In:" saleEndDate={responseDeadline} size="sm" />
+                      <TextHelp title='Order Expiry' description='This is the time limit within which you need to respond to this order. If the time expires, the order will be automatically expired.' triggerText='What is this?'/>
                     </div>
                   )}
 

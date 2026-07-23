@@ -9,12 +9,16 @@ import AddressForm from '@/components/checkout/AddressForm';
 import Image from 'next/image';
 
 export default function BookingModal({ product, selectedVariation, onClose }) {
-  const { addToast } = useAppStore();
+  const { addToast, profile } = useAppStore();
   const { submitOrder, isLoading: isPending } = useCheckout();
 
   const [quantity, setQuantity] = useState(1);
   const [address, setAddress] = useState({});
-  const isAddressComplete = ['firstName', 'lastName', 'phone', 'address', 'city'].every((field) => address[field]?.trim());
+  // Default to the first saved address until the user picks/edits one —
+  // derived at render instead of synced via effect since profile loads
+  // asynchronously after mount.
+  const effectiveAddress = address.firstName ? address : (profile?.shopping_addresses?.[0] || address);
+  const isAddressComplete = ['firstName', 'lastName', 'phone', 'address', 'city'].every((field) => effectiveAddress[field]?.trim());
 
   const isFutureSale = product?.sale_start_date && new Date(product.sale_start_date) > new Date();
   const unitPrice = selectedVariation?.sale_price || selectedVariation?.price || product.sale_price;
@@ -33,7 +37,7 @@ export default function BookingModal({ product, selectedVariation, onClose }) {
       id: product.id,
       variation_id: selectedVariation?.id ?? null,
       quantity,
-    }], address, 'cash_on_delivery', '');
+    }], effectiveAddress, 'cash_on_delivery', '');
 
     if (result.success) {
       addToast({ type: 'success', message: 'Booking confirmed! The vendor will contact you shortly.' });
@@ -158,7 +162,7 @@ export default function BookingModal({ product, selectedVariation, onClose }) {
             <div>
               <label className="tt-label">Delivery or Pickup Address</label>
               
-              <AddressForm value={address} onChange={setAddress} />
+              <AddressForm value={effectiveAddress} onChange={setAddress} />
             </div>
 
             {/* Payment Warning */}
